@@ -1,0 +1,19 @@
+Source: basic256
+Section: devel
+Priority: optional
+Maintainer: Ryan Kavanagh <ryanakca@kubuntu.org>
+Build-Depends: cdbs, debhelper (>= 5), bison, flex, libqt4-dev
+Standards-Version: 3.8.0
+Homepage: http://kidbasic.sourceforge.net/
+
+Package: basic256
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: educational BASIC programming environment for children
+ BASIC-256 is an easy to use version of BASIC designed to teach young
+ children the basics of computer programming. It uses traditional 
+ control structures like gosub, for/next, and goto, which helps kids
+ easily see how program flow-control works. It has a built-in graphics
+ mode which lets them draw pictures on screen in minutes, and a set 
+ of detailed, easy-to-follow tutorials that introduce programming 
+ concepts through fun exercises.
