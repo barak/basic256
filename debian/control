@@ -3,7 +3,7 @@ Section: devel
 Priority: optional
 Maintainer: Ryan Kavanagh <ryanakca@kubuntu.org>
 Build-Depends: cdbs, debhelper (>= 5), bison, flex, libqt4-dev
-Standards-Version: 3.8.0
+Standards-Version: 3.9.1
 Homepage: http://kidbasic.sourceforge.net/
 
 Package: basic256
