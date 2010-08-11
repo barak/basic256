@@ -5,6 +5,7 @@ Maintainer: Ryan Kavanagh <ryanakca@kubuntu.org>
 Build-Depends: debhelper (>= 7),
  bison,
  flex,
+ flite1-dev,
  libqt4-dev
 Standards-Version: 3.9.1
 Homepage: http://kidbasic.sourceforge.net/
