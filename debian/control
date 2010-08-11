@@ -8,6 +8,8 @@ Build-Depends: debhelper (>= 7),
  flite1-dev,
  libespeak-dev,
  libqt4-dev,
+ libsdl1.2-dev,
+ libsdl-mixer1.2-dev,
  libsqlite3-dev
 Standards-Version: 3.9.1
 Homepage: http://kidbasic.sourceforge.net/
