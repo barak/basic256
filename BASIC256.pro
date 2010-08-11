@@ -6,16 +6,82 @@ TEMPLATE		=	app
 TARGET			=	BASIC256
 DEPENDPATH		+=	.
 INCLUDEPATH		+=	.
+TMAKE_CXXFLAGS = -g 
+CONFIG          	+=  qt debug_and_release
 OBJECTS_DIR		=	tmp/obj
 MOC_DIR			=	tmp/moc
+QT			+=	webkit
 RESOURCES		+=	resources/resource.qrc
 RC_FILE         =   resources/basic256.rc
 TRANSLATIONS	=	Translations/basic256_en_US.ts \
-		        Translations/basic256_de.ts \
-		        Translations/basic256_nl.ts
+		        	Translations/basic256_de.ts \
+		        	Translations/basic256_ru_RU.ts \
+		        	Translations/basic256_sp.ts \
+		        	Translations/basic256_nl.ts
+LIBS			+= -lsqlite3
 
 win32 {
-DEFINES += WIN32
+	# use SAPI for speech
+	DEFINES 		+= WIN32
+	DEFINES 		+= USEQSOUND
+	LIBS			+= -lole32 \
+				-lsapi \
+				-lwinmm
+
+
+} else {
+	## for the SAY command (LINUX) you need to choose one TTS engine - uncomment the one desired
+	## espeak library (causes problems with sound statement in 0.9.5i under ubuntu 9.10 - suggest flite)
+	DEFINES		+= 	LINUX_ESPEAK
+	INCLUDEPATH		+=	/usr/include/espeak
+	LIBS			+=	-lespeak
+
+	## flite library
+	#DEFINES			+= 	LINUX_FLITE
+	#INCLUDEPATH		+=	/usr/include/flite
+	#LIBS			+=	-lflite_cmu_us_kal16
+	#LIBS			+=	-lflite
+	#LIBS			+=	-lflite_cmulex
+	#LIBS			+=	-lflite_usenglish
+	
+	LIBS			+=	-lm
+
+	## include libraries for SDL audio for wav and sound output
+	DEFINES 		+= USESDL
+	LIBS			+= -lSDL
+	LIBS			+= -lSDL_mixer
+
+	## original - problematic LINUX sound
+	#DEFINES 		+= LINUX_DSPSOUND
+
+	## rules for make install
+	examplesDiceFiles.files = ./Examples/dice/*.kbs \
+				./Examples/dice/*.wav
+	examplesDiceFiles.path = /usr/share/basic256/Examples/dice
+	INSTALLS += examplesDiceFiles
+	examplesImgloadFiles.files = ./Examples/imgload/*.kbs \
+				./Examples/imgload/*.png \
+				./Examples/imgload/*.bmp
+	examplesImgloadFiles.path = /usr/share/basic256/Examples/imgload
+	INSTALLS += examplesImgloadFiles
+	examplesSpritesFiles.files = ./Examples/sprites/*.kbs \
+				./Examples/sprites/*.wav \
+				./Examples/sprites/*.png \
+				./Examples/sprites/*.bmp
+	examplesSpritesFiles.path = /usr/share/basic256/Examples/sprites
+	INSTALLS += examplesSpritesFiles
+	examplesTestingFiles.files = ./Examples/testing/*.kbs
+	examplesTestingFiles.path = /usr/share/basic256/Examples/testing
+	INSTALLS += examplesTestingFiles
+	examplesFiles.files = ./Examples/*.kbs
+	examplesFiles.path = /usr/share/basic256/Examples
+	INSTALLS += examplesFiles
+	transFiles.files = ./Translations/*.qm
+	transFiles.path = /usr/share/basic256
+	INSTALLS += transFiles
+	target.path = /usr/local/bin
+	INSTALLS += target
+
 }
 
 exists( ./LEX/Makefile ) {
@@ -25,6 +91,7 @@ exists( ./LEX/Makefile ) {
 else { 
 	error( Couldn't make LEX project - aborting... )
 }
+
 
 # Input
 HEADERS 		+= 	LEX/basicParse.tab.h 
@@ -41,7 +108,10 @@ HEADERS			+=	ToolBar.h
 HEADERS			+=	ViewWidgetIFace.h
 HEADERS			+=	MainWindow.h
 HEADERS			+=	VariableWin.h
+HEADERS			+=	DocumentationWin.h
+HEADERS			+=	Version.h
 HEADERS			+=	EditSyntaxHighlighter.h
+HEADERS         +=  Stack.h
 
 SOURCES 		+= 	LEX/lex.yy.c 
 SOURCES 		+= 	LEX/basicParse.tab.c 
@@ -59,4 +129,6 @@ SOURCES			+=	ToolBar.cpp
 SOURCES			+=	ViewWidgetIFace.cpp
 SOURCES			+=	MainWindow.cpp
 SOURCES			+=	VariableWin.cpp
+SOURCES			+=	DocumentationWin.cpp
 SOURCES			+=	EditSyntaxHighlighter.cpp
+SOURCES			+=  Stack.cpp

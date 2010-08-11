@@ -20,14 +20,18 @@
 #define __MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QGridLayout>
 #include <QAction>
+#include <QMessageBox>
 
 #include "BasicWidget.h"
 #include "BasicOutput.h"
 #include "BasicEdit.h"
 #include "BasicGraph.h"
 #include "VariableWin.h"
+#include "DocumentationWin.h"
 #include "EditSyntaxHighlighter.h"
+
 
 class MainWindow : public QMainWindow
 {
@@ -35,6 +39,7 @@ class MainWindow : public QMainWindow
 public:
   	MainWindow(QWidget * parent = 0, Qt::WindowFlags f = 0);
 	~MainWindow();
+	void closeEvent(QCloseEvent *);
 	QAction * runact;
 	QAction * debugact;
 	QAction * stepact;
@@ -43,7 +48,10 @@ public:
   	BasicOutput * output;
 	BasicGraph * goutput;
 	VariableWin * vardock;
+	DocumentationWin * docdock;
 	EditSyntaxHighlighter * editsyntax;
+	
+	QString localecode;
 };
 
 #endif

@@ -26,28 +26,48 @@
 #include "ViewWidgetIFace.h"
 #include "BasicOutput.h"
 
+#define GSIZE_INITIAL_WIDTH   300
+#define GSIZE_INITIAL_HEIGHT   300
+
 class BasicGraph : public QWidget, public ViewWidgetIFace
 {
   Q_OBJECT;
  public:
   BasicGraph(BasicOutput *);
   QImage *image;
-  QImage *imask;
+  bool initActions(QMenu *, ToolBar *);
+  // used to store current location of mouse
+  // default value of -1 when no mouse recorded over graphic output
+  int mouseX;
+  int mouseY;
+  int mouseB;
+  // used to store location of last mouse click
+  // default value of -1 when no click recorded
+  int clickX;
+  int clickY;
+  int clickB;
 
- 	bool initActions(QMenu *, ToolBar *);
  
  public slots:
-	void slotCopy();
-	void slotPrint();
+  void resize(int, int);
+  void slotCopy();
+  void slotPrint();
  
  protected:
   void paintEvent(QPaintEvent *);
   void keyPressEvent(QKeyEvent *);
+  void mousePressEvent(QMouseEvent *);
+  void mouseReleaseEvent(QMouseEvent *);
+  void mouseMoveEvent(QMouseEvent *);
   
  private:
-  uchar imagedata[sizeof(int) * 300 * 300];
-  uchar maskdata[300 * 300];
+  uchar *imagedata;
   BasicOutput *output;
+  unsigned int gwidth;
+  unsigned int gheight;
+  unsigned int gtop;	// position of image in basicgraph widget
+  unsigned int gleft;
+
 };
 
 

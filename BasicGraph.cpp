@@ -16,7 +16,7 @@
  **/
 
 
-using namespace std;
+
 #include <iostream>
 #include <QApplication>
 #include <QMutex>
@@ -26,28 +26,51 @@ using namespace std;
 #include <QPrintDialog>
 #include <QClipboard>
 #include <QMessageBox>
+using namespace std;
 
 #include "BasicGraph.h"
+#include "MainWindow.h"
 
 QMutex keymutex;
 int currentKey;
 
 BasicGraph::BasicGraph(BasicOutput *o)
 {
-	
-  image = new QImage(imagedata, 300, 300, QImage::Format_ARGB32);
-  imask = new QImage(maskdata, 300, 300, QImage::Format_Mono);
+  image = NULL;
+  resize(GSIZE_INITIAL_WIDTH, GSIZE_INITIAL_HEIGHT);
   output = o;
+  setMinimumSize(gwidth, gheight);
 }
+
+void
+BasicGraph::resize(int width, int height)
+{
+	if (image != NULL && width == image->width() && height == image->height()) {
+		return;
+    }
+	gwidth  = width;
+	gheight = height;
+	delete image;
+	imagedata = new uchar[sizeof(int) * width * height];
+	image = new QImage(imagedata, width, height, QImage::Format_ARGB32);
+	image->fill(Qt::color0);
+	mouseX = 0;
+	mouseY = 0;
+	mouseB = 0;
+	clickX = 0;
+	clickY = 0;
+	clickB = 0;
+	setMouseTracking(true);
+}
+
 
 void
 BasicGraph::paintEvent(QPaintEvent *)
 {
   QPainter p2(this);
-  image->setAlphaChannel(*imask);
-  p2.drawImage((width() - 300) / 2,
-	       (height() - 300) / 2,
-	       *image);
+  gtop = (height() - gheight) / 2;
+  gleft = (width() - gwidth) / 2;
+  p2.drawImage(gleft, gtop, *image);
 }
 
 
@@ -59,6 +82,27 @@ BasicGraph::keyPressEvent(QKeyEvent *e)
   keymutex.lock();
   currentKey = e->key();
   keymutex.unlock();
+}
+
+void BasicGraph::mouseMoveEvent(QMouseEvent *e) {
+    if (e->x() >= (int) gleft && e->x() < (int) (gleft+gwidth) && e->y() >= (int) gtop && e->y() < (int) (gtop+gheight)) { 
+		mouseX = e->x() - gleft;
+		mouseY = e->y() - gtop;
+		mouseB = e->buttons();
+	}
+}
+
+void BasicGraph::mouseReleaseEvent(QMouseEvent *e) {
+	// cascade call to mouse move so we record clicks real time like moves
+	mouseMoveEvent(e);
+}
+
+void BasicGraph::mousePressEvent(QMouseEvent *e) {
+    if (e->x() >= (int) gleft && e->x() < (int) (gleft+gwidth) && e->y() >= (int) gtop && e->y() < (int) (gtop+gheight)) { 
+		clickX = mouseX = e->x() - gleft;
+		clickY = mouseY = e->y() - gtop;
+		clickB = mouseB = e->buttons();
+	}
 }
 
 bool BasicGraph::initActions(QMenu * vMenu, ToolBar * vToolBar)

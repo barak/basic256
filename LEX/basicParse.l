@@ -25,6 +25,7 @@
 #endif
 
     #include <string.h>
+    #include <stdlib.h>
 
     struct symbol 
     {
@@ -40,18 +41,24 @@
     extern struct symbol symtable[];
     extern void clearSymbolTable();
     extern void clearLabelTable();
+    extern void clearIfTable();
     extern void newLineOffsets(int);
 
     extern int getSymbol(char *);
     extern int newSymbol(char *);
     extern int yyparse();
+    //extern YYLTYPE yylloc;
     extern int errorcode;
     extern int byteOffset;
+    extern int lastLineOffset;
     int linenumber;
+    int column;
 
 #ifdef __cplusplus
   }
 #endif
+
+void count();
 
 %}
 
@@ -66,9 +73,17 @@ key   [Kk][Ee][Yy]
 return [Rr][Ee][Tt][Uu][Rr][Nn]
 if    [Ii][Ff]
 then  [Tt][Hh][Ee][Nn]
-rem   [Rr][Ee][Mm].*$
+else  [Ee][Ll][Ss][Ee]
+endif  [Ee][Nn][Dd][Ii][Ff]
+while [Ww][Hh][Ii][Ll][Ee]
+endwhile [Ee][Nn][Dd][Ww][Hh][Ii][Ll][Ee]
+do [Dd][Oo]
+until [Uu][Nn][Tt][Ii][Ll]
+rem   [Rr][Ee][Mm][ ].+$
+remeol   [Rr][Ee][Mm]$
 remalt #.*$
 dim   [Dd][Ii][Mm]
+redim   [Rr][Ee][Dd][Ii][Mm]
 end   [Ee][Nn][Dd]
 for   [Ff][Oo][Rr]
 to    [Tt][Oo]
@@ -83,8 +98,12 @@ plot  [Pp][Ll][Oo][Tt]
 circle [Cc][Ii][Rr][Cc][Ll][Ee]
 rect  [Rr][Ee][Cc][Tt]
 poly  [Pp][Oo][Ll][Yy]
+stamp  [Ss][Tt][Aa][Mm][Pp]
 line  [Ll][Ii][Nn][Ee]
 fastgraphics [Ff][Aa][Ss][Tt][Gg][Rr][Aa][Pp][Hh][Ii][Cc][Ss]
+graphsize [Gg][Rr][Aa][Pp][Hh][Ss][Ii][Zz][Ee]
+graphwidth [Gg][Rr][Aa][Pp][Hh][Ww][Ii][Dd][Tt][Hh]
+graphheight [Gg][Rr][Aa][Pp][Hh][Hh][Ee][Ii][Gg][Hh][Tt]
 refresh [Rr][Ee][Ff][Rr][Ee][Ss][Hh]
 cls   [Cc][Ll][Ss]
 clg   [Cc][Ll][Gg]
@@ -106,6 +125,10 @@ toint   [Ii][Nn][Tt]
 tostring [Ss][Tt][Rr][Ii][Nn][Gg]
 length  [Ll][Ee][Nn][Gg][Tt][Hh]
 mid     [Mm][Ii][Dd]
+left    [Ll][Ee][Ff][Tt]
+right   [Rr][Ii][Gg][Hh][Tt]
+upper	[Uu][Pp][Pp][Ee][Rr]
+lower	[Ll][Oo][Ww][Ee][Rr]
 instr   [Ii][Nn][Ss][Tt][Rr]
 ceil    [Cc][Ee][Ii][Ll]
 floor   [Ff][Ll][Oo][Oo][Rr]
@@ -113,6 +136,11 @@ abs     [Aa][Bb][Ss]
 sin     [Ss][Ii][Nn]
 cos     [Cc][Oo][Ss]
 tan     [Tt][Aa][Nn]
+asin     [Aa][Ss][Ii][Nn]
+acos     [Aa][Cc][Oo][Ss]
+atan     [Aa][Tt][Aa][Nn]
+degrees     [Dd][Ee][Gg][Rr][Ee][Ee][Ss]
+radians     [Rr][Aa][Dd][Ii][Aa][Nn][Ss]
 rand    [Rr][Aa][Nn][Dd]
 pi      [Pp][Ii]
 and [Aa][Nn][Dd]
@@ -122,22 +150,114 @@ not [Nn][Oo][Tt]
 pause [Pp][Aa][Uu][Ss][Ee]
 sound [Ss][Oo][Uu][Nn][Dd]
 integer [0-9]+
+hexinteger 0[xX][0-9a-fA-F]+
+octalinteger 0[oO][0-7]+
+binaryinteger 0[bB][01]+
 floatnum [0-9]*\.?[0-9]*
 string \"[^\"\n]*\"
-variable [a-zA-Z][a-zA-Z0-9]*
-stringvar [a-zA-Z][a-zA-Z0-9]*\$
-label     {variable}:
-blankline ^{whitespace}*[\n]
-
+variable [a-zA-Z][a-zA-Z0-9_]*
+stringvar [a-zA-Z][a-zA-Z0-9_]*\$
+label     ^[ \t]*{variable}:
+blankline ^[ \t]*[\n]
+asc [Aa][Ss][Cc]
+chr [Cc][Hh][Rr]
+tofloat [Ff][Ll][Oo][Aa][Tt]
+readline [Rr][Ee][Aa][Dd][Ll][Ii][Nn][Ee]
+writeline [Ww][Rr][Ii][Tt][Ee][Ll][Ii][Nn][Ee]
+booleof [Ee][Oo][Ff]
+year [Yy][Ee][Aa][Rr]
+month [Mm][Oo][Nn][Tt][Hh]
+day [Dd][Aa][Yy]
+hour [Hh][Oo][Uu][Rr]
+minute [Mm][Ii][Nn][Uu][Tt][Ee]
+second [Ss][Ee][Cc][Oo][Nn][Dd]
+text [Tt][Ee][Xx][Tt]
+font [Ff][Oo][Nn][Tt]
+say [Ss][Aa][Yy]
+wavplay [Ww][Aa][Vv][Pp][Ll][Aa][Yy]
+wavstop [Ww][Aa][Vv][Ss][Tt][Oo][Pp]
+wavwait [Ww][Aa][Vv][Ww][Aa][Ii][Tt]
+seek [Ss][Ee][Ee][Kk]
+size [Ss][Ii][Zz][Ee]
+exists [Ee][Xx][Ii][Ss][Tt][Ss]
+booltrue [Tt][Rr][Uu][Ee]
+boolfalse [Ff][Aa][Ll][Ss][Ee]
+mousex [Mm][Oo][Uu][Ss][Ee][Xx]
+mousey [Mm][Oo][Uu][Ss][Ee][Yy]
+mouseb [Mm][Oo][Uu][Ss][Ee][Bb]
+clickclear [Cc][Ll][Ii][Cc][Kk][Cc][Ll][Ee][Aa][Rr]
+clickx [Cc][Ll][Ii][Cc][Kk][Xx]
+clicky [Cc][Ll][Ii][Cc][Kk][Yy]
+clickb [Cc][Ll][Ii][Cc][Kk][Bb]
+system [Ss][Yy][Ss][Tt][Ee][Mm]
+volume [Vv][Oo][Ll][Uu][Mm][Ee]
+rgb [Rr][Gg][Bb]
+pixel [Pp][Ii][Xx][Ee][Ll]
+getcolor [Gg][Ee][Tt][Cc][Oo][Ll][Oo][Rr]
+log [Ll][Oo][Gg]
+logten [Ll][Oo][Gg][1][0]
+getslice [Gg][Ee][Tt][Ss][Ll][Ii][Cc][Ee]
+putslice [Pp][Uu][Tt][Ss][Ll][Ii][Cc][Ee]
+imgload [Ii][Mm][Gg][Ll][Oo][Aa][Dd]
+spritedim [Ss][Pp][Rr][Ii][Tt][Ee][Dd][Ii][Mm]
+spriteload [Ss][Pp][Rr][Ii][Tt][Ee][Ll][Oo][Aa][Dd]
+spriteslice [Ss][Pp][Rr][Ii][Tt][Ee][Ss][Ll][Ii][Cc][Ee]
+spritemove [Ss][Pp][Rr][Ii][Tt][Ee][Mm][Oo][Vv][Ee]
+spriteplace [Ss][Pp][Rr][Ii][Tt][Ee][Pp][Ll][Aa][Cc][Ee]
+spritehide [Ss][Pp][Rr][Ii][Tt][Ee][Hh][Ii][Dd][Ee]
+spriteshow [Ss][Pp][Rr][Ii][Tt][Ee][Ss][Hh][Oo][Ww]
+spritecollide [Ss][Pp][Rr][Ii][Tt][Ee][Cc][Oo][Ll][Ll][Ii][Dd][Ee]
+spritex [Ss][Pp][Rr][Ii][Tt][Ee][Xx]
+spritey [Ss][Pp][Rr][Ii][Tt][Ee][Yy]
+spriteh [Ss][Pp][Rr][Ii][Tt][Ee][Hh]
+spritew [Ss][Pp][Rr][Ii][Tt][Ee][Ww]
+spritev [Ss][Pp][Rr][Ii][Tt][Ee][Vv]
+changedir [Cc][Hh][Aa][Nn][Gg][Ee][Dd][Ii][Rr]
+currentdir [Cc][Uu][Rr][Rr][Ee][Nn][Tt][Dd][Ii][Rr]
+decimal [Dd][Ee][Cc][Ii][Mm][Aa][Ll]
+dbopen [Dd][Bb][Oo][Pp][Ee][Nn]
+dbclose [Dd][Bb][Cc][Ll][Oo][Ss][Ee]
+dbexecute [Dd][Bb][Ee][Xx][Ee][Cc][Uu][Tt][Ee]
+dbopenset [Dd][Bb][Oo][Pp][Ee][Nn][Ss][Ee][Tt]
+dbcloseset [Dd][Bb][Cc][Ll][Oo][Ss][Ee][Ss][Ee][Tt]
+dbrow [Dd][Bb][Rr][Oo][Ww]
+dbint [Dd][Bb][Ii][Nn][Tt]
+dbfloat [Dd][Bb][Ff][Ll][Oo][Aa][Tt]
+dbstring [Dd][Bb][Ss][Tt][Rr][Ii][Nn][Gg]
+onerror [Oo][Nn][Ee][Rr][Rr][Oo][Rr]
+offerror [Oo][Ff][Ff][Ee][Rr][Rr][Oo][Rr]
+lasterror [Ll][Aa][Ss][Tt][Ee][Rr][Rr][Oo][Rr]
+lasterrormessage [Ll][Aa][Ss][Tt][Ee][Rr][Rr][Oo][Rr][Mm][Ee][Ss][Ss][Aa][Gg][Ee]
+lasterrorline [Ll][Aa][Ss][Tt][Ee][Rr][Rr][Oo][Rr][Ll][Ii][Nn][Ee]
+lasterrorextra [Ll][Aa][Ss][Tt][Ee][Rr][Rr][Oo][Rr][Ee][Xx][Tt][Rr][Aa]
 %%
 
 
 {label} { 
-          char *temp, *c;
-          temp = c = strdup(yytext);
+	  char *temp;
+	  char *c, *d;
+	  int num;
+          
+          count();
+          temp = strdup(yytext);
+		  // strip whitespace
+		  c = temp;
+		  while(*c == ' ' || *c == '\t') {
+		  	c++;
+		  }
+		  if (c!=temp) {
+			d = temp;
+			while(*c!=0x00) {
+				*d++ = *c++;
+			}
+			*d = 0x00;
+		  }
+		  // strip :
+		  c = temp;
           while (*c != ':') c++;
-          *c = 0;
-          int num = getSymbol(temp);
+          *c = 0x0;
+          //
+		  num = getSymbol(temp);
           if (num < 0)
             {
               yylval.number = newSymbol(temp); //Doesn't conflict, because label only resolved after branch
@@ -149,105 +269,203 @@ blankline ^{whitespace}*[\n]
             }
           return LABEL; 
         }
-{integer}       { yylval.number = atoi(yytext); return INTEGER; }
-{floatnum}      { yylval.floatnum = atof(yytext); return FLOAT; }
-{string}        { int len = strlen(yytext); 
+{integer}       { count(); yylval.number = atoi(yytext); return INTEGER; }
+{hexinteger}       { count(); yylval.number = strtol(yytext+2, NULL, 16); return INTEGER; }
+{octalinteger}       { count(); yylval.number = strtol(yytext+2, NULL, 8); return INTEGER; }
+{binaryinteger}       { count(); yylval.number = strtol(yytext+2, NULL, 2); return INTEGER; }
+{floatnum}      { count(); yylval.floatnum = atof(yytext); return FLOAT; }
+{string}        { int len; count(); len = strlen(yytext); 
                   yylval.string = strdup(yytext + 1); 
                   yylval.string[len - 2] = 0; 
                   return STRING; }
-{toint}         { return TOINT; }
-{tostring}      { return TOSTRING; }
-{length}        { return LENGTH; }
-{mid}           { return MID; }
-{instr}         { return INSTR; }
-{ceil}          { return CEIL; }
-{floor}         { return FLOOR; }
-{abs}           { return ABS; }
-{sin}           { return SIN; }
-{cos}           { return COS; }
-{tan}           { return TAN; }
-{rand}          { return RAND; }
-{pi}            { return PI; }
-{and}           { return AND; }
-{or}            { return OR; }
-{xor}           { return XOR; }
-{not}           { return NOT; }
-{print}		{ return PRINT; }
-{dim}		{ return DIM; }
-{cls}		{ return CLS; }
-{clg}		{ return CLG; }
-{plot}		{ return PLOT; }
-{circle}	{ return CIRCLE; }
-{rect}	        { return RECT; }
-{poly}		{ return POLY; }
-{line}	        { return LINE; }
-{sound}         { return SOUND; }
-{fastgraphics}	{ return FASTGRAPHICS; }
-{refresh}	{ return REFRESH; }
-{color}		{ return SETCOLOR; }
-{colour}	{ return SETCOLOR; }
-{clear}		{ yylval.number = 0; return COLOR; }
-{white}		{ yylval.number = 1; return COLOR; }
-{black}		{ yylval.number = 2; return COLOR; }
-{red}		{ yylval.number = 3; return COLOR; }
-{dark}{red}	{ yylval.number = 4; return COLOR; }
-{green}		{ yylval.number = 5; return COLOR; }
-{dark}{green}	{ yylval.number = 6; return COLOR; }
-{blue}		{ yylval.number = 7; return COLOR; }
-{dark}{blue}	{ yylval.number = 8; return COLOR; }
-{cyan}		{ yylval.number = 9; return COLOR; }
-{dark}{cyan}	{ yylval.number = 10; return COLOR; }
-{purple}	{ yylval.number = 11; return COLOR; }
-{dark}{purple}	{ yylval.number = 12; return COLOR; }
-{yellow}	{ yylval.number = 13; return COLOR; }
-{dark}{yellow}	{ yylval.number = 14; return COLOR; }
-{orange}	{ yylval.number = 15; return COLOR; }
-{dark}{orange}	{ yylval.number = 16; return COLOR; }
-{gray}	        { yylval.number = 17; return COLOR; }
-{dark}{gray}	{ yylval.number = 18; return COLOR; }
-{goto}		{ return GOTO; }
-{if}		{ return IF; }
-{then}		{ return THEN; }
-{for}		{ return FOR; }
-{to}		{ return TO; }
-{step}		{ return STEP; }
-{next}		{ return NEXT; }
-{open}		{ return OPEN; }
-{read}		{ return READ; }
-{write}		{ return WRITE; }
-{close}		{ return CLOSE; }
-{reset}		{ return RESET; }
-{input}         { return INPUT; }
-{key}           { return KEY; }
-{gosub}         { return GOSUB; }
-{return}        { return RETURN; }
-{pause}         { return PAUSE; }
-{rem}           { return '\n'; }
-{remalt}        { return '\n'; }
-{end}           { return END; }
-">="            { return GTE; }
-"<="            { return LTE; }
-"<>"            { return NE; }
-"+"             { return '+'; }
-"-"             { return '-'; }
-"*"             { return '*'; }
-"/"             { return '/'; }
-"^"             { return '^'; }
-"="             { return '='; }
-"<"             { return '<'; }
-">"             { return '>'; }
-","             { return ','; }
-";"             { return ';'; }
-":"             { return ':'; }
-"("             { return '('; }
-")"             { return ')'; }
-"{"             { return '{'; }
-"}"             { return '}'; }
-"["             { return '['; }
-"]"             { return ']'; }
-"\n"            { linenumber++; return '\n'; }
+{toint}         { count(); return TOINT; }
+{tostring}      { count(); return TOSTRING; }
+{length}        { count(); return LENGTH; }
+{mid}           { count(); return MID; }
+{left}          { count(); return LEFT; }
+{right}         { count(); return RIGHT; }
+{upper}         { count(); return UPPER; }
+{lower}         { count(); return LOWER; }
+{instr}         { count(); return INSTR; }
+{ceil}          { count(); return CEIL; }
+{floor}         { count(); return FLOOR; }
+{abs}           { count(); return ABS; }
+{sin}           { count(); return SIN; }
+{cos}           { count(); return COS; }
+{tan}           { count(); return TAN; }
+{asin}           { count(); return ASIN; }
+{acos}           { count(); return ACOS; }
+{atan}           { count(); return ATAN; }
+{degrees}           { count(); return DEGREES; }
+{radians}           { count(); return RADIANS; }
+{log}           { count(); return LOG; }
+{logten}           { count(); return LOGTEN; }
+{rand}          { count(); return RAND; }
+{pi}            { count(); return PI; }
+{and}           { count(); return AND; }
+{or}            { count(); return OR; }
+{xor}           { count(); return XOR; }
+{not}           { count(); return NOT; }
+{print}		{ count(); return PRINT; }
+{dim}		{ count(); return DIM; }
+{redim}		{ count(); return REDIM; }
+{cls}		{ count(); return CLS; }
+{clg}		{ count(); return CLG; }
+{plot}		{ count(); return PLOT; }
+{circle}	{ count(); return CIRCLE; }
+{rect}	        { count(); return RECT; }
+{poly}		{ count(); return POLY; }
+{stamp}		{ count(); return STAMP; }
+{line}	        { count(); return LINE; }
+{sound}         { count(); return SOUND; }
+{fastgraphics}	{ count(); return FASTGRAPHICS; }
+{graphsize}	{ count(); return GRAPHSIZE; }
+{graphwidth}	{ count(); return GRAPHWIDTH; }
+{graphheight}	{ count(); return GRAPHHEIGHT; }
+{refresh}	{ count(); return REFRESH; }
+{pixel}		{ count(); return PIXEL; }
+{rgb}		{ count(); return RGB; }
+{color}		{ count(); return SETCOLOR; }
+{getcolor}		{ count(); return GETCOLOR; }
+{colour}	{ count(); return SETCOLOR; }
+{clear}		{ count(); return CLEAR; }
+{white}		{ count(); return WHITE; }
+{black}		{ count(); return BLACK; }
+{red}		{ count(); return RED; }
+{dark}{red}	{ count(); return DARKRED; }
+{green}		{ count(); return GREEN; }
+{dark}{green}	{ count(); return DARKGREEN; }
+{blue}		{ count(); return BLUE; }
+{dark}{blue}	{ count(); return DARKBLUE; }
+{cyan}		{ count(); return CYAN; }
+{dark}{cyan}	{ count(); return DARKCYAN; }
+{purple}	{ count(); return PURPLE; }
+{dark}{purple}	{ count(); return DARKPURPLE; }
+{yellow}	{ count(); return YELLOW; }
+{dark}{yellow}	{ count(); return DARKYELLOW; }
+{orange}	{ count(); return ORANGE; }
+{dark}{orange}	{ count(); return DARKORANGE; }
+{gray}	        { count(); return GREY; }
+{dark}{gray}	{ count(); return DARKGREY; }
+{goto}		{ count(); return GOTO; }
+{if}		{ count(); return IF; }
+{then}		{ count(); return THEN; }
+{else}		{ count(); return ELSE; }
+{endif}		{ count(); return ENDIF; }
+{while}		{ count(); return WHILE; }
+{endwhile}		{ count(); return ENDWHILE; }
+{do}		{ count(); return DO; }
+{until}		{ count(); return UNTIL; }
+{for}		{ count(); return FOR; }
+{to}		{ count(); return TO; }
+{step}		{ count(); return STEP; }
+{next}		{ count(); return NEXT; }
+{open}		{ count(); return OPEN; }
+{read}		{ count(); return READ; }
+{write}		{ count(); return WRITE; }
+{close}		{ count(); return CLOSE; }
+{reset}		{ count(); return RESET; }
+{input}         { count(); return INPUT; }
+{key}           { count(); return KEY; }
+{gosub}         { count(); return GOSUB; }
+{return}        { count(); return RETURN; }
+{pause}         { count(); return PAUSE; }
+{asc}           { count(); return ASC; }
+{chr}           { count(); return CHR; }
+{tofloat}       { count(); return TOFLOAT; }
+{readline}      { count(); return READLINE; }
+{writeline}     { count(); return WRITELINE; }
+{booleof}       { count(); return BOOLEOF; }
+{booltrue}       { count(); return BOOLTRUE; }
+{boolfalse}       { count(); return BOOLFALSE; }
+{year}          { count(); return YEAR; }
+{month}         { count(); return MONTH; }
+{day}           { count(); return DAY; }
+{hour}          { count(); return HOUR; }
+{minute}        { count(); return MINUTE; }
+{second}        { count(); return SECOND; }
+{text}          { count(); return TEXT; }
+{font}          { count(); return FONT; }
+{say}           { count(); return SAY; }
+{wavplay}       { count(); return WAVPLAY; }
+{wavstop}       { count(); return WAVSTOP; }
+{wavwait}       { count(); return WAVWAIT; }
+{getslice}       { count(); return GETSLICE; }
+{putslice}       { count(); return PUTSLICE; }
+{imgload}       { count(); return IMGLOAD; }
+{spritedim}       { count(); return SPRITEDIM; }
+{spriteload}       { count(); return SPRITELOAD; }
+{spriteslice}       { count(); return SPRITESLICE; }
+{spriteplace}       { count(); return SPRITEPLACE; }
+{spritemove}       { count(); return SPRITEMOVE; }
+{spritehide}       { count(); return SPRITEHIDE; }
+{spriteshow}       { count(); return SPRITESHOW; }
+{spritecollide}       { count(); return SPRITECOLLIDE; }
+{spritex}       { count(); return SPRITEX; }
+{spritey}       { count(); return SPRITEY; }
+{spriteh}       { count(); return SPRITEH; }
+{spritew}       { count(); return SPRITEW; }
+{spritev}       { count(); return SPRITEV; }
+{seek}       { count(); return SEEK; }
+{size}       { count(); return SIZE; }
+{exists}       { count(); return EXISTS; }
+{mousex}       { count(); return MOUSEX; }
+{mousey}       { count(); return MOUSEY; }
+{mouseb}       { count(); return MOUSEB; }
+{clickclear}       { count(); return CLICKCLEAR; }
+{clickx}       { count(); return CLICKX; }
+{clicky}       { count(); return CLICKY; }
+{clickb}       { count(); return CLICKB; }
+{system}       { count(); return SYSTEM; }
+{volume}       { count(); return VOLUME; }
+{currentdir}       { count(); return CURRENTDIR; }
+{changedir}       { count(); return CHANGEDIR; }
+{decimal}       { count(); return DECIMAL; }
+{dbopen}       { count(); return DBOPEN; }
+{dbclose}       { count(); return DBCLOSE; }
+{dbexecute}       { count(); return DBEXECUTE; }
+{dbopenset}       { count(); return DBOPENSET; }
+{dbcloseset}       { count(); return DBCLOSESET; }
+{dbrow}       { count(); return DBROW; }
+{dbint}       { count(); return DBINT; }
+{dbfloat}       { count(); return DBFLOAT; }
+{dbstring}       { count(); return DBSTRING; }
+{onerror}       { count(); return ONERROR; }
+{offerror}       { count(); return OFFERROR; }
+{lasterror}       { count(); return LASTERROR; }
+{lasterrormessage}       { count(); return LASTERRORMESSAGE; }
+{lasterrorline}       { count(); return LASTERRORLINE; }
+{lasterrorextra}       { count(); return LASTERROREXTRA; }
+{rem}           { count(); return '\n'; }
+{remeol}        { count(); return '\n'; }
+{remalt}        { count(); return '\n'; }
+{end}           { count(); return END; }
+">="            { count(); return GTE; }
+"<="            { count(); return LTE; }
+"<>"            { count(); return NE; }
+"+"             { count(); return '+'; }
+"-"             { count(); return '-'; }
+"*"             { count(); return '*'; }
+"\\"            { count(); return INTDIV; }
+"\%"            { count(); return MOD; }
+"/"             { count(); return '/'; }
+"^"             { count(); return '^'; }
+"="             { count(); return '='; }
+"<"             { count(); return '<'; }
+">"             { count(); return '>'; }
+","             { count(); return ','; }
+";"             { count(); return ';'; }
+":"             { count(); return ':'; }
+"("             { count(); return '('; }
+")"             { count(); return ')'; }
+"{"             { count(); return '{'; }
+"}"             { count(); return '}'; }
+"["             { count(); return '['; }
+"]"             { count(); return ']'; }
 {variable}      { 
-                  int num = getSymbol(yytext);
+		  int num;
+		  count(); 
+                  num = getSymbol(yytext);
                   if (num < 0)
                    {
                      yylval.number = newSymbol(strdup(yytext));
@@ -259,7 +477,9 @@ blankline ^{whitespace}*[\n]
                   return VARIABLE;
                 }
 {stringvar}     { 
-                  int num = getSymbol(yytext);
+                  int num;
+                  count(); 
+                  num = getSymbol(yytext);
                   if (num < 0)
                    {
                      yylval.number = newSymbol(strdup(yytext));
@@ -270,8 +490,11 @@ blankline ^{whitespace}*[\n]
                    }
                   return STRINGVAR;
                 }
+
+"\n"            {count(); linenumber++; return '\n'; }
+
 {whitespace} 	/* ignore whitespace */
-. 		{ printf("char: %s\n", yytext); return yytext[0]; }
+. 		{ count(); return yytext[0]; }
 
 
 %%
@@ -279,6 +502,19 @@ blankline ^{whitespace}*[\n]
 int 
 yywrap(void) {
   return 1;
+}
+
+void count()
+{
+        int i;
+
+        for (i = 0; yytext[i] != '\0'; i++)
+                if (yytext[i] == '\n')
+                        column = 0;
+                else if (yytext[i] == '\t')
+                        column += 8 - (column % 8);
+                else
+                        column++;
 }
 
 
@@ -290,8 +526,11 @@ basicParse(char *code){
 
   clearSymbolTable();
   clearLabelTable();
+  clearIfTable();
 
   linenumber = 1;
+  lastLineOffset = 0;
+  column = 0;
   errorcode = 0;
 
   yyparse();

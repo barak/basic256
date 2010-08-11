@@ -1,4 +1,6 @@
-<!DOCTYPE TS><TS>
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE TS>
+<TS version="2.0" language="en_US">
 <context>
     <name>BasicEdit</name>
     <message>
@@ -73,10 +75,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cannot assign non-string to string array</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Array index out of bounds</source>
         <translation type="unfinished"></translation>
     </message>
@@ -89,55 +87,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Illegal argument to int()</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Illegal argument to string()</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Illegal argument to sin()</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Illegal argument to cos()</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Illegal argument to tan()</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Illegal argument to ceil()</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Illegal argument to floor()</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Illegal argument to abs()</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>String in numeric expression</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cannot compare strings with &gt; or &lt;=</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cannot compare strings with &lt; or &gt;=</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Unable to open file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Illegal argument to open()</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -146,18 +100,6 @@
     </message>
     <message>
         <source>Unable to write to file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Illegal argument to write()</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Illegal argument to length()</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Illegal argument to poly()</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -173,90 +115,82 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Illegal argument to mid()</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>String not long enough for given starting character</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Illegal argument to instr()</source>
+        <source>Illegal FOR -- start number &gt; end number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Illegal FOR -- start number &lt; end number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Array dimension too small</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> around end of line.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> around column </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t size -- no open file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>seek() called when no file is open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not a string array variable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not an array variable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Argument not an array for poly()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not enough points in immediate list for poly()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not enough points in array for stamp()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Argument not an array for stamp()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not enough points in immediate list for stamp()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Illegal argument</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RGB Color values must be in the range of 0 to 255.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
-        <source>Run</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Stop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Step</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save As</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Exit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Edit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Debug</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save Compiled Byte Code</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>About</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>About BASIC-256</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -292,18 +226,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>View</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Toolbars</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Main</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Print Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -313,19 +235,115 @@ Please check your printer settings.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Text Window</source>
+        <source>&amp;File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Graphics Window</source>
+        <source>&amp;New</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Variable Watch Window</source>
+        <source>&amp;Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;h2 align=&apos;center&apos;&gt;BASIC-256 -- Version 0.9&lt;/h2&gt; <byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/>&lt;p&gt;Copyright &amp;copy; 2006, The BASIC-256 Team&lt;/p&gt;<byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/>&lt;p&gt;Please see the CONTRIBUTORS file for a list of developers and translators for this project.&lt;/p&gt;<byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/>        &lt;p&gt;&lt;i&gt;You should have received a copy of the GNU General Public License along&lt;br&gt; <byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/>with this program; if not, write to the Free Software Foundation, Inc.,&lt;br&gt; <byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/>51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.&lt;/i&gt;&lt;/p&gt;</source>
+        <source>&amp;Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save &amp;As</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Print</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Exit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Edit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cu&amp;t</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select &amp;All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Beautify</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Text Window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Graphics Window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Variable Watch Window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Toolbars</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Main</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Text Output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Graphics Output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Run</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Debug</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;tep</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save Compiled &amp;Byte Code</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;About</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;About BASIC-256</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

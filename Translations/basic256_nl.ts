@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1" language="nl">
+<!DOCTYPE TS>
+<TS version="2.0" language="nl_NL">
 <context>
     <name>BasicEdit</name>
     <message>
@@ -75,7 +76,7 @@
     </message>
     <message>
         <source>Cannot assign non-string to string array</source>
-        <translation>Kan niet-string niet aan string array toewijzen</translation>
+        <translation type="obsolete">Kan niet-string niet aan string array toewijzen</translation>
     </message>
     <message>
         <source>Array index out of bounds</source>
@@ -91,35 +92,35 @@
     </message>
     <message>
         <source>Illegal argument to int()</source>
-        <translation>Illegaal argument voor int()</translation>
+        <translation type="obsolete">Illegaal argument voor int()</translation>
     </message>
     <message>
         <source>Illegal argument to string()</source>
-        <translation>Illegaal argument voor string()</translation>
+        <translation type="obsolete">Illegaal argument voor string()</translation>
     </message>
     <message>
         <source>Illegal argument to sin()</source>
-        <translation>Illegaal argument voor sin()</translation>
+        <translation type="obsolete">Illegaal argument voor sin()</translation>
     </message>
     <message>
         <source>Illegal argument to cos()</source>
-        <translation>Illegaal argument voor cos()</translation>
+        <translation type="obsolete">Illegaal argument voor cos()</translation>
     </message>
     <message>
         <source>Illegal argument to tan()</source>
-        <translation>Illegaal argument voor tan()</translation>
+        <translation type="obsolete">Illegaal argument voor tan()</translation>
     </message>
     <message>
         <source>Illegal argument to ceil()</source>
-        <translation>Illegaal argument voor ceil()</translation>
+        <translation type="obsolete">Illegaal argument voor ceil()</translation>
     </message>
     <message>
         <source>Illegal argument to floor()</source>
-        <translation>Illegaal argument voor floor()</translation>
+        <translation type="obsolete">Illegaal argument voor floor()</translation>
     </message>
     <message>
         <source>Illegal argument to abs()</source>
-        <translation>Illegaal argument voor abs()</translation>
+        <translation type="obsolete">Illegaal argument voor abs()</translation>
     </message>
     <message>
         <source>String in numeric expression</source>
@@ -127,11 +128,11 @@
     </message>
     <message>
         <source>Cannot compare strings with &gt; or &lt;=</source>
-        <translation>Kan strings niet met &gt; of &lt; verglijken</translation>
+        <translation type="obsolete">Kan strings niet met &gt; of &lt; verglijken</translation>
     </message>
     <message>
         <source>Cannot compare strings with &lt; or &gt;=</source>
-        <translation>Kan strings niet met &lt; of &gt; verglijken</translation>
+        <translation type="obsolete">Kan strings niet met &lt; of &gt; verglijken</translation>
     </message>
     <message>
         <source>Unable to open file</source>
@@ -139,7 +140,7 @@
     </message>
     <message>
         <source>Illegal argument to open()</source>
-        <translation>Illegaal argument voor open()</translation>
+        <translation type="obsolete">Illegaal argument voor open()</translation>
     </message>
     <message>
         <source>Can&apos;t read -- no open file.</source>
@@ -151,15 +152,15 @@
     </message>
     <message>
         <source>Illegal argument to write()</source>
-        <translation>Illegaal argument voor write()</translation>
+        <translation type="obsolete">Illegaal argument voor write()</translation>
     </message>
     <message>
         <source>Illegal argument to length()</source>
-        <translation>Illegaal argument voor length()</translation>
+        <translation type="obsolete">Illegaal argument voor length()</translation>
     </message>
     <message>
         <source>Illegal argument to poly()</source>
-        <translation>Illegaal argument voor poly()</translation>
+        <translation type="obsolete">Illegaal argument voor poly()</translation>
     </message>
     <message>
         <source>Not enough points in array for poly()</source>
@@ -175,7 +176,7 @@
     </message>
     <message>
         <source>Illegal argument to mid()</source>
-        <translation>Illegaal argument voor mid()</translation>
+        <translation type="obsolete">Illegaal argument voor mid()</translation>
     </message>
     <message>
         <source>String not long enough for given starting character</source>
@@ -183,18 +184,82 @@
     </message>
     <message>
         <source>Illegal argument to instr()</source>
-        <translation>Illegaal argument voor instr()</translation>
+        <translation type="obsolete">Illegaal argument voor instr()</translation>
     </message>
     <message>
         <source>Sound file must be a string.</source>
-        <translation>Geluid bestand moet een string zijn.</translation>
+        <translation type="obsolete">Geluid bestand moet een string zijn.</translation>
+    </message>
+    <message>
+        <source>Illegal FOR -- start number &gt; end number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Illegal FOR -- start number &lt; end number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Array dimension too small</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> around end of line.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> around column </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t size -- no open file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>seek() called when no file is open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not a string array variable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not an array variable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Argument not an array for poly()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not enough points in immediate list for poly()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not enough points in array for stamp()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Argument not an array for stamp()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not enough points in immediate list for stamp()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Illegal argument</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RGB Color values must be in the range of 0 to 255.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
         <source>Run</source>
-        <translation>Uitvoeren</translation>
+        <translation type="obsolete">Uitvoeren</translation>
     </message>
     <message>
         <source>Pause</source>
@@ -202,43 +267,43 @@
     </message>
     <message>
         <source>Stop</source>
-        <translation>Stop</translation>
+        <translation type="obsolete">Stop</translation>
     </message>
     <message>
         <source>Step</source>
-        <translation>Stap</translation>
+        <translation type="obsolete">Stap</translation>
     </message>
     <message>
         <source>File</source>
-        <translation>Bestand</translation>
+        <translation type="obsolete">Bestand</translation>
     </message>
     <message>
         <source>New</source>
-        <translation>Nieuw</translation>
+        <translation type="obsolete">Nieuw</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Openen</translation>
+        <translation type="obsolete">Openen</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation>Opslaan</translation>
+        <translation type="obsolete">Opslaan</translation>
     </message>
     <message>
         <source>Save As</source>
-        <translation>Opslaan als</translation>
+        <translation type="obsolete">Opslaan als</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation>Afsluiten</translation>
+        <translation type="obsolete">Afsluiten</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>Bewerken</translation>
+        <translation type="obsolete">Bewerken</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation>Knippen</translation>
+        <translation type="obsolete">Knippen</translation>
     </message>
     <message>
         <source>Copy</source>
@@ -250,7 +315,7 @@
     </message>
     <message>
         <source>Select All</source>
-        <translation>Alles selecteren</translation>
+        <translation type="obsolete">Alles selecteren</translation>
     </message>
     <message>
         <source>Advanced</source>
@@ -258,19 +323,19 @@
     </message>
     <message>
         <source>Debug</source>
-        <translation>Debuggen</translation>
+        <translation type="obsolete">Debuggen</translation>
     </message>
     <message>
         <source>Save Compiled Byte Code</source>
-        <translation>Bytecode opslaan</translation>
+        <translation type="obsolete">Bytecode opslaan</translation>
     </message>
     <message>
         <source>About</source>
-        <translation>Over</translation>
+        <translation type="obsolete">Over</translation>
     </message>
     <message>
         <source>About BASIC-256</source>
-        <translation>Over BASIC-256</translation>
+        <translation type="obsolete">Over BASIC-256</translation>
     </message>
     <message>
         <source>Graphics Output</source>
@@ -306,15 +371,15 @@
     </message>
     <message>
         <source>View</source>
-        <translation>View</translation>
+        <translation type="obsolete">View</translation>
     </message>
     <message>
         <source>Toolbars</source>
-        <translation>Gereedschap</translation>
+        <translation type="obsolete">Gereedschap</translation>
     </message>
     <message>
         <source>Main</source>
-        <translation>Hoofdvenster</translation>
+        <translation type="obsolete">Hoofdvenster</translation>
     </message>
     <message>
         <source>Print Error</source>
@@ -328,19 +393,131 @@ Check uw printer instelling.</translation>
     </message>
     <message>
         <source>Text Window</source>
-        <translation>Tekstvenster</translation>
+        <translation type="obsolete">Tekstvenster</translation>
     </message>
     <message>
         <source>Graphics Window</source>
-        <translation>Grafikkenvenster</translation>
+        <translation type="obsolete">Grafikkenvenster</translation>
     </message>
     <message>
         <source>Variable Watch Window</source>
-        <translation>Variabelenvenster</translation>
+        <translation type="obsolete">Variabelenvenster</translation>
     </message>
     <message>
-        <source>&lt;h2 align=&apos;center&apos;&gt;BASIC-256 -- Version 0.9.2&lt;/h2&gt; <byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/>&lt;p&gt;Copyright &amp;copy; 2006, The BASIC-256 Team&lt;/p&gt;<byte value="x9"/>                                        &lt;p&gt;Please visit our web site at http://kidbasic.sourceforge.net for tutorials and documentation.&lt;/p&gt; <byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/>&lt;p&gt;Please see the CONTRIBUTORS file for a list of developers and translators for this project.&lt;/p&gt;<byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/>        &lt;p&gt;&lt;i&gt;You should have received a copy of the GNU General Public License along&lt;br&gt; <byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/>with this program; if not, write to the Free Software Foundation, Inc.,&lt;br&gt; <byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/>51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.&lt;/i&gt;&lt;/p&gt;</source>
-        <translation>&lt;h2 align=&apos;center&apos;&gt;BASIC-256 -- Version 0.9.2&lt;/h2&gt; <byte value="x9"/>&lt;p&gt;Copyright &amp;copy; 2006, Het BASIC-256 Team&lt;/p&gt;<byte value="x9"/>&lt;p&gt;Lees alstublieft het CONTRIBUTORS bestand voor een lijst van ontwikkelaars en vertalers voor dit project.&lt;/p&gt;<byte value="x9"/>&lt;p&gt;&lt;i&gt;U zou een exemplaar van de GNU General Public License samen&lt;br&gt; <byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/>met dit programma moeten ontvangen hebben; als niet, schrijf aan the Free Software Foundation, Inc.,&lt;br&gt; <byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/><byte value="x9"/>51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.&lt;/i&gt;&lt;/p&gt;</translation>
+        <source>&lt;h2 align=&apos;center&apos;&gt;BASIC-256 -- Version 0.9.2&lt;/h2&gt; 					&lt;p&gt;Copyright &amp;copy; 2006, The BASIC-256 Team&lt;/p&gt;	                                        &lt;p&gt;Please visit our web site at http://kidbasic.sourceforge.net for tutorials and documentation.&lt;/p&gt; 					&lt;p&gt;Please see the CONTRIBUTORS file for a list of developers and translators for this project.&lt;/p&gt;				        &lt;p&gt;&lt;i&gt;You should have received a copy of the GNU General Public License along&lt;br&gt; 					with this program; if not, write to the Free Software Foundation, Inc.,&lt;br&gt; 					51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.&lt;/i&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;h2 align=&apos;center&apos;&gt;BASIC-256 -- Version 0.9.2&lt;/h2&gt; 	&lt;p&gt;Copyright &amp;copy; 2006, Het BASIC-256 Team&lt;/p&gt;	&lt;p&gt;Lees alstublieft het CONTRIBUTORS bestand voor een lijst van ontwikkelaars en vertalers voor dit project.&lt;/p&gt;	&lt;p&gt;&lt;i&gt;U zou een exemplaar van de GNU General Public License samen&lt;br&gt; 					met dit programma moeten ontvangen hebben; als niet, schrijf aan the Free Software Foundation, Inc.,&lt;br&gt; 					51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.&lt;/i&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;New</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save &amp;As</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Print</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Exit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Edit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cu&amp;t</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select &amp;All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Beautify</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Text Window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Graphics Window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Variable Watch Window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Toolbars</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Main</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Text Output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Graphics Output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Run</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Debug</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;tep</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save Compiled &amp;Byte Code</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;About</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;About BASIC-256</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
