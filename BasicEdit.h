@@ -20,6 +20,7 @@
 #define __BASICEDIT_H
 
 
+#include <QApplication>
 #include <QTextEdit>
 #include <QMainWindow>
 #include <QKeyEvent>
@@ -42,7 +43,12 @@ class BasicEdit : public QTextEdit, public ViewWidgetIFace
   void cursorMove();
   void goToLine(int);
   void highlightLine(int);
-	void slotPrint();
+  void slotPrint();
+  void beautifyProgram();
+  void fontSmall();
+  void fontMedium();
+  void fontLarge();
+  void fontHuge();
  
  protected:
   void keyPressEvent(QKeyEvent *);
@@ -54,6 +60,7 @@ class BasicEdit : public QTextEdit, public ViewWidgetIFace
   int startPos;
   int linePos;
   QString filename;
+  void changeFontSize(unsigned int);
 };
 
 

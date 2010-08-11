@@ -22,6 +22,7 @@
 #include <QTextEdit>
 #include <QPushButton>
 #include <QStatusBar>
+
 #include "BasicEdit.h"
 #include "BasicOutput.h"
 #include "BasicGraph.h"
@@ -43,17 +44,25 @@ class RunController : public QObject
   void runResumed();
 
  public slots:
-  void playSound(int, int);
+ void playSounds(int, int*);
+  void speakWords(QString);
+  void setVolume(int);
+  void system(char*);
+  void playWAV(QString);
+  void stopWAV();
+  void waitWAV();
   void inputFilter(QString text);
   void outputFilter(QString text);
   void outputClear();
   void goutputFilter();
+  void goutputResize(int, int);
   void startDebug();
   void startRun();
   void stopRun();
   void pauseResume();
   void saveByteCode();
   void stepThrough();
+  void showDocumentation();
 
  private:
   Interpreter *i;
@@ -65,6 +74,9 @@ class RunController : public QObject
   run_status oldStatus;
   QString bytefilename;
   MainWindow *mainwin;
+  int soundVolume;
+
+
 };
 
 
