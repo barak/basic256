@@ -1,23 +1,4 @@
 #!/usr/bin/make -f
 
-include /usr/share/cdbs/1/rules/debhelper.mk
-include /usr/share/cdbs/1/class/makefile.mk
-include /usr/share/cdbs/1/class/qmake.mk
-
-# Don't use Qt3's qmake!
-QMAKE = qmake-qt4
-
-install/basic256::
-	install -D --mode=0755 $(CURDIR)/BASIC256 \
-        $(CURDIR)/debian/basic256/usr/bin/basic256
-
-clean::
-	# Upstream doesn't clean up bison/flex crud.
-	rm -f $(CURDIR)/LEX/basicParse.tab.h $(CURDIR)/LEX/basicParse.tab.c \
-	    $(CURDIR)/LEX/lex.yy.c
-
-DEB_INSTALL_MANPAGES_basic256 := $(CURDIR)/debian/basic256.1
-
-# Because upstream decided to name its changelog ChangeLog
-# instead of a standard name, we need the following line.
-DEB_INSTALL_CHANGELOGS_ALL := $(CURDIR)/ChangeLog
+%:
+	$@
