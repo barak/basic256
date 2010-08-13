@@ -13,6 +13,8 @@ Build-Depends: debhelper (>= 7.0.50~),
  libsqlite3-dev
 Standards-Version: 3.9.1
 Homepage: http://www.basic256.org/
+Vcs-Browser: http://git.debian.org/?p=collab-maint/basic256.git
+Vcs-Git: git://git.debian.org/collab-maint/basic256.git
 
 Package: basic256
 Architecture: any
