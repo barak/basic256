@@ -2,7 +2,7 @@ Source: basic256
 Section: devel
 Priority: optional
 Maintainer: Ryan Kavanagh <ryanakca@kubuntu.org>
-Build-Depends: debhelper (>= 7),
+Build-Depends: debhelper (>= 7.0.50~),
  bison,
  flex,
  flite1-dev,
