@@ -1,3 +1,35 @@
+basic256 (0.9.6.27-1) unstable; urgency=low
+
+  * New upstream release
+      - Added flite1-dev to B-D
+      - Added libespeak-dev to B-D
+      - Added libsqlite3-dev as B-D
+      - Added libsdl1.2-dev and libsdl-mixer1.2-dev as B-D
+  * Bumped Standards-Version to 3.9.1
+  * Debian source format 3.0 (quilt)
+  * Ditch CDBS rules for dh7 rules
+  * Drop CDBS from the build depends and bump debhelper version to 7.0.50~
+  * debian/compat 5 -> 7
+  * Override dh_auto_configure so that we run qmake
+  * Deal with manpages from debian/basic256.manpages instead of debian/rules
+  * Drop debian/dirs, unneeded
+  * Added a watch file
+  * Install in /usr/bin, not /usr/local/bin, 01_usr_bin.diff
+  * Let's call the executable basic256 instead of BASIC256 to keep
+    consistent with previous releases, 02_basic256_not_BASIC256.diff
+  * Updated the manpage
+  * Updated the copyright file with new copyright holders.
+  * Use the GPL-2 common-license, not the GPL symlink to the most recent
+    version
+  * Prepend missing 'Copyright' to '(C)' in debian/copyright
+  * Updated 'Homepage:' in debian/control
+  * Added the Vcs-* tags
+  * Install examples in their proper location, 03_examples.diff
+  * Added icon for desktop file
+  * Update .desktop file with new Icon
+
+ -- Ryan Kavanagh <ryanakca@kubuntu.org>  Fri, 13 Aug 2010 11:07:44 -0400
+
 basic256 (0.9.2-2) unstable; urgency=low
 
   * Change the copyright year in debian/copyright from 2008 to 2006 as per
