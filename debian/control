@@ -12,7 +12,7 @@ Build-Depends: debhelper (>= 7.0.50~),
  libsdl-mixer1.2-dev,
  libsqlite3-dev
 Standards-Version: 3.9.1
-Homepage: http://kidbasic.sourceforge.net/
+Homepage: http://www.basic256.org/
 
 Package: basic256
 Architecture: any
