@@ -1,0 +1,36 @@
+# 03_examples.diff by Ryan Kavanagh <ryanakca@kubuntu.org>
+# Description: use dh_installexamples to install examples, not the Makefiles.
+Index: basic256/BASIC256.pro
+===================================================================
+--- basic256.orig/BASIC256.pro	2010-08-13 11:05:47.939666532 -0400
++++ basic256/BASIC256.pro	2010-08-13 11:06:47.207661703 -0400
+@@ -58,24 +58,24 @@
+ 	examplesDiceFiles.files = ./Examples/dice/*.kbs \
+ 				./Examples/dice/*.wav
+ 	examplesDiceFiles.path = /usr/share/basic256/Examples/dice
+-	INSTALLS += examplesDiceFiles
++	# INSTALLS += examplesDiceFiles
+ 	examplesImgloadFiles.files = ./Examples/imgload/*.kbs \
+ 				./Examples/imgload/*.png \
+ 				./Examples/imgload/*.bmp
+ 	examplesImgloadFiles.path = /usr/share/basic256/Examples/imgload
+-	INSTALLS += examplesImgloadFiles
++	# INSTALLS += examplesImgloadFiles
+ 	examplesSpritesFiles.files = ./Examples/sprites/*.kbs \
+ 				./Examples/sprites/*.wav \
+ 				./Examples/sprites/*.png \
+ 				./Examples/sprites/*.bmp
+ 	examplesSpritesFiles.path = /usr/share/basic256/Examples/sprites
+-	INSTALLS += examplesSpritesFiles
++	# INSTALLS += examplesSpritesFiles
+ 	examplesTestingFiles.files = ./Examples/testing/*.kbs
+ 	examplesTestingFiles.path = /usr/share/basic256/Examples/testing
+-	INSTALLS += examplesTestingFiles
++	# INSTALLS += examplesTestingFiles
+ 	examplesFiles.files = ./Examples/*.kbs
+ 	examplesFiles.path = /usr/share/basic256/Examples
+-	INSTALLS += examplesFiles
++	# INSTALLS += examplesFiles
+ 	transFiles.files = ./Translations/*.qm
+ 	transFiles.path = /usr/share/basic256
+ 	INSTALLS += transFiles
