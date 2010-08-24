@@ -1,0 +1,15 @@
+# 04_portable_sound.diff by Petr Salinger <Petr.Salinger@seznam.cz>
+# Description: Don't FTBFS on kfreebsd, (Closes: #594164) 
+Index: basic256/RunController.cpp
+===================================================================
+--- basic256.orig/RunController.cpp	2010-08-24 07:49:15.138281252 -0400
++++ basic256/RunController.cpp	2010-08-24 07:50:25.342281808 -0400
+@@ -52,7 +52,7 @@
+ 	#include <fcntl.h>
+ 	#include <sys/ioctl.h>
+ 	#include <time.h>
+-	#include <linux/soundcard.h>
++	#include <sys/soundcard.h>
+ #endif
+ 
+ #ifdef USEQSOUND
