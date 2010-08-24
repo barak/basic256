@@ -1,3 +1,10 @@
+basic256 (0.9.6.27-2) unstable; urgency=low
+
+  * Don't FTBFS on kfreebsd, thanks to Petr Salinger for the patch.
+    (Closes: #594164)
+
+ -- Ryan Kavanagh <ryanakca@kubuntu.org>  Tue, 24 Aug 2010 07:53:10 -0400
+
 basic256 (0.9.6.27-1) unstable; urgency=low
 
   * New upstream release
