@@ -105,13 +105,36 @@
 #define ERROR_DBNOTSET_MESSAGE "Record set must be opened first."
 #define ERROR_EXTOPBAD 35
 #define ERROR_EXTOPBAD_MESSAGE "Invalid Extended Op-code."
+#define ERROR_NETSOCK 36
+#define ERROR_NETSOCK_MESSAGE "Error opening network socket."
+#define ERROR_NETHOST 37
+#define ERROR_NETHOST_MESSAGE "Error finding network host."
+#define ERROR_NETCONN 38
+#define ERROR_NETCONN_MESSAGE "Unable to connect to network host."
+#define ERROR_NETREAD 39
+#define ERROR_NETREAD_MESSAGE "Unable to read from network connection."
+#define ERROR_NETNONE 40
+#define ERROR_NETNONE_MESSAGE "Network connection has not been opened."
+#define ERROR_NETWRITE 41
+#define ERROR_NETWRITE_MESSAGE "Unable to write to network connection."
+#define ERROR_NETSOCKOPT 42
+#define ERROR_NETSOCKOPT_MESSAGE "Unable to set network socket options."
+#define ERROR_NETBIND 43
+#define ERROR_NETBIND_MESSAGE "Unable to bind network socket."
+#define ERROR_NETACCEPT 44
+#define ERROR_NETACCEPT_MESSAGE "Unable to accept network connection."
+#define ERROR_NETSOCKNUMBER 45
+#define ERROR_NETSOCKNUMBER_MESSAGE "Invalid Socket Number"
+//
+#define ERROR_NOTIMPLEMENTED 9999
+#define ERROR_NOTIMPLEMENTED_MESSAGE "Feature not implemented in this environment."
 #endif
 
 enum run_status {R_STOPPED, R_RUNNING, R_INPUT, R_INPUTREADY, R_ERROR, R_PAUSED};
 
 #define NUMVARS 2000
 #define NUMFILES 8
-
+#define NUMSOCKETS 8
 
 struct array
 {
@@ -172,6 +195,7 @@ class Interpreter : public QThread
   Q_OBJECT;
  public:
   Interpreter(BasicGraph *);
+  ~Interpreter();
   int compileProgram(char *);
   void initialize();
   byteCodeData *getByteCode(char *);
@@ -214,6 +238,7 @@ class Interpreter : public QThread
   void waitForGraphics();
   void printError(int, QString);
   QString getErrorMessage(int);
+  int netSockClose(int);
   QImage *image;
   BasicGraph *graph;
   variable vars[NUMVARS];
@@ -247,6 +272,7 @@ class Interpreter : public QThread
   QString lasterrormessage;
   int lasterrorline;
   int onerroraddress;
+  int netsockfd[NUMSOCKETS];
 };
 
 

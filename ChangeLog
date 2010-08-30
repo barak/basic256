@@ -1,3 +1,23 @@
+2010-08-16 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.31
+	* fixed linux to compile again after changes in 0.9.6.30
+	* removed most of the errors from LEX/basicParse.y 
+
+2010-08-16 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.30
+	* changed all tokens to B256... in lex folder to stop conflicts with windows wtypes.h
+	* work on porting to winsock (Windows) - have functioning well enough to test
+	* changed net commands to act like file io commands and allow up to 8 open
+	- sockets 0-7 with 0 being the default.
+	
+2010-08-15 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.29
+	* cleaned up socket release (close)
+	* added NETDATA function to return true if data is waiting to be received
+
+2010-08-13 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.28
+	* added first attempt at networking statements
+        - statements NETLISTEN, NETCONNECT, NETREAD, NETOPEN, and NETCLOSE
+	* added new networking folder to Examples with a few test programs
+	* not compiled or tested in Windows yet.
+
 2010-08-09 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.27
 	* fixed string comparison problem caused since 0.9.6h
 

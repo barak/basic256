@@ -24,6 +24,19 @@
 #include <cmath>
 #include <string>
 #include <sqlite3.h>
+#include <errno.h>
+
+#ifdef WIN32
+	#include <winsock.h>
+	typedef int socklen_t;
+#else
+	#include <sys/types.h> 
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <netdb.h> 
+	#include <poll.h> 
+#endif
+
 #include <QString>
 #include <QPainter>
 #include <QPixmap>
@@ -215,8 +228,57 @@ QString Interpreter::getErrorMessage(int e) {
 		case ERROR_EXTOPBAD:
 			errormessage = tr(ERROR_EXTOPBAD_MESSAGE);
 			break;
+		case ERROR_NETSOCK:
+			errormessage = tr(ERROR_NETSOCK_MESSAGE);
+			break;
+		case ERROR_NETHOST:
+			errormessage = tr(ERROR_NETHOST_MESSAGE);
+			break;
+		case ERROR_NETCONN:
+			errormessage = tr(ERROR_NETCONN_MESSAGE);
+			break;
+		case ERROR_NETREAD:
+			errormessage = tr(ERROR_NETREAD_MESSAGE);
+			break;
+		case ERROR_NETNONE:
+			errormessage = tr(ERROR_NETNONE_MESSAGE);
+			break;
+		case ERROR_NETWRITE:
+			errormessage = tr(ERROR_NETWRITE_MESSAGE);
+			break;
+		case ERROR_NETSOCKOPT:
+			errormessage = tr(ERROR_NETSOCKOPT_MESSAGE);
+			break;
+		case ERROR_NETBIND:
+			errormessage = tr(ERROR_NETBIND_MESSAGE);
+			break;
+		case ERROR_NETACCEPT:
+			errormessage = tr(ERROR_NETACCEPT_MESSAGE);
+			break;
+		case ERROR_NETSOCKNUMBER:
+			errormessage = tr(ERROR_NETSOCKNUMBER_MESSAGE);
+			break;
+		// put new messages here
+		case ERROR_NOTIMPLEMENTED:
+			errormessage = tr(ERROR_NOTIMPLEMENTED_MESSAGE);
+			break;
 	}
 	return errormessage;
+}
+
+int Interpreter::netSockClose(int fd)
+{
+	// tidy up a network socket and return -1 to assign to the
+	// fd variable to mark as closed as closed
+	// call  f = netSockClose(f);
+	if(fd>=0) {
+		#ifdef WIN32
+			closesocket(fd);
+		#else
+			close(fd);
+		#endif
+	}
+	return(-1);
 }
 
 void
@@ -264,6 +326,7 @@ Interpreter::Interpreter(BasicGraph *bg)
 	fastgraphics = false;
 	stack.fToAMask = stack.defaultFToAMask;
 	status = R_STOPPED;
+	for (int t=0;t<NUMSOCKETS;t++) netsockfd[t]=-1;
 	for (int i = 0; i < NUMVARS; i++)
 	{
 		vars[i].type = T_UNUSED;
@@ -271,8 +334,24 @@ Interpreter::Interpreter(BasicGraph *bg)
 		vars[i].value.string = NULL;
 		vars[i].value.arr = NULL;
 	}
+	// on a windows box start winsock
+	#ifdef WIN32
+		WSAData wsaData;
+		int nCode;
+		if ((nCode = WSAStartup(MAKEWORD(1, 1), &wsaData)) != 0) {
+			emit(outputReady(tr("ERROR - Unable to initialize Winsock library.\n")));
+		}
+	#endif
 }
 
+Interpreter::~Interpreter() {
+	// need to add cleanup of stack and variables...
+	
+	// on a windows box stop winsock
+	#ifdef WIN32
+		WSACleanup();
+	#endif
+}
 
 void
 Interpreter::clearvars()
@@ -479,13 +558,14 @@ Interpreter::initialize()
 	for (int t=0;t<NUMFILES;t++) stream[t] = NULL;
 	emit(resizeGraph(300, 300));
 	image = graph->image;
-	fontfamily = QString::QString();
+	fontfamily = QString("");
 	fontpoint = 0;
 	fontweight = 0;
 	nsprites = 0;
 	stack.fToAMask = stack.defaultFToAMask;
-dbconn = NULL;
-dbset = NULL;
+	dbconn = NULL;
+	dbset = NULL;
+	for (int t=0;t<NUMSOCKETS;t++) netsockfd[t] = netSockClose(netsockfd[t]);
 }
 
 
@@ -1721,7 +1801,7 @@ Interpreter::execByteCode()
 			QChar temp[2];
 			temp[0] = (QChar) code;
 			temp[1] = (QChar) 0;
-			QString qs = QString::QString(temp,1);
+			QString qs = QString(temp,1);
 			stack.push(strdup(qs.toUtf8().data()));
 		}
 		break;
@@ -3331,6 +3411,213 @@ Interpreter::execByteCode()
 				}
 				break;
 
+			case OP_NETLISTEN:
+				{
+					op++;
+					int tempsockfd;
+					struct sockaddr_in serv_addr, cli_addr;
+					socklen_t clilen;
+
+					int port = stack.popint();
+					int fn = stack.popint();
+					if (fn<0||fn>=NUMSOCKETS) {
+						errornum = ERROR_NETSOCKNUMBER;
+					} else {
+						if (netsockfd[fn] >= 0) {
+							netsockfd[fn] = netSockClose(netsockfd[fn]);
+						}
+
+						// SOCK_DGRAM = UDP  SOCK_STREAM = TCP
+						tempsockfd = socket(AF_INET, SOCK_STREAM, 0);
+						if (tempsockfd < 0) {
+							errornum = ERROR_NETSOCK;
+							errormessage = strerror(errno);
+						} else {
+							int optval = 1;
+							if (setsockopt(tempsockfd,SOL_SOCKET,SO_REUSEADDR,(char *)&optval,sizeof(int))) {
+								errornum = ERROR_NETSOCKOPT;
+								errormessage = strerror(errno);
+								tempsockfd = netSockClose(tempsockfd);
+							} else {
+								memset((char *) &serv_addr, 0, sizeof(serv_addr));
+								serv_addr.sin_family = AF_INET;
+								serv_addr.sin_addr.s_addr = INADDR_ANY;
+								serv_addr.sin_port = htons(port);
+								if (bind(tempsockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+									errornum = ERROR_NETBIND;
+									errormessage = strerror(errno);
+									tempsockfd = netSockClose(tempsockfd);
+								} else {
+									listen(tempsockfd,5);
+									clilen = sizeof(cli_addr);
+									netsockfd[fn] = accept(tempsockfd, (struct sockaddr *) &cli_addr, &clilen);
+									if (netsockfd[fn] < 0) {
+										errornum = ERROR_NETACCEPT;
+										errormessage = strerror(errno);
+									}
+									tempsockfd = netSockClose(tempsockfd);
+								}
+							}
+						}
+					}
+				}
+				break;
+
+			case OP_NETCONNECT:
+				{
+					op++;
+
+					struct sockaddr_in serv_addr;
+					struct hostent *server;
+
+					int port = stack.popint();
+					char* address = stack.popstring();
+					int fn = stack.popint();
+					
+					
+					
+					if (fn<0||fn>=NUMSOCKETS) {
+						errornum = ERROR_NETSOCKNUMBER;
+					} else {
+
+						if (netsockfd[fn] >= 0) {
+							netsockfd[fn] = netSockClose(netsockfd[fn]);
+						}
+					
+						netsockfd[fn] = socket(AF_INET, SOCK_STREAM, 0);
+						if (netsockfd[fn] < 0) {
+							errornum = ERROR_NETSOCK;
+							errormessage = strerror(errno);
+						} else {
+
+							server = gethostbyname(address);
+							if (server == NULL) {
+								errornum = ERROR_NETHOST;
+								errormessage = strerror(errno);
+								netsockfd[fn] = netSockClose(netsockfd[fn]);
+							} else {
+								memset((char *) &serv_addr, 0, sizeof(serv_addr));
+								serv_addr.sin_family = AF_INET;
+								memcpy((char *)&serv_addr.sin_addr.s_addr, (char *)server->h_addr, server->h_length);
+								serv_addr.sin_port = htons(port);
+								if (::connect(netsockfd[fn],(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
+									errornum = ERROR_NETCONN;
+									errormessage = strerror(errno);
+									netsockfd[fn] = netSockClose(netsockfd[fn]);
+								}
+							}
+						}
+					}
+					free(address);
+				}
+				break;
+
+			case OP_NETREAD:
+				{
+					op++;
+					int MAXSIZE = 2048;
+					int n;
+					char * strarray = (char *) malloc(MAXSIZE);
+
+					int fn = stack.popint();
+					if (fn<0||fn>=NUMSOCKETS) {
+						errornum = ERROR_NETSOCKNUMBER;
+						stack.push(strdup(""));
+					} else {
+						if (netsockfd[fn] < 0) {
+							errornum = ERROR_NETNONE;
+							stack.push(strdup(""));
+						} else {
+							memset(strarray, 0, MAXSIZE);
+							n = recv(netsockfd[fn],strarray,MAXSIZE-1,0);
+							if (n < 0) {
+								errornum = ERROR_NETREAD;
+								errormessage = strerror(errno);
+							}
+							stack.push(strdup(strarray));
+							free(strarray);
+						}
+					}
+				}
+				break;
+
+			case OP_NETWRITE:
+				{
+					op++;
+					char* data = stack.popstring();
+					int fn = stack.popint();
+					if (fn<0||fn>=NUMSOCKETS) {
+						errornum = ERROR_NETSOCKNUMBER;
+					} else {
+						if (netsockfd[fn]<0) {
+							errornum = ERROR_NETNONE;
+						} else {
+							int n = send(netsockfd[fn],data,strlen(data),0);
+							if (n < 0) {
+								errornum = ERROR_NETWRITE;
+								errormessage = strerror(errno);
+							}
+						}
+					}
+					free(data);
+				}
+				break;
+
+			case OP_NETCLOSE:
+				{
+					op++;
+					int fn = stack.popint();
+					if (fn<0||fn>=NUMSOCKETS) {
+						errornum = ERROR_NETSOCKNUMBER;
+					} else {
+						if (netsockfd[fn]<0) {
+							errornum = ERROR_NETNONE;
+						} else {
+							netsockfd[fn] = netSockClose(netsockfd[fn]);
+						}
+					}
+				}
+				break;
+
+			case OP_NETDATA:
+				{
+					op++;
+					// push 1 if there is data to read on network connection
+					// wait 1 ms for each poll
+					int fn = stack.popint();
+					if (fn<0||fn>=NUMSOCKETS) {
+						errornum = ERROR_NETSOCKNUMBER;
+					} else {
+						#ifdef WIN32
+						unsigned long n;
+						if (ioctlsocket(netsockfd[fn], FIONREAD, &n)!=0) {
+							stack.push(0);
+						} else {
+							if (n==0L) {
+								stack.push(0);
+							} else {
+								stack.push(1);
+							}
+						}
+						#else
+						struct pollfd p[1];
+						p[0].fd = netsockfd[fn];
+						p[0].events = POLLIN | POLLPRI;
+						if(poll(p, 1, 1)<0) {
+							stack.push(0);
+						} else {
+							if (p[0].revents & POLLIN || p[0].revents & POLLPRI) {
+								stack.push(1);
+							} else {
+								stack.push(0);
+							}
+						}
+						#endif
+					}
+				}
+				break;
+
+
 
 
 				// insert additional extended operations here
@@ -3349,7 +3636,18 @@ Interpreter::execByteCode()
 	case OP_STACKSWAP:
 		{
 			op++;
+			// swap the top of the stack
+			// 0, 1, 2, 3...  becomes 1, 0, 2, 3...
 			stack.swap();
+		}
+		break;
+		
+	case OP_STACKTOPTO2:
+		{
+			// move the top of the stack under the next two
+			// 0, 1, 2, 3...  becomes 1, 2, 0, 3...
+			op++;
+			stack.topto2();
 		}
 		break;
 		
