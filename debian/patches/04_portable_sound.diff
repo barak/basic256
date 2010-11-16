@@ -2,14 +2,16 @@
 # Description: Don't FTBFS on kfreebsd, (Closes: #594164) 
 Index: basic256/RunController.cpp
 ===================================================================
---- basic256.orig/RunController.cpp	2010-08-24 07:49:15.138281252 -0400
-+++ basic256/RunController.cpp	2010-08-24 07:50:25.342281808 -0400
-@@ -52,7 +52,7 @@
- 	#include <fcntl.h>
- 	#include <sys/ioctl.h>
- 	#include <time.h>
+--- basic256.orig/RunController.cpp	2010-11-16 12:11:10.475177212 -0500
++++ basic256/RunController.cpp	2010-11-16 12:12:30.110187731 -0500
+@@ -48,7 +48,9 @@
+ #endif
+ 
+ #ifdef LINUX
 -	#include <linux/soundcard.h>
++    // sys/soundcard.h instead of linux/soundcard.h in Debian so that we don't
++    // FTBFS on kfreebsd (See Debian bug #594164).
 +	#include <sys/soundcard.h>
  #endif
  
- #ifdef USEQSOUND
+ 
