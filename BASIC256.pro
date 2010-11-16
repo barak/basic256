@@ -27,10 +27,16 @@ win32 {
 	LIBS			+= -lole32 \
 				-lsapi \
 				-lws2_32 \
+				-linpout32 \
 				-lwinmm
 
 
-} else {
+}
+
+unix:!macx {
+	## this is the LINUX (unix-non-mac)
+	DEFINES		+= LINUX
+	
 	## for the SAY command (LINUX) you need to choose one TTS engine - uncomment the one desired
 	## espeak library (causes problems with sound statement in 0.9.5i under ubuntu 9.10 - suggest flite)
 	DEFINES		+= 	LINUX_ESPEAK
@@ -51,9 +57,6 @@ win32 {
 	DEFINES 		+= USESDL
 	LIBS			+= -lSDL
 	LIBS			+= -lSDL_mixer
-
-	## original - problematic LINUX sound
-	#DEFINES 		+= LINUX_DSPSOUND
 
 	## rules for make install
 	examplesDiceFiles.files = ./Examples/dice/*.kbs \
@@ -88,6 +91,25 @@ win32 {
 
 }
 
+macx {
+	# macintosh
+	DEFINES +=	MACX
+	
+	DEFINES +=  MACX_SAY
+	
+	ICON = resources/basic256.icns
+
+	LIBS			+= -L/opt/local/lib
+	INCLUDEPATH		+=	/opt/local/include
+
+	## include libraries for SDL audio for wav and sound output
+	DEFINES 		+= USESDL
+	LIBS			+= -lSDL
+	LIBS			+= -lSDL_mixer
+
+	
+}
+
 exists( ./LEX/Makefile ) {
 	message( Running make for ./LEX/Makefile )
 	system( make -C ./LEX )
@@ -116,6 +138,8 @@ HEADERS			+=	DocumentationWin.h
 HEADERS			+=	Version.h
 HEADERS			+=	EditSyntaxHighlighter.h
 HEADERS         +=  Stack.h
+HEADERS         +=  PreferencesWin.h
+HEADERS         +=  md5.h
 
 SOURCES 		+= 	LEX/lex.yy.c 
 SOURCES 		+= 	LEX/basicParse.tab.c 
@@ -136,3 +160,6 @@ SOURCES			+=	VariableWin.cpp
 SOURCES			+=	DocumentationWin.cpp
 SOURCES			+=	EditSyntaxHighlighter.cpp
 SOURCES			+=  Stack.cpp
+SOURCES			+=  PreferencesWin.cpp
+SOURCES			+=  md5.cpp
+

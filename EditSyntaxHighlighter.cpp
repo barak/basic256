@@ -101,6 +101,7 @@ void EditSyntaxHighlighter::initKeywords()
 		  << "\\b[Dd][Bb][Oo][Pp][Ee][Nn][Ss][Ee][Tt]\\b"			// dbopenset
 		  << "\\b[Dd][Bb][Rr][Oo][Ww]\\b"					// dbrow
 		  << "\\b[Dd][Bb][Ss][Tt][Rr][Ii][Nn][Gg]\\b"				// dbstring
+		  << "\\b[Dd][Ee][Gg][Rr][Ee][Ee][Ss]\\b"				// degrees
 		  << "\\b[Dd][Ii][Mm]\\b"						// dim
 		  << "\\b[Dd][Oo]\\b"							// do
 		  << "\\b[Ee][Ll][Ss][Ee]\\b"						// else
@@ -113,6 +114,7 @@ void EditSyntaxHighlighter::initKeywords()
 		  << "\\b[Ff][Ll][Oo][Oo][Rr]\\b"					// floor
 		  << "\\b[Ff][Oo][Rr]\\b"						// for
 		  << "\\b[Gg][Ee][Tt][Cc][Oo][Ll][Oo][Rr]\\b"					// getcolor
+		  << "\\b[Gg][Ee][Tt][Ss][Ee][Tt][Tt][Ii][Nn][Gg]\\b"						// getsetting
 		  << "\\b[Gg][Ee][Tt][Ss][Ll][Ii][Cc][Ee]\\b"					// getslice
 		  << "\\b[Gg][Oo][Ss][Uu][Bb]\\b"					// gosub
 		  << "\\b[Gg][Oo][Tt][Oo]\\b"						// goto
@@ -125,6 +127,7 @@ void EditSyntaxHighlighter::initKeywords()
 		  << "\\b[Ii][Nn][Pp][Uu][Tt]\\b"					// input
 		  << "\\b[Ii][Nn][Ss][Tt][Rr]\\b"					// instr
 		  << "\\b[Kk][Ee][Yy]\\b"						// key
+		  << "\\b[Kk][Ii][Ll][Ll]\\b"						// kill
 		  << "\\b[Ll][Aa][Ss][Tt][Ee][Rr][Rr][Oo][Rr]\\b"						// lasterror
 		  << "\\b[Ll][Aa][Ss][Tt][Ee][Rr][Rr][Oo][Rr][Ee][Xx][Tt][Rr][Aa]\\b"						// lasterrorextra
 		  << "\\b[Ll][Aa][Ss][Tt][Ee][Rr][Rr][Oo][Rr][Ll][Ii][Nn][Ee]\\b"						// lasterrorline
@@ -133,12 +136,14 @@ void EditSyntaxHighlighter::initKeywords()
 		  << "\\b[Ll][Ii][Nn][Ee]\\b"						// line
 		  << "\\b[Ll][Ee][Nn][Gg][Tt][Hh]\\b"					// length
 		  << "\\b[Ll][Oo][Ww][Ee][Rr]\\b"					// lower
+		  << "\\b[Mm][Dd][5]\\b"						// md5
 		  << "\\b[Mm][Ii][Dd]\\b"						// mid
 		  << "\\b[Mm][Ii][Nn][Uu][Tt][Ee]\\b"					// minute
 		  << "\\b[Mm][Oo][Nn][Tt][Hh]\\b"					// month
 		  << "\\b[Mm][Oo][Uu][Ss][Ee][Bb]\\b"					// mouseb
 		  << "\\b[Mm][Oo][Uu][Ss][Ee][Xx]\\b"					// mousex
 		  << "\\b[Mm][Oo][Uu][Ss][Ee][Yy]\\b"					// mousey
+		  << "\\b[Nn][Ee][Tt][Aa][Dd][Dd][Rr][Ee][Ss][Ss]\\b"						// netaddress
 		  << "\\b[Nn][Ee][Tt][Cc][Ll][Oo][Ss][Ee]\\b"						// netclose
 		  << "\\b[Nn][Ee][Tt][Cc][Oo][Nn][Nn][Ee][Cc][Tt]\\b"						// netconnect
 		  << "\\b[Nn][Ee][Tt][Dd][Aa][Tt][Aa]\\b"						// netdata
@@ -158,6 +163,7 @@ void EditSyntaxHighlighter::initKeywords()
 		  << "\\b[Pp][Oo][Ll][Yy]\\b"						// poly
 		  << "\\b[Pp][Rr][Ii][Nn][Tt]\\b"					// print
 		  << "\\b[Pp][Uu][Tt][Ss][Ll][Ii][Cc][Ee]\\b"					// putslice
+		  << "\\b[Rr][Aa][Dd][Ii][Aa][Nn][Ss]\\b"						// radians
 		  << "\\b[Rr][Aa][Nn][Dd]\\b"						// rand
 		  << "\\b[Rr][Ee][Aa][Dd]\\b"						// read
 		  << "\\b[Rr][Ee][Aa][Dd][Ll][Ii][Nn][Ee]\\b"				// readline
@@ -170,6 +176,7 @@ void EditSyntaxHighlighter::initKeywords()
 		  << "\\b[Ss][Aa][Yy]\\b"						// say
 		  << "\\b[Ss][Ee][Cc][Oo][Nn][Dd]\\b"					// second
 		  << "\\b[Ss][Ee][Ee][Kk]\\b"						// seek
+		  << "\\b[Ss][Ee][Tt][Ss][Ee][Tt][Tt][Ii][Nn][Gg]\\b"						// setsetting
 		  << "\\b[Ss][Ii][Nn]\\b"						// sin
 		  << "\\b[Ss][Ii][Zz][Ee]\\b"						// size
 		  << "\\b[Ss][Pp][Rr][Ii][Ee][Cc][Oo][Ll][Ll][Ii][Dd][Ee]\\b"						// spritedcollide

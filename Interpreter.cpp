@@ -29,12 +29,16 @@
 #ifdef WIN32
 	#include <winsock.h>
 	typedef int socklen_t;
+
 #else
 	#include <sys/types.h> 
 	#include <sys/socket.h>
 	#include <netinet/in.h>
 	#include <netdb.h> 
 	#include <poll.h> 
+	#include <arpa/inet.h>
+	#include <net/if.h>
+	#include <ifaddrs.h>
 #endif
 
 #include <QString>
@@ -50,14 +54,24 @@ using namespace std;
 #include "LEX/basicParse.tab.h"
 #include "ByteCodes.h"
 #include "Interpreter.h"
+#include "md5.h"
+#include "Settings.h"
+
+QMutex keymutex;
+int currentKey;
 
 extern QMutex mutex;
-extern QMutex keymutex;
 extern QMutex debugmutex;
-extern int currentKey;
 extern QWaitCondition waitCond;
 extern QWaitCondition waitDebugCond;
 extern QWaitCondition waitInput;
+
+#ifdef WIN32
+	extern "C" { 
+		unsigned char Inp32(short int);
+		void Out32(short int, unsigned char);
+	}
+#endif
 
 #define POP2  stackval *one = stack.pop(); stackval *two = stack.pop(); 
 
@@ -257,6 +271,12 @@ QString Interpreter::getErrorMessage(int e) {
 			break;
 		case ERROR_NETSOCKNUMBER:
 			errormessage = tr(ERROR_NETSOCKNUMBER_MESSAGE);
+			break;
+		case ERROR_PERMISSION:
+			errormessage = tr(ERROR_PERMISSION_MESSAGE);
+			break;
+		case ERROR_IMAGESAVETYPE:
+			errormessage = tr(ERROR_IMAGESAVETYPE_MESSAGE);
 			break;
 		// put new messages here
 		case ERROR_NOTIMPLEMENTED:
@@ -1129,11 +1149,11 @@ Interpreter::execByteCode()
 		{
 			// move file pointer to a specific loaction in file
 			op++;
+			long pos = stack.popint();
 			int fn = stack.popint();
 			if (fn<0||fn>=NUMFILES) {
 				errornum = ERROR_FILENUMBER;
 			} else {
-				long pos = stack.popint();
 				if (stream[fn] == NULL)
 				{
 					errornum = ERROR_FILENOTOPEN;
@@ -2207,10 +2227,7 @@ Interpreter::execByteCode()
 		{
 			op++;
 			char *temp = stack.popstring();
-			//mutex.lock();
 			emit(speakWords(QString::fromUtf8(temp)));
-			//waitCond.wait(&mutex);
-			//mutex.unlock();
 			free(temp);
 		}
 		break;
@@ -2219,10 +2236,16 @@ Interpreter::execByteCode()
 		{
 			op++;
 			char *temp = stack.popstring();
-			//mutex.lock();
-			emit(system(temp));
-			//waitCond.wait(&mutex);
-			//mutex.unlock();
+
+			QSettings settings(SETTINGSORG, SETTINGSAPP);
+			if(settings.value(SETTINGSALLOWSYSTEM, SETTINGSALLOWSYSTEMDEFAULT).toBool()) {
+				mutex.lock();
+				emit(executeSystem(temp));
+				waitCond.wait(&mutex);
+				mutex.unlock();
+			} else {
+				errornum = ERROR_PERMISSION;
+			}
 			free(temp);
 		}
 		break;
@@ -3616,6 +3639,197 @@ Interpreter::execByteCode()
 					}
 				}
 				break;
+
+			case OP_NETADDRESS:
+				{
+					op++;
+					// get first non "lo" ip4 address
+					#ifdef WIN32
+					char szHostname[100];
+					HOSTENT *pHostEnt;
+					int nAdapter = 0;
+					struct sockaddr_in sAddr;
+					gethostname( szHostname, sizeof( szHostname ));
+					pHostEnt = gethostbyname( szHostname );
+					memcpy ( &sAddr.sin_addr.s_addr, pHostEnt->h_addr_list[nAdapter], pHostEnt->h_length);
+					stack.push(strdup(inet_ntoa(sAddr.sin_addr)));
+					#else
+					bool good = false;
+					struct ifaddrs *myaddrs, *ifa;
+					void *in_addr;
+					char buf[64];
+					if(getifaddrs(&myaddrs) != 0) {
+						errornum = ERROR_NETNONE;
+					} else {
+						for (ifa = myaddrs; ifa != NULL && !good; ifa = ifa->ifa_next) {
+							if (ifa->ifa_addr == NULL) continue;
+							if (!(ifa->ifa_flags & IFF_UP)) continue;
+							if (ifa->ifa_addr->sa_family == AF_INET && strcmp(ifa->ifa_name, "lo") !=0 ) {
+								struct sockaddr_in *s4 = (struct sockaddr_in *)ifa->ifa_addr;
+								in_addr = &s4->sin_addr;
+								if (inet_ntop(ifa->ifa_addr->sa_family, in_addr, buf, sizeof(buf))) {
+									stack.push(strdup(buf));
+									good = true;
+								}
+							}
+						}
+						freeifaddrs(myaddrs);
+					}
+					if (!good) {
+						// on error give local loopback
+						stack.push(strdup("127.0.0.1"));
+					}
+					#endif
+				}
+				break;
+
+			case OP_KILL:
+				{
+					op++;
+					char *name = stack.popstring();
+					if(!QFile::remove(QString::fromUtf8(name))) {
+						errornum = ERROR_FILEOPEN;
+					}
+					free(name);
+				}
+				break;
+
+			case OP_MD5:
+				{
+					op++;
+					char *stuff = stack.popstring();
+					stack.push(MD5(stuff).hexdigest());
+					free(stuff);
+				}
+				break;
+
+			case OP_SETSETTING:
+				{
+					op++;
+					char *stuff = stack.popstring();
+					char *key = stack.popstring();
+					char *app = stack.popstring();
+					QSettings settings(SETTINGSORG, SETTINGSAPP);
+					if(settings.value(SETTINGSALLOWSETTING, SETTINGSALLOWSETTINGDEFAULT).toBool()) {
+						settings.beginGroup(SETTINGSGROUPUSER);
+						settings.beginGroup(app);
+						settings.setValue(key, stuff);
+						settings.endGroup();
+						settings.endGroup();
+					} else {
+						errornum = ERROR_PERMISSION;
+					}
+					free(stuff);
+					free(key);
+					free(app);
+				}
+				break;
+
+			case OP_GETSETTING:
+				{
+					op++;
+					char *key = stack.popstring();
+					char *app = stack.popstring();
+					QSettings settings(SETTINGSORG, SETTINGSAPP);
+					if(settings.value(SETTINGSALLOWSETTING, SETTINGSALLOWSETTINGDEFAULT).toBool()) {
+						settings.beginGroup(SETTINGSGROUPUSER);
+						settings.beginGroup(app);
+						stack.push(strdup(settings.value(key, "").toString().toUtf8().data()));
+						settings.endGroup();
+						settings.endGroup();
+					} else {
+						errornum = ERROR_PERMISSION;
+					}
+					free(key);
+					free(app);
+				}
+				break;
+
+
+			case OP_PORTOUT:
+				{
+					op++;
+					int data = stack.popint();
+					int port = stack.popint();
+					QSettings settings(SETTINGSORG, SETTINGSAPP);
+					if(settings.value(SETTINGSALLOWPORT, SETTINGSALLOWPORTDEFAULT).toBool()) {
+						#ifdef WIN32
+							Out32(port, data);
+						#else
+							errornum = ERROR_NOTIMPLEMENTED;
+						#endif
+					} else {
+						errornum = ERROR_PERMISSION;
+					}
+				}
+				break;
+
+			case OP_PORTIN:
+				{
+					op++;
+					int data=0;
+					int port = stack.popint();
+					QSettings settings(SETTINGSORG, SETTINGSAPP);
+					if(settings.value(SETTINGSALLOWPORT, SETTINGSALLOWPORTDEFAULT).toBool()) {
+						#ifdef WIN32
+							data = Inp32(port);
+						#else
+							errornum = ERROR_NOTIMPLEMENTED;
+						#endif
+					} else {
+						errornum = ERROR_PERMISSION;
+					}
+					stack.push(data);
+				}
+				break;
+
+			case OP_BINARYOR:
+				{
+					op++;
+					int a = stack.popint();
+					int b = stack.popint();
+					stack.push(a|b);
+				}
+				break;
+
+			case OP_BINARYAND:
+				{
+					op++;
+					int a = stack.popint();
+					int b = stack.popint();
+					stack.push(a&b);
+				}
+				break;
+
+			case OP_BINARYNOT:
+				{
+					op++;
+					int a = stack.popint();
+					stack.push(~a);
+				}
+				break;
+
+			case OP_IMGSAVE:
+				{
+					// Image Save - Save image
+					char *type = stack.popstring();
+         				char *file = stack.popstring();
+					QStringList validtypes;
+					validtypes << "BMP" << "bmp" << "JPG" << "jpg" << "JPEG" << "jpeg" << "PNG" << "png";
+					if (validtypes.indexOf(QString(type))!=-1) {
+         					image->save(QString::fromUtf8(file), type);
+					} else {
+						errornum = ERROR_IMAGESAVETYPE;
+					}
+					free(file);
+					free(type);
+				}
+				break;
+
+
+
+
+
 
 
 
