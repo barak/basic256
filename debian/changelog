@@ -1,3 +1,11 @@
+basic256 (0.9.6.48-1) unstable; urgency=low
+
+  * Imported Upstream version 0.9.6.48
+  * Refreshed patches
+  * Turn on DM-Upload-Allowed
+
+ -- Ryan Kavanagh <ryanakca@kubuntu.org>  Tue, 16 Nov 2010 12:14:42 -0500
+
 basic256 (0.9.6.32-1) unstable; urgency=low
 
   * New upstream release
