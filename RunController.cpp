@@ -23,11 +23,14 @@
 #include <QWaitCondition>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QInputDialog>
 #include <QFile>
 #include <QApplication>
 using namespace std;
 
 #include "RunController.h"
+#include "Settings.h"
+#include "md5.h"
 
 #ifdef WIN32
 	#include <windows.h> 
@@ -37,28 +40,35 @@ using namespace std;
 	#include <cstdlib>
 	#include <mmsystem.h>
 #else
-	#ifdef LINUX_ESPEAK
-		#include <speak_lib.h>
-	#endif
-	#ifdef LINUX_FLITE
-		#include <flite.h>
-		extern "C"
-		{
-			cst_voice* register_cmu_us_kal();
-		}
-	#endif
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <fcntl.h>
 	#include <sys/ioctl.h>
 	#include <time.h>
+#endif
+
+#ifdef LINUX
 	#include <linux/soundcard.h>
+#endif
+
+
+#ifdef LINUX_ESPEAK
+	#include <speak_lib.h>
+#endif
+
+#ifdef LINUX_FLITE
+	#include <flite.h>
+	extern "C"
+	{
+		cst_voice* register_cmu_us_kal();
+	}
 #endif
 
 #ifdef USEQSOUND
 	#include <QSound>
 	QSound wavsound(QString(""));
 #endif
+
 #ifdef USESDL
 	#include <SDL/SDL.h>
 	#include <SDL/SDL_mixer.h>
@@ -101,7 +111,7 @@ RunController::RunController(MainWindow *mw)
 	QObject::connect(i, SIGNAL(goToLine(int)), te, SLOT(goToLine(int)));
 
 	QObject::connect(i, SIGNAL(setVolume(int)), this, SLOT(setVolume(int)));
-	QObject::connect(i, SIGNAL(system(char*)), this, SLOT(system(char*)));
+	QObject::connect(i, SIGNAL(executeSystem(char*)), this, SLOT(executeSystem(char*)));
 	QObject::connect(i, SIGNAL(playSounds(int, int*)), this, SLOT(playSounds(int, int*)));
 	QObject::connect(i, SIGNAL(speakWords(QString)), this, SLOT(speakWords(QString)));
 	QObject::connect(i, SIGNAL(playWAV(QString)), this, SLOT(playWAV(QString)));
@@ -187,7 +197,7 @@ RunController::playSounds(int notes, int* freqdur)
 	
 #endif
 
-#ifdef LINUX_DSPSOUND
+#ifdef USEDSPSOUND
 	// Code loosely based on idea from TONEGEN by Timothy Pozar
 	// - Plays a sine wave via the dsp or standard out.
  
@@ -334,6 +344,13 @@ RunController::speakWords(QString text)
   	//while (clock() < endwait) {}
 
 #endif
+#ifdef MACX_SAY
+	// easy macosX implementation - call the command line say statement
+	text.replace("\""," quote ");
+	text.prepend("say \"");
+	text.append("\"");
+	executeSystem(text.toLatin1().data());
+#endif
 }
 
 void
@@ -344,9 +361,14 @@ RunController::setVolume(int volume)
 }
 
 void
-RunController::system(char* text)
+RunController::executeSystem(char* text)
 {
+	//fprintf(stderr,"system b4 %s\n", text);
+	mutex.lock();
 	system(text);
+	waitCond.wakeAll();
+	mutex.unlock();
+	//fprintf(stderr,"system af %s\n", text);
 }
 
 void RunController::playWAV(QString file)
@@ -591,5 +613,33 @@ RunController::showDocumentation()
      docwin->show();
      docwin->raise();
      docwin->activateWindow();
+}
+
+void
+RunController::showPreferences()
+{
+	bool good = true;
+	QSettings settings(SETTINGSORG, SETTINGSAPP);
+	QString prefpass = settings.value(SETTINGSPREFPASSWORD,"").toString();
+	if (prefpass.length()!=0) {
+		char * digest;
+		QString text = QInputDialog::getText(mainwin, tr("BASIC-256 Preferences and Settings"),
+			tr("Password:"), QLineEdit::Password, QString:: null);
+		digest = MD5(text.toUtf8().data()).hexdigest();
+		good = (QString::compare(digest, prefpass)==0);
+		free(digest);
+	}
+	if (good) {
+		PreferencesWin *w = new PreferencesWin(mainwin);
+		w->show();
+		w->raise();
+		w->activateWindow();
+	} else {
+		QMessageBox msgBox;
+		msgBox.setText("Incorrect password.");
+		msgBox.setStandardButtons(QMessageBox::Ok);
+		msgBox.setDefaultButton(QMessageBox::Ok);
+		msgBox.exec();
+	}
 }
 

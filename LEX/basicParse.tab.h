@@ -210,16 +210,27 @@
      B256NETWRITE = 426,
      B256NETCLOSE = 427,
      B256NETDATA = 428,
-     B256LINENUM = 429,
-     B256INTEGER = 430,
-     B256FLOAT = 431,
-     B256STRING = 432,
-     B256VARIABLE = 433,
-     B256STRINGVAR = 434,
-     B256NEWVAR = 435,
-     B256COLOR = 436,
-     B256LABEL = 437,
-     B256UMINUS = 438
+     B256NETADDRESS = 429,
+     B256KILL = 430,
+     B256MD5 = 431,
+     B256SETSETTING = 432,
+     B256GETSETTING = 433,
+     B256PORTIN = 434,
+     B256PORTOUT = 435,
+     B256BINARYOR = 436,
+     B256BINARYAND = 437,
+     B256BINARYNOT = 438,
+     B256IMGSAVE = 439,
+     B256LINENUM = 440,
+     B256INTEGER = 441,
+     B256FLOAT = 442,
+     B256STRING = 443,
+     B256VARIABLE = 444,
+     B256STRINGVAR = 445,
+     B256NEWVAR = 446,
+     B256COLOR = 447,
+     B256LABEL = 448,
+     B256UMINUS = 449
    };
 #endif
 
@@ -230,7 +241,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 284 "basicParse.y"
+#line 288 "basicParse.y"
 
   int number;
   double floatnum;
@@ -239,7 +250,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 243 "basicParse.tab.h"
+#line 254 "basicParse.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

@@ -1,3 +1,63 @@
+2010-11-03 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.48
+	* removed mutex from say statement - eliminate frezing after speech
+
+2010-10-25 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.47
+	* initial MAC port - tested help & preferences
+	* added Mac Icon
+	* added logic to save font size as a preference
+
+2010-10-24 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.46
+	* initial MAC port - tested sound, say, playwav, database,
+	and networking
+
+2010-10-17 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.45
+	* added IMGSAVE statement to save graphics area as a .png or other  qt supported file type
+
+2010-10-15 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.44
+	* forces locale to "C" so that decimal mark '.' will always work
+
+2010-10-11 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.43
+	* fixed seek statement
+
+2010-09-21 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.42
+	* tested inpout32 with Windows7-x64 and Vista-x32 and changed compiling instructions
+	
+2010-09-20 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.41
+	* finished and tested PORTIN/PORTOUT statements for parallel port control (WINDOWS ONLY)
+	* added preference settings to allow or disable PORTIN/PORTOUT statements
+	* added three new operators &, | and ~ - bitwise and or and not that work with integers
+
+2010-09-19 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.40
+	* INCOMPLETE - Code to start adding PORTIN/PORTOUT statementf for parallel port control
+
+2010-09-14 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.39
+	* fixed SYSTEM statement to use mutex to wait correctly
+	* added preference settings to allow or disable system, get/setsetting
+
+
+2010-09-12 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.38
+	* added GETSETTING and SETSETTING for persistant application storage to the registery/config folder
+
+2010-09-12 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.37
+	* Created password protected preferences dialog - nothing on it yet except the password
+	* added MD5 function to return a hex string digest for a string
+
+2010-09-11 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.36
+	* added settings to restore IDE and help to size and location when re-opened
+	* added list of 9 most recently opened or saved items for quick open on file menu
+
+2010-09-08 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.35
+	* Added NETADDRESS to return the local IPv4 address as a string
+
+2010-09-06 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.34
+	* Added kill statement to delete a file from the file system
+
+2010-08-22 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.33
+	* fixed problem with focus effecting "key" statement - if focus was ever lost from
+	- graphics window - key statement would stop working.  added key trap to BasicOutput
+	- and logic to allow BasicGraph to regain focus
+	* syntax highliter updated for a few misses commands
+
 2010-08-16 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.31
 	* fixed linux to compile again after changes in 0.9.6.30
 	* removed most of the errors from LEX/basicParse.y 

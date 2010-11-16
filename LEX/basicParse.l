@@ -236,6 +236,14 @@ netwrite [Nn][Ee][Tt][Ww][Rr][Ii][Tt][Ee]
 netread [Nn][Ee][Tt][Rr][Ee][Aa][Dd]
 netclose [Nn][Ee][Tt][Cc][Ll][Oo][Ss][Ee]
 netdata [Nn][Ee][Tt][Dd][Aa][Tt][Aa]
+netaddress [Nn][Ee][Tt][Aa][Dd][Dd][Rr][Ee][Ss][Ss]
+kill [Kk][Ii][Ll][Ll]
+md5 [Mm][Dd][5]
+getsetting [Gg][Ee][Tt][Ss][Ee][Tt][Tt][Ii][Nn][Gg]
+setsetting [Ss][Ee][Tt][Ss][Ee][Tt][Tt][Ii][Nn][Gg]
+portin [Pp][Oo][Rr][Tt][Ii][Nn]
+portout [Pp][Oo][Rr][Tt][Oo][Uu][Tt]
+imgsave [Ii][Mm][Gg][Ss][Aa][Vv][Ee]
 %%
 
 
@@ -399,6 +407,7 @@ netdata [Nn][Ee][Tt][Dd][Aa][Tt][Aa]
 {getslice}       { count(); return B256GETSLICE; }
 {putslice}       { count(); return B256PUTSLICE; }
 {imgload}       { count(); return B256IMGLOAD; }
+{imgsave}       { count(); return B256IMGSAVE; }
 {spritedim}       { count(); return B256SPRITEDIM; }
 {spriteload}       { count(); return B256SPRITELOAD; }
 {spriteslice}       { count(); return B256SPRITESLICE; }
@@ -448,6 +457,13 @@ netdata [Nn][Ee][Tt][Dd][Aa][Tt][Aa]
 {netread}       { count(); return B256NETREAD; }
 {netclose}       { count(); return B256NETCLOSE; }
 {netdata}       { count(); return B256NETDATA; }
+{netaddress}       { count(); return B256NETADDRESS; }
+{kill}       { count(); return B256KILL; }
+{md5}       { count(); return B256MD5; }
+{getsetting}       { count(); return B256GETSETTING; }
+{setsetting}       { count(); return B256SETSETTING; }
+{portin}       { count(); return B256PORTIN; }
+{portout}       { count(); return B256PORTOUT; }
 {rem}           { count(); return '\n'; }
 {remeol}        { count(); return '\n'; }
 {remalt}        { count(); return '\n'; }
@@ -460,6 +476,9 @@ netdata [Nn][Ee][Tt][Dd][Aa][Tt][Aa]
 "*"             { count(); return '*'; }
 "\\"            { count(); return B256INTDIV; }
 "\%"            { count(); return B256MOD; }
+"|"            { count(); return B256BINARYOR; }
+"&"            { count(); return B256BINARYAND; }
+"~"            { count(); return B256BINARYNOT; }
 "/"             { count(); return '/'; }
 "^"             { count(); return '^'; }
 "="             { count(); return '='; }

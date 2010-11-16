@@ -247,6 +247,17 @@
 #define OP_NETWRITE		0x22
 #define OP_NETCLOSE		0x23
 #define OP_NETDATA		0x24
+#define OP_NETADDRESS		0x25
+#define OP_KILL		0x26
+#define OP_MD5		0x27
+#define OP_SETSETTING		0x28
+#define OP_GETSETTING		0x29
+#define OP_PORTIN		0x2a
+#define OP_PORTOUT		0x2b
+#define OP_BINARYOR		0x2c
+#define OP_BINARYAND		0x2d
+#define OP_BINARYNOT		0x2e
+#define OP_IMGSAVE		0x2f
 
 
 

@@ -18,6 +18,7 @@
 #include <iostream>
 #include <QPainter>
 #include <QTextCursor>
+#include <QMutex>
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
@@ -25,12 +26,18 @@
 #include <QPrinter>
 #include <QMessageBox>
 
+#include "Settings.h"
 #include "BasicOutput.h"
+
+extern QMutex keymutex;
+extern int currentKey;
 
 BasicOutput::BasicOutput( ) : QTextEdit () 
 {
   setFocusPolicy(Qt::StrongFocus);
   gettingInput = false;
+  QSettings settings(SETTINGSORG, SETTINGSAPP);
+  changeFontSize(settings.value(SETTINGSFONTSIZE, SETTINGSFONTSIZEDEFAULT).toInt());
 }
 
 
@@ -81,7 +88,10 @@ BasicOutput::keyPressEvent(QKeyEvent *e)
   e->accept();
   if (!gettingInput)
     {
-      QTextEdit::keyPressEvent(e);
+      keymutex.lock();
+      currentKey = e->key();
+      keymutex.unlock();
+      //QTextEdit::keyPressEvent(e);
     }
   else
     {
