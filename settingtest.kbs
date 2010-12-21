@@ -1,3 +1,0 @@
-print getsetting("foo","bar")
-setsetting "foo","bar","val"
-print getsetting("foo","bar")

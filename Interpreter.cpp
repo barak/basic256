@@ -605,6 +605,10 @@ Interpreter::cleanup()
 		free(byteCode);
 		byteCode = NULL;
 	}
+	closeDatabase();
+}
+
+void Interpreter::closeDatabase() {
 	// cleanup database
 	if (dbset) {
 		sqlite3_finalize(dbset);
@@ -614,7 +618,6 @@ Interpreter::cleanup()
 		sqlite3_close(dbconn);
 		dbconn = NULL;
 	}
-						
 }
 
 void
@@ -649,6 +652,7 @@ Interpreter::run()
 	onerroraddress = 0;
 	while (status != R_STOPPED && execByteCode() >= 0) {} //continue
 	status = R_STOPPED;
+	closeDatabase();
 	emit(runFinished());
 }
 
@@ -1789,14 +1793,14 @@ Interpreter::execByteCode()
 			op++;
 			char *temp = stack.popstring();
 
-            		for(unsigned int p=0;p<strlen(temp);p++) {
-					if(opcode==OP_UPPER) {
-						if (isalpha(temp[p])) temp[p] = toupper(temp[p]);
-					} else {
-						if(isalpha(temp[p])) temp[p] = tolower(temp[p]);
-					}
+			QString qtemp = QString::fromUtf8(temp);
+			if(opcode==OP_UPPER) {
+				qtemp = qtemp.toUpper();
+			} else {
+				qtemp = qtemp.toLower();
 			}
-			stack.push(temp);
+
+			stack.push(strdup(qtemp.toUtf8().data()));
 			free(temp);
 		}
 		break;
@@ -3301,14 +3305,7 @@ Interpreter::execByteCode()
 			case OP_DBCLOSE:
 					{
 						op++;
-						if (dbset) {
-							sqlite3_finalize(dbset);
-							dbset = NULL;
-						}
-						if (dbconn) {
-							sqlite3_close(dbconn);
-							dbconn = NULL;
-						}
+						closeDatabase();
 					}
 					break;
 

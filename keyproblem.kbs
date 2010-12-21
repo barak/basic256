@@ -1,0 +1,7 @@
+input foo$
+print foo$
+while true
+print key;
+pause .1
+end while
+# dfgdfgfdgdfgdfg

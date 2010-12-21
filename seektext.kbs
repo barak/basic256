@@ -1,6 +1,0 @@
-open 3, "seektest.txt"
-seek 3,asc("O")-asc("A")+26
-print left(readline(3),1);
-seek 3,asc("k")-asc("a")
-print left(readline(3),1)
-close 3
