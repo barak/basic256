@@ -1,0 +1,9 @@
+dim a$(1)
+dim b(1)
+a$ = Explode("How now brown cow"," ")
+print implode(a$,"-")
+print implode(a$)
+b = Explode("1,2,3.33,4.44,5.55",",")
+print implode(b,", ")
+print implode(b)
+
