@@ -1,3 +1,11 @@
+basic256 (0.9.6.59-1) unstable; urgency=low
+
+  * Imported Upstream version 0.9.6.59
+    - Updated copyright file with years
+    - Refreshed patches
+
+ -- Ryan Kavanagh <ryanakca@kubuntu.org>  Sat, 22 Jan 2011 11:29:27 -0500
+
 basic256 (0.9.6.50-1) unstable; urgency=low
 
   * New upstream release
