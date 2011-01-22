@@ -37,13 +37,15 @@ unix:!macx {
 	## this is the LINUX (unix-non-mac)
 	DEFINES		+= LINUX
 	
-	## for the SAY command (LINUX) you need to choose one TTS engine - uncomment the one desired
-	## espeak library (causes problems with sound statement in 0.9.5i under ubuntu 9.10 - suggest flite)
+	## TTS Option 1 - ececute 'espak' command to speak 
+	#DEFINES		+= 	LINUX_ESPEAK_EXECUTE
+
+	## TTS Option 2 - use the espeak library
 	DEFINES		+= 	LINUX_ESPEAK
 	INCLUDEPATH		+=	/usr/include/espeak
 	LIBS			+=	-lespeak
 
-	## flite library
+	## TTS Option 3 - use the flite library
 	#DEFINES			+= 	LINUX_FLITE
 	#INCLUDEPATH		+=	/usr/include/flite
 	#LIBS			+=	-lflite_cmu_us_kal16
@@ -126,6 +128,7 @@ HEADERS 		+= 	Interpreter.h
 HEADERS 		+= 	RunController.h 
 HEADERS 		+= 	BasicOutput.h 
 HEADERS 		+= 	BasicGraph.h 
+HEADERS 		+= 	ErrorCodes.h 
 HEADERS 		+= 	GhostButton.h 
 HEADERS 		+= 	PauseButton.h 
 HEADERS 		+= 	DockWidget.h
@@ -133,13 +136,14 @@ HEADERS			+=	BasicWidget.h
 HEADERS			+=	ToolBar.h
 HEADERS			+=	ViewWidgetIFace.h
 HEADERS			+=	MainWindow.h
+HEADERS			+=	Variables.h
 HEADERS			+=	VariableWin.h
 HEADERS			+=	DocumentationWin.h
 HEADERS			+=	Version.h
 HEADERS			+=	EditSyntaxHighlighter.h
-HEADERS         +=  Stack.h
-HEADERS         +=  PreferencesWin.h
-HEADERS         +=  md5.h
+HEADERS			+=	Stack.h
+HEADERS			+=	PreferencesWin.h
+HEADERS			+=	md5.h
 
 SOURCES 		+= 	LEX/lex.yy.c 
 SOURCES 		+= 	LEX/basicParse.tab.c 
@@ -156,10 +160,11 @@ SOURCES			+=	BasicWidget.cpp
 SOURCES			+=	ToolBar.cpp
 SOURCES			+=	ViewWidgetIFace.cpp
 SOURCES			+=	MainWindow.cpp
+SOURCES			+=	Variables.cpp
 SOURCES			+=	VariableWin.cpp
 SOURCES			+=	DocumentationWin.cpp
 SOURCES			+=	EditSyntaxHighlighter.cpp
-SOURCES			+=  Stack.cpp
-SOURCES			+=  PreferencesWin.cpp
-SOURCES			+=  md5.cpp
+SOURCES			+=	Stack.cpp
+SOURCES			+=	PreferencesWin.cpp
+SOURCES			+=	md5.cpp
 

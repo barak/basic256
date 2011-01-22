@@ -92,7 +92,7 @@
     <name>DocumentationWin</name>
     <message>
         <source>Help Navigation</source>
-        <translation>Навигация по справке</translation>
+        <translation type="obsolete">Навигация по справке</translation>
     </message>
     <message>
         <source>Search:</source>
@@ -105,6 +105,22 @@
     <message>
         <source>Search Backward</source>
         <translation type="obsolete">Поиск назад</translation>
+    </message>
+    <message>
+        <source>&amp;Back</source>
+        <translation>&amp;Назад</translation>
+    </message>
+    <message>
+        <source>&amp;Forward</source>
+        <translation>&amp;Вперед</translation>
+    </message>
+    <message>
+        <source>&amp;Home</source>
+        <translation>&amp;Домой</translation>
+    </message>
+    <message>
+        <source>&amp;Exit</source>
+        <translation>В&amp;ыход</translation>
     </message>
 </context>
 <context>
@@ -388,6 +404,10 @@
         <source>Save</source>
         <translation>Сохранить</translation>
     </message>
+    <message>
+        <source>Preferences and settings have been saved.</source>
+        <translation>Настройки и параметры сохранены.</translation>
+    </message>
 </context>
 <context>
     <name>QObject</name>
@@ -461,7 +481,7 @@
     </message>
     <message>
         <source>About BASIC-256</source>
-        <translation type="obsolete">О BASIC-256</translation>
+        <translation>О BASIC-256</translation>
     </message>
     <message>
         <source>Graphics Output</source>
@@ -676,6 +696,22 @@ Please check your printer settings.</source>
     <message>
         <source>Preferences</source>
         <translation>Настройки</translation>
+    </message>
+    <message>
+        <source>BASIC-256 Reference</source>
+        <translation>Справочник по BASIC-256</translation>
+    </message>
+    <message>
+        <source>&amp;Online help</source>
+        <translation>&amp;Интернет-справка</translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;BASIC-256&lt;/h2&gt;version &lt;b&gt;</source>
+        <translation>&lt;h2&gt;BASIC-256&lt;/h2&gt;версия &lt;b&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;/b&gt;&lt;p&gt;Copyright &amp;copy; 2006-2010, The BASIC-256 Team&lt;/p&gt;&lt;p&gt;Please visit our web site at &lt;a href=http://www.basic256.org&gt;basic256.org&lt;/a&gt; for tutorials and documentation.&lt;/p&gt;&lt;p&gt;Please see the CONTRIBUTORS file for a list of developers and translators for this project.&lt;/p&gt;&lt;p&gt;&lt;i&gt;You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.&lt;/i&gt;&lt;/p&gt;</source>
+        <translation>&lt;/b&gt;&lt;p&gt;Авторское право &amp;copy; 2006-2010, Команда BASIC-256&lt;/p&gt;&lt;p&gt;На веб-сайте &lt;a href=http://www.basic256.org&gt;basic256.org&lt;/a&gt; вы найдете руководства и документацию.&lt;/p&gt;&lt;p&gt;В файле CONTRIBUTORS - имена и контакты разработчиков и переводчиков проекта.&lt;/p&gt;&lt;p&gt;&lt;i&gt;Вы должны получить копию GNU General Public License вместе с этой программой, а если нет, напишите в Free Software Foundation, Inc, 51-Франклин-стрит, 5й этаж, Boston, MA 02110-1301 USA.&lt;/i&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>

@@ -14,8 +14,8 @@ var customImage
 var customImageHandle
 
 Function .onInit
-  StrCpy $VERSION "0.9.6.50"
-  StrCpy $VERSIONDATE "2010-11-26"
+  StrCpy $VERSION "0.9.6.56"
+  StrCpy $VERSIONDATE "2011-01-05"
 FunctionEnd
 
 Function customPage
@@ -87,15 +87,21 @@ Section "BASIC256"
   File .\release\phonon4.dll
   File .\release\QtCore4.dll
   File .\release\QtGui4.dll
-  File .\release\QtNetwork4.dll
-  File .\release\QtWebKit4.dll
-  File .\release\QtXmlPatterns4.dll
+;  File .\release\QtNetwork4.dll
+;  File .\release\QtWebKit4.dll
+;  File .\release\QtXmlPatterns4.dll
   File .\release\sqlite3.dll
   File .\release\inpout32.dll
   File ChangeLog
   File CONTRIBUTORS
   File license.txt
-  File /r /x ".svn" Examples 
+  File /r /x ".svn" Examples
+  
+  SetOutPath $INSTDIR\help 
+  File /r /x ".svn" ..\doc\help\en 
+  File /r /x ".svn" ..\doc\help\ru 
+  File /r /x ".svn" ..\doc\help\de 
+  File /r /x ".svn" ..\doc\help\fr 
   
   SetOutPath $INSTDIR\Translations 
   File .\Translations\*.qm
@@ -139,15 +145,16 @@ Section "Uninstall"
   Delete $INSTDIR\phonon4.dll
   Delete $INSTDIR\QtCore4.dll
   Delete $INSTDIR\QtGui4.dll
-  Delete $INSTDIR\QtNetwork4.dll
-  Delete $INSTDIR\QtWebKit4.dll
-  Delete $INSTDIR\QtXmlPatterns4.dll
+;  Delete $INSTDIR\QtNetwork4.dll
+;  Delete $INSTDIR\QtWebKit4.dll
+;  Delete $INSTDIR\QtXmlPatterns4.dll
   Delete $INSTDIR\sqlite3.dll
   Delete $INSTDIR\inpout32.dll
- Delete $INSTDIR\ChangeLog
+  Delete $INSTDIR\ChangeLog
   Delete $INSTDIR\CONTRIBUTORS
   Delete $INSTDIR\license.txt
   RMDir /r $INSTDIR\Examples
+  RMDir /r $INSTDIR\help
   RMDir /r $INSTDIR\Translations
   Delete $INSTDIR\uninstall.exe
 
