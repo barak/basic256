@@ -2,9 +2,9 @@
 # Description: use dh_installexamples to install examples, not the Makefiles.
 Index: basic256/BASIC256.pro
 ===================================================================
---- basic256.orig/BASIC256.pro	2010-11-16 12:08:29.867180746 -0500
-+++ basic256/BASIC256.pro	2010-11-16 12:08:32.534201052 -0500
-@@ -62,27 +62,27 @@
+--- basic256.orig/BASIC256.pro	2011-01-22 11:28:38.204892802 -0500
++++ basic256/BASIC256.pro	2011-01-22 11:28:39.079872788 -0500
+@@ -64,27 +64,27 @@
  	examplesDiceFiles.files = ./Examples/dice/*.kbs \
  				./Examples/dice/*.wav
  	examplesDiceFiles.path = /usr/share/basic256/Examples/dice

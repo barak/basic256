@@ -2,9 +2,9 @@
 # Description: Use /usr/bin, not /usr/local/bin
 Index: basic256/BASIC256.pro
 ===================================================================
---- basic256.orig/BASIC256.pro	2010-11-16 12:07:02.870181279 -0500
-+++ basic256/BASIC256.pro	2010-11-16 12:08:24.715175192 -0500
-@@ -86,7 +86,7 @@
+--- basic256.orig/BASIC256.pro	2011-01-22 11:28:09.832874363 -0500
++++ basic256/BASIC256.pro	2011-01-22 11:28:29.516895644 -0500
+@@ -88,7 +88,7 @@
  	transFiles.files = ./Translations/*.qm
  	transFiles.path = /usr/share/basic256
  	INSTALLS += transFiles
