@@ -1,0 +1,6 @@
+start = msec()
+for t = 1 to 10
+pause .5
+print msec()
+next t
+print "duration = " + ( msec-start)
