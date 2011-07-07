@@ -46,9 +46,15 @@ public:
 	QAction * debugact;
 	QAction * stepact;
 	QAction * stopact;
+	QAction *editWinVisibleAct;
+	QAction *textWinVisibleAct;
+	QAction *graphWinVisibleAct;
   	BasicEdit * editor;
   	BasicOutput * output;
 	BasicGraph * goutput;
+	BasicWidget * editorwgt;
+	BasicWidget * outputwgt;
+	BasicWidget * goutputwgt;
 	VariableWin * vardock;
 	DocumentationWin * docdock;
 	EditSyntaxHighlighter * editsyntax;
@@ -57,6 +63,9 @@ public:
 
 private:
 	QAction *recentact[SETTINGSGROUPHISTN]; 
+	// void pointer to the run controller
+	// can't specify type because of circular reference
+	void *rcvoidpointer;		
 
 private slots:
 	void onlineHelp();

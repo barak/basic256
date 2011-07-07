@@ -28,12 +28,17 @@
 #include "BasicGraph.h"
 #include "Interpreter.h"
 #include "MainWindow.h"
+#include "FindWin.h"
+#include "ReplaceWin.h"
 
 class RunController : public QObject
 {
   Q_OBJECT;
  public:
   RunController(MainWindow *);
+  ~RunController();
+  FindWin *findwin;
+  ReplaceWin *replacewin;
 
  signals:
   void debugStarted();
@@ -54,7 +59,7 @@ class RunController : public QObject
   void outputFilter(QString text);
   void outputClear();
   void goutputFilter();
-  void goutputResize(int, int);
+  void mainWindowsResize(int, int, int);
   void startDebug();
   void startRun();
   void stopRun();
@@ -63,6 +68,9 @@ class RunController : public QObject
   void stepThrough();
   void showDocumentation();
   void showPreferences();
+  void showFind();
+  void showReplace();
+  void mainWindowsVisible(int, bool);
 
  private:
   Interpreter *i;
@@ -75,7 +83,6 @@ class RunController : public QObject
   QString bytefilename;
   MainWindow *mainwin;
   int soundVolume;
-
 
 };
 

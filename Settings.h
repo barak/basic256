@@ -38,6 +38,21 @@
 	#define SETTINGSPREFPOS "Pref/Pos"
 	#define SETTINGSPREFPASSWORD "Pref/Password"
 
+	// Find window
+	#define SETTINGSFINDPOS "Find/Pos"
+	#define SETTINGSFINDSTRING "Find/String"
+	#define SETTINGSFINDCASE "Find/Case"
+	#define SETTINGSFINDCASEDEFAULT false
+	#define SETTINGSFINDBACK "Find/Back"
+	#define SETTINGSFINDBACKDEFAULT false
+
+	// Replace window
+	#define SETTINGSREPLACEPOS "Replace/Pos"
+	#define SETTINGSREPLACEFROM "Replace/From"
+	#define SETTINGSREPLACETO "Replace/To"
+	#define SETTINGSREPLACECASE "Replace/Case"
+	#define SETTINGSREPLACECASEDEFAULT false
+
 	// permissions
 	#define SETTINGSALLOWSYSTEM "Allow/System"
 	#define SETTINGSALLOWSYSTEMDEFAULT true
@@ -45,7 +60,6 @@
 	#define SETTINGSALLOWSETTINGDEFAULT true
 	#define SETTINGSALLOWPORT "Allow/Port"
 	#define SETTINGSALLOWPORTDEFAULT true
-
 
 	// store history of files as SaveHistory/0 ... SaveHistory/8 
 	#define SETTINGSGROUPHIST "SaveHistory"

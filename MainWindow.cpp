@@ -63,14 +63,15 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f)
 
 	vardock = new VariableWin(this);
 
-	BasicWidget * editorwgt = new BasicWidget();
+	editorwgt = new BasicWidget();
 	editorwgt->setViewWidget(editor);
-	BasicWidget * outputwgt = new BasicWidget(QObject::tr("Text Output"));
+	outputwgt = new BasicWidget(QObject::tr("Text Output"));
 	outputwgt->setViewWidget(output);
-	BasicWidget * goutputwgt = new BasicWidget(QObject::tr("Graphics Output"));
+	goutputwgt = new BasicWidget(QObject::tr("Graphics Output"));
 	goutputwgt->setViewWidget(goutput);
 
 	RunController *rc = new RunController(this);
+	rcvoidpointer = rc;
 	editsyntax = new EditSyntaxHighlighter(editor->document());
 
 	// Main window toolbar
@@ -157,10 +158,12 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f)
 	QAction *selectallact = editmenu->addAction(QObject::tr("Select &All"));
 	selectallact->setShortcut(Qt::Key_A + Qt::CTRL);
 	editmenu->addSeparator();
+	QAction *findact = editmenu->addAction(QObject::tr("&Find"));
+	QAction *replaceact = editmenu->addAction(QObject::tr("&Replace"));
+	editmenu->addSeparator();
 	QAction *beautifyact = editmenu->addAction(QObject::tr("&Beautify"));
 	editmenu->addSeparator();
 	QAction *prefact = editmenu->addAction(QIcon(":images/preferences.png"), QObject::tr("Preferences"));
-	QObject::connect(prefact, SIGNAL(triggered()), rc, SLOT(showPreferences()));
 	//
 	QObject::connect(cutact, SIGNAL(triggered()), editor, SLOT(cut()));
 	QObject::connect(editor, SIGNAL(copyAvailable(bool)), cutact, SLOT(setEnabled(bool)));
@@ -168,7 +171,10 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f)
 	QObject::connect(editor, SIGNAL(copyAvailable(bool)), copyact, SLOT(setEnabled(bool)));
 	QObject::connect(pasteact, SIGNAL(triggered()), editor, SLOT(paste()));
 	QObject::connect(selectallact, SIGNAL(triggered()), editor, SLOT(selectAll()));
+	QObject::connect(findact, SIGNAL(triggered()), rc, SLOT(showFind()));
+	QObject::connect(replaceact, SIGNAL(triggered()), rc, SLOT(showReplace()));
 	QObject::connect(beautifyact, SIGNAL(triggered()), editor, SLOT(beautifyProgram()));
+	QObject::connect(prefact, SIGNAL(triggered()), rc, SLOT(showPreferences()));
 
 	bool extraSepAdded = false;
 	if (outputwgt->usesMenu())
@@ -188,16 +194,20 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f)
 
 	// View menuBar
 	QMenu *viewmenu = menuBar()->addMenu(QObject::tr("&View"));
-	QAction *textWinVisibleAct = viewmenu->addAction(QObject::tr("&Text Window"));
-	QAction *graphWinVisibleAct = viewmenu->addAction(QObject::tr("&Graphics Window"));
+	editWinVisibleAct = viewmenu->addAction(QObject::tr("&Edit Window"));
+	textWinVisibleAct = viewmenu->addAction(QObject::tr("&Text Window"));
+	graphWinVisibleAct = viewmenu->addAction(QObject::tr("&Graphics Window"));
 	QAction *variableWinVisibleAct = viewmenu->addAction(QObject::tr("&Variable Watch Window"));
 	editmenu->addSeparator();
+	editWinVisibleAct->setCheckable(true);
 	textWinVisibleAct->setCheckable(true);
 	graphWinVisibleAct->setCheckable(true);
 	variableWinVisibleAct->setCheckable(true);
+	editWinVisibleAct->setChecked(true);
 	textWinVisibleAct->setChecked(true);
 	graphWinVisibleAct->setChecked(true);
 	variableWinVisibleAct->setChecked(false);
+	QObject::connect(editWinVisibleAct, SIGNAL(toggled(bool)), editorwgt, SLOT(setVisible(bool)));
 	QObject::connect(textWinVisibleAct, SIGNAL(toggled(bool)), tdock, SLOT(setVisible(bool)));
 	QObject::connect(graphWinVisibleAct, SIGNAL(toggled(bool)), gdock, SLOT(setVisible(bool)));
 	QObject::connect(variableWinVisibleAct, SIGNAL(toggled(bool)), vardock, SLOT(setVisible(bool)));
@@ -311,6 +321,12 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f)
 
 }
 
+MainWindow::~MainWindow()
+{
+	//printf("mwdestroy\n");
+	((RunController *) rcvoidpointer)->~RunController();
+}
+
 void MainWindow::onlineHelp()
 {
 	QDesktopServices::openUrl(QUrl("http://doc.basic256.org"));
@@ -349,10 +365,6 @@ void MainWindow::updateRecent()
 
 }
 
-MainWindow::~MainWindow()
-{
-}
-
 void MainWindow::closeEvent(QCloseEvent *e) {
 	// quit the application but ask if there are unsaved changes in buffer
 	bool doquit = true;
@@ -374,5 +386,10 @@ void MainWindow::closeEvent(QCloseEvent *e) {
 	QSettings settings(SETTINGSORG, SETTINGSAPP);
 	settings.setValue(SETTINGSSIZE, size());
 	settings.setValue(SETTINGSPOS, pos());
+
+	// close any windows from the runcontroller
+	RunController *rc = (RunController *) rcvoidpointer;
+	if (rc->findwin) rc->findwin->close();
+	if (rc->replacewin) rc->replacewin->close();
 
 }
