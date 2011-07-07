@@ -1,3 +1,34 @@
+2011-07-01 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.66
+	* changed inpout32.dll linking to dynamic for Windows port to eliminate the dll hell
+	* merged in http://patch-tracker.debian.org/patch/series/view/basic256/0.9.6.60-2/04_portable_sound.diff
+	* fix off-line documentation load on windows - to use the application absolute path to fing help folder
+	
+2011-05-01 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.65
+	* renamed spanish help file to es not sp
+
+2011-03-19 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.65
+	* Added GRAPHVISIBLE, EDITVISIBLE, and OUTPUTVISIBLE statements to hide sections if the UI from a running program.
+
+2011-03-18 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.64
+	* Added option to View menu to hide Edit Widget (program source)
+
+2011-03-17 Javier González
+	* new Spanish UI translation
+
+2011-03-05 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.63
+	* Added replace dialog and refined find dialog
+
+2011-03-04 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.62
+	* Added find dialog
+
+2011-02-14 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.61
+	* fixed windows only problem with DIR statement
+	* restructured and documented the doc tree
+	* worked on the windows installer to allow for optional install of offline help and examples
+
+2011-02-14 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.60
+	* added MSEC function to return program running time in milliseconds
+
 2011-01-20 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.59
 	* added option to use espeak for TTS from shell not as a library
               * update documentation in BASIC256.pro and COMPILING.txt
@@ -138,6 +169,7 @@
 	* changed parser to allow labels at the begining of any line or on a line by themselves
 	* added display of column number of cursor in status bar when editing
 	* added _ as a valid character in a veriable or label name (first letter MUST still be a letter)
+
 
 2010-08-02 j.m.reneau <renejm@users.sourceforge.net> 0.9.6y
 	* Added sqLite database processing - dbopen, dbclose, dbsetopen, dbsetclose, and dbexecute statements, also dbint, dbfloat, dbstring, and dbrow functions to manipulate recordsets

@@ -29,6 +29,7 @@
 using namespace std;
 
 #include "RunController.h"
+#include "MainWindow.h"
 #include "Settings.h"
 #include "md5.h"
 
@@ -48,7 +49,9 @@ using namespace std;
 #endif
 
 #ifdef LINUX
-	#include <linux/soundcard.h>
+   // sys/soundcard.h instead of linux/soundcard.h in Debian so that we don't
+   // FTBFS on kfreebsd (See Debian bug #594164).
+   #include <sys/soundcard.h>
 #endif
 
 
@@ -92,11 +95,13 @@ RunController::RunController(MainWindow *mw)
 	goutput = mainwin->goutput;
 	statusbar = mainwin->statusBar();
 
+	findwin = NULL;
+	replacewin = NULL;
+
 	soundVolume = 5;	// set default sound volume to 1/2
 
 	QObject::connect(i, SIGNAL(runFinished()), this, SLOT(stopRun()));
 	QObject::connect(i, SIGNAL(goutputReady()), this, SLOT(goutputFilter()));
-	QObject::connect(i, SIGNAL(resizeGraph(int, int)), this, SLOT(goutputResize(int, int)));
 	QObject::connect(i, SIGNAL(outputReady(QString)), this, SLOT(outputFilter(QString)));
 	QObject::connect(i, SIGNAL(clearText()), this, SLOT(outputClear()));
 
@@ -121,11 +126,23 @@ RunController::RunController(MainWindow *mw)
 	QObject::connect(i, SIGNAL(highlightLine(int)), te, SLOT(highlightLine(int)));
 	QObject::connect(i, SIGNAL(varAssignment(QString, QString, int)), mainwin->vardock, SLOT(addVar(QString, QString, int)));
 
+	QObject::connect(i, SIGNAL(mainWindowsResize(int, int, int)), this, SLOT(mainWindowsResize(int, int, int)));
+	QObject::connect(i, SIGNAL(mainWindowsVisible(int, bool)), this, SLOT(mainWindowsVisible(int, bool)));
+
+
 #ifdef USESDL
 	//mono
 	Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, AUDIO_S16SYS, 1, 2048);
 #endif
 }
+
+RunController::~RunController()
+{
+	if(findwin!=NULL) findwin->close();
+	if(replacewin!=NULL) replacewin->close();
+	//printf("rcdestroy\n");
+}
+
 
 // play a list of counds 0,2,4... = frequency & 1,3,5... = duration in ms
 // notes is arraylength/2 (number of notes)
@@ -511,16 +528,6 @@ RunController::outputFilter(QString text)
 }
 
 void
-RunController::goutputResize(int width, int height)
-{
-	mutex.lock();
-	goutput->resize(width, height);
-	goutput->setMinimumSize(goutput->image->width(), goutput->image->height());
-	waitCond.wakeAll();
-	mutex.unlock();
-}
-
-void
 RunController::goutputFilter()
 {
 	mutex.lock();
@@ -649,4 +656,44 @@ RunController::showPreferences()
 		msgBox.exec();
 	}
 }
+
+void RunController::showFind()
+{
+     if (!findwin) findwin = new FindWin(te);
+     findwin->show();
+     findwin->raise();
+     findwin->activateWindow();
+}
+
+void RunController::showReplace()
+{
+     if (!replacewin) replacewin = new ReplaceWin(te);
+     replacewin->show();
+     replacewin->raise();
+     replacewin->activateWindow();
+}
+
+void
+RunController::mainWindowsVisible(int w, bool v)
+{
+	//printf("mwv %i %i\n",w,v);
+	if (w==0) mainwin->editWinVisibleAct->setChecked(v);
+	if (w==1) mainwin->graphWinVisibleAct->setChecked(v);
+	if (w==2) mainwin->textWinVisibleAct->setChecked(v);
+}
+
+void
+RunController::mainWindowsResize(int w, int width, int height)
+{
+	// only resize graphics window now - may add other windows later
+	mutex.lock();
+	if (w==1) {
+		goutput->resize(width, height);
+		goutput->setMinimumSize(goutput->image->width(), goutput->image->height());
+	}
+	waitCond.wakeAll();
+	mutex.unlock();
+}
+
+
 

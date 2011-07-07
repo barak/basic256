@@ -27,7 +27,6 @@ win32 {
 	LIBS			+= -lole32 \
 				-lsapi \
 				-lws2_32 \
-				-linpout32 \
 				-lwinmm
 
 
@@ -88,6 +87,46 @@ unix:!macx {
 	transFiles.files = ./Translations/*.qm
 	transFiles.path = /usr/share/basic256
 	INSTALLS += transFiles
+	# EN - english help files
+	helpENFiles.files = ../doc/help/en/*.html \
+		./help/en/*.css \
+		./help/en/*.png \
+		./help/en/*.jpg
+	helpENFiles.path = /usr/share/basic256/help/en
+	INSTALLS += helpENFiles
+	# DE - german help files
+	helpDEFiles.files = ../doc/help/de/*.html \
+		./help/de/*.css \
+		./help/de/*.png \
+		./help/de/*.jpg
+	helpDEFiles.path = /usr/share/basic256/help/de
+	INSTALLS += helpDEFiles
+	# ES - spanish help files
+	helpESFiles.files = ../doc/help/es/*.html \
+		./help/es/*.css \
+		./help/es/*.png \
+		./help/es/*.jpg
+	helpESFiles.path = /usr/share/basic256/help/es
+	INSTALLS += helpESFiles
+	# FR - french help files
+	helpFRFiles.files = ../doc/help/fr/*.html \
+		./help/fr/*.css \
+		./help/fr/*.png \
+		./help/fr/*.jpg
+	helpFRFiles.path = /usr/share/basic256/help/fr
+	INSTALLS += helpFRFiles
+	# RU - russian help files
+	helpRUFiles.files = ../doc/help/ru/*.html \
+		./help/ru/*.css \
+		./help/ru/*.png \
+		./help/ru/*.jpg
+	helpRUFiles.path = /usr/share/basic256/help/ru
+	INSTALLS += helpRUFiles
+	# all language translation files
+	transFiles.files = ./Translations/*.qm
+	transFiles.path = /usr/share/basic256
+	INSTALLS += transFiles
+	# main program executable
 	target.path = /usr/local/bin
 	INSTALLS += target
 
@@ -143,6 +182,8 @@ HEADERS			+=	Version.h
 HEADERS			+=	EditSyntaxHighlighter.h
 HEADERS			+=	Stack.h
 HEADERS			+=	PreferencesWin.h
+HEADERS			+=	FindWin.h
+HEADERS			+=	ReplaceWin.h
 HEADERS			+=	md5.h
 
 SOURCES 		+= 	LEX/lex.yy.c 
@@ -166,5 +207,7 @@ SOURCES			+=	DocumentationWin.cpp
 SOURCES			+=	EditSyntaxHighlighter.cpp
 SOURCES			+=	Stack.cpp
 SOURCES			+=	PreferencesWin.cpp
+SOURCES			+=	FindWin.cpp
+SOURCES			+=	ReplaceWin.cpp
 SOURCES			+=	md5.cpp
 
