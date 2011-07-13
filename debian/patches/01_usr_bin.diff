@@ -1,5 +1,8 @@
-# 01_usr_bin.diff by Ryan Kavanagh <ryanakca@kubuntu.org>
 # Description: Use /usr/bin, not /usr/local/bin
+# Author: Ryan Kavanagh <ryanakca@kubuntu.org>
+# Forwarded: not-needed
+# Origin: vendor
+# Last-Update: 2011-07-13
 Index: basic256/BASIC256.pro
 ===================================================================
 --- basic256.orig/BASIC256.pro	2011-07-13 09:49:55.000000000 -0400

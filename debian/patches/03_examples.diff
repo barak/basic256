@@ -1,5 +1,8 @@
-# 03_examples.diff by Ryan Kavanagh <ryanakca@kubuntu.org>
 # Description: use dh_installexamples to install examples, not the Makefiles.
+# Author: Ryan Kavanagh <ryanakca@kubuntu.org>
+# Origin: vendor
+# Forwarded: not-needed
+# Last-Update: 2011-07-13
 Index: basic256/BASIC256.pro
 ===================================================================
 --- basic256.orig/BASIC256.pro	2011-07-07 09:27:58.359695593 -0400

@@ -1,3 +1,13 @@
+basic256 (0.9.6.66-1) unstable; urgency=low
+
+  * New upstream release
+  * Fix typo in .desktop file, thanks Andrea Carpineti (Closes: #620136)
+  * Updated 01_usr_bin.diff to reflect upstream's changes to BASIC256.pro
+  * Dropped 04_portable_sound.diff , applied upstream
+  * Bumped Standards to 3.9.2, no changes required
+
+ -- Ryan Kavanagh <ryanakca@kubuntu.org>  Wed, 13 Jul 2011 09:52:53 -0400
+
 basic256 (0.9.6.60-2) unstable; urgency=low
 
   * Depend on libqtwebkit-dev, it has split from libqt4-dev. Fixes FTBFS.
