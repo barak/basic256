@@ -5,8 +5,10 @@ basic256 (0.9.6.66-1) unstable; urgency=low
   * Updated 01_usr_bin.diff to reflect upstream's changes to BASIC256.pro
   * Dropped 04_portable_sound.diff , applied upstream
   * Bumped Standards to 3.9.2, no changes required
+  * Added DEP-3 header to patches
+  * Override duplicate-files warning for 24K of example files
 
- -- Ryan Kavanagh <ryanakca@kubuntu.org>  Wed, 13 Jul 2011 09:52:53 -0400
+ -- Ryan Kavanagh <ryanakca@kubuntu.org>  Wed, 13 Jul 2011 13:52:39 -0400
 
 basic256 (0.9.6.60-2) unstable; urgency=low
 
