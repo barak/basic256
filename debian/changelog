@@ -1,3 +1,13 @@
+basic256 (0.9.6.66-1.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Fix "FTBFS: dpkg-buildpackage: error: dpkg-source -b basic256-
+    0.9.6.66 gave error exit status 2": add patch 04_bison.diff that adds the
+    generated Bison parser files to the clean target.
+    Closes: #652244
+
+ -- gregor herrmann <gregoa@debian.org>  Tue, 21 Feb 2012 20:32:53 +0100
+
 basic256 (0.9.6.66-1) unstable; urgency=low
 
   * New upstream release
