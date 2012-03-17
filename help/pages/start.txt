@@ -1,0 +1,27 @@
+=====BASIC-256 Language Documentation=====
+====Choose documentation language/Выберите документация язык====
+{{  :basic256.png?100|BASIC 256 - Newton Ball}}
+
+[[en:start|{{:en.png|en}}]][[en:start|English]]
+[[ru:start|{{:ru.png|ru}}]][[ru:start|Русский]]
+[[es:start|{{:sp.png|es}}]][[es:start|Español]] 
+[[nl:start|{{:nl.png|nl}}]][[nl:start|Dutch]]
+
+
+=== Documentation Under Development or Incomplete ===
+
+[[de:start|{{:de.png|de}}]][[de:start|German]]  [[fr:start|{{:fr.png|fr}}]][[fr:start|French]] 
+
+==== Sample Programs ====
+  * [[galleryjoelkahn|Gallery of Images and Programs from Joel Kahn]]
+  * [[galleryjmreneau|Gallery of Images and Programs from Jim Reneau]]
+
+====Note====
+  * The **English** documentation is the most complete. 
+  * A **Russian** translation is being performed and should be updated soon. 
+  * The **German** translation is several years old, missing much of the language's functionality, and has not been formatted for the WIKI. If you want to make changes or updates to the documentation, all you need to do is register. (Jim Reneau - 2010-06-30). 
+  * Translations in **Dutch** have been done in jan 2012 and are complete ( with exception of a number of extra examples)
+  * 
+====Заметка====
+Документация на английском является наиболее полной. Русский перевод - в процессе и должен быть обновлен в ближайшее время. Перевод на немецкий был сделан несколько лет назад, отсутствует большая часть функциональности языка, и он не был отформатирован под WIKI. Если вы хотите внести изменения или дополнения к документации, все что вам нужно сделать, - это зарегистрироваться. (Джим Рено - 30 июня 2011)
+
