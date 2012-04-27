@@ -1,0 +1,29 @@
+Description: Fix FTBFS with GCC-4.7
+Author: Cyril Brulebois <kibi@debian.org>
+Origin: vendor
+Bug-Debian: http://bugs.debian.org/667110
+Forwarded: no
+Reviewed-by: Ryan Kavanagh <rak@debian.org>
+Last-Update: 2012-04-27
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/Interpreter.cpp
++++ b/Interpreter.cpp
+@@ -47,6 +47,7 @@
+ 	#include <arpa/inet.h>
+ 	#include <net/if.h>
+ 	#include <ifaddrs.h>
++	#include <unistd.h>
+ #endif
+ 
+ #include <QString>
+--- a/RunController.cpp
++++ b/RunController.cpp
+@@ -46,6 +46,7 @@ using namespace std;
+ 	#include <fcntl.h>
+ 	#include <sys/ioctl.h>
+ 	#include <time.h>
++	#include <unistd.h>
+ #endif
+ 
+ #ifdef LINUX
