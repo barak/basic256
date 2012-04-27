@@ -1,3 +1,18 @@
+basic256 (0.9.6.69a-1) unstable; urgency=low
+
+  [ Ryan Kavanagh ]
+  * Imported Upstream version 0.9.6.69a
+  * Acknowledge NMU
+  * Updated copyright years
+  * Bump Standards Version to 3.9.3
+  * Drop DM-Upload-Allowed: yes and update maintainer email to @debian.org
+
+  [ Cyril Brulebois ]
+  * Fix FTBFS with gcc 4.7 due to missing <unistd.h> includes (Closes: #667110)
+    (05_ftbfs_gcc4.7.diff)
+
+ -- Ryan Kavanagh <rak@debian.org>  Fri, 27 Apr 2012 09:36:14 -0400
+
 basic256 (0.9.6.66-1.1) unstable; urgency=low
 
   * Non-maintainer upload.
