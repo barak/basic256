@@ -16,8 +16,8 @@ Build-Depends: debhelper (>= 10),
  qtmultimedia5-dev,
 Standards-Version: 3.9.3
 Homepage: http://www.basic256.org/
-Vcs-Browser: http://git.debian.org/?p=collab-maint/basic256.git
-Vcs-Git: git://git.debian.org/collab-maint/basic256.git
+Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/basic256.git
+Vcs-Git: https://anonscm.debian.org/git/collab-maint/basic256.git
 
 Package: basic256
 Architecture: any

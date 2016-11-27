@@ -8,6 +8,7 @@ basic256 (1.1.4.0-1) UNRELEASED; urgency=medium
   * Use basic256.png as the icon instead of basic256.xpm
   * Switch to debhelper 10
   * Update debian/watch
+  * Use secure URIs for VCS fields
 
  -- Graham Inggs <ginggs@debian.org>  Sun, 27 Nov 2016 16:10:31 +0200
 
