@@ -1,2 +1,2 @@
 debian/basic256.desktop usr/share/applications/
-debian/basic256.xpm usr/share/pixmaps/
+resources/images/basic256.png usr/share/pixmaps/

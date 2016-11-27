@@ -5,6 +5,7 @@ basic256 (1.1.4.0-1) UNRELEASED; urgency=medium
   * Clean generated LEX/lex.yy.c (Closes: #746100)
   * Switch from Qt4 to Qt5 and adjust build-dependencies
   * Drop debian/menu, see #741573
+  * Use basic256.png as the icon instead of basic256.xpm
 
  -- Graham Inggs <ginggs@debian.org>  Sun, 27 Nov 2016 16:10:31 +0200
 
