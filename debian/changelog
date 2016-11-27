@@ -3,6 +3,7 @@ basic256 (1.1.4.0-1) UNRELEASED; urgency=medium
   * New upstream release
     - Fixes FTBFS with GCC 6 (Closes: #811799)
   * Clean generated LEX/lex.yy.c (Closes: #746100)
+  * Switch from Qt4 to Qt5 and adjust build-dependencies
 
  -- Graham Inggs <ginggs@debian.org>  Sun, 27 Nov 2016 16:10:31 +0200
 

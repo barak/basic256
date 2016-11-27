@@ -7,11 +7,13 @@ Build-Depends: debhelper (>= 7.0.50~),
  flex,
  flite1-dev,
  libespeak-dev,
- libqt4-dev,
- libqtwebkit-dev,
+ libqt5serialport5-dev,
+ libqt5webkit5-dev,
  libsdl1.2-dev,
  libsdl-mixer1.2-dev,
- libsqlite3-dev
+ libsqlite3-dev,
+ qtbase5-dev,
+ qtmultimedia5-dev,
 Standards-Version: 3.9.3
 Homepage: http://www.basic256.org/
 Vcs-Browser: http://git.debian.org/?p=collab-maint/basic256.git
