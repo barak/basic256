@@ -1,3 +1,10 @@
+basic256 (1.1.4.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+    - Fixes FTBFS with GCC 6 (Closes: #811799)
+
+ -- Graham Inggs <ginggs@debian.org>  Sun, 27 Nov 2016 16:10:31 +0200
+
 basic256 (0.9.6.69a-1) unstable; urgency=low
 
   [ Ryan Kavanagh ]
