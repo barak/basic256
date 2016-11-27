@@ -1,16 +1,19 @@
-Description: remove generated bison parser files during clean
+Description: remove generated bison and flex parser files during clean
 Origin: vendor
 Bug-Debian: https://bugs.debian.org/652244
+Bug-Debian: https://bugs.debian.org/746100
 Forwarded: no
 Author: gregor herrmann <gregoa@debian.org>
+Author: Graham Inggs <ginggs@debian.org>
 Last-Update: 2016-11-27
 
 --- a/BASIC256.pro
 +++ b/BASIC256.pro
-@@ -161,3 +161,6 @@
+@@ -161,3 +161,7 @@
  SOURCES 					+=	LEX/basicParse.tab.c 
  SOURCES 					+=	*.cpp
  
 +# Generated Bison parser files
 +QMAKE_CLEAN		+=	LEX/basicParse.tab.h
 +QMAKE_CLEAN		+=	LEX/basicParse.tab.c
++QMAKE_CLEAN		+=	LEX/lex.yy.c
