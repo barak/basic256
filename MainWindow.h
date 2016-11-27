@@ -19,10 +19,14 @@
 #ifndef __MAINWINDOW_H
 #define __MAINWINDOW_H
 
-#include <QMainWindow>
-#include <QGridLayout>
-#include <QAction>
-#include <QMessageBox>
+#include <qglobal.h>
+
+#include <QtWidgets/QMainWindow>
+#include <QtWidgets/QGridLayout>
+#include <QtWidgets/QAction>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QShortcut>
+#include <QtWidgets/QScrollArea>
 
 #include "BasicWidget.h"
 #include "BasicOutput.h"
@@ -31,38 +35,28 @@
 #include "VariableWin.h"
 #include "DocumentationWin.h"
 #include "PreferencesWin.h"
+#include "RunController.h"
 #include "EditSyntaxHighlighter.h"
 #include "Settings.h"
+#include "DockWidget.h"
 
 
 class MainWindow : public QMainWindow
 {
-  	Q_OBJECT;
+    Q_OBJECT
 public:
   	MainWindow(QWidget * parent = 0, Qt::WindowFlags f = 0);
 	~MainWindow();
 	void closeEvent(QCloseEvent *);
 	void loadAndGoMode();
-	QAction * runact;
-	QAction * debugact;
-	QAction * stepact;
-	QAction * stopact;
-	QAction *editWinVisibleAct;
-	QAction *textWinVisibleAct;
-	QAction *graphWinVisibleAct;
-  	BasicEdit * editor;
-  	BasicOutput * output;
-	BasicGraph * goutput;
-	BasicWidget * editorwgt;
-	BasicWidget * outputwgt;
-	BasicWidget * goutputwgt;
-	VariableWin * vardock;
-	DocumentationWin * docdock;
-	EditSyntaxHighlighter * editsyntax;
 
-	QString localecode;
+	// Main IU Widgets
+	BasicWidget * editwinwgt;
+	BasicWidget * outwinwgt;
+	BasicWidget * graphwinwgt;
+	BasicWidget * varwinwgt;
 
-private:
+	// file menu and choices
 	QMenu * filemenu;
 	QAction * newact;
 	QAction * openact;
@@ -73,6 +67,7 @@ private:
 	QAction *recentact[SETTINGSGROUPHISTN]; 
 	QAction * exitact;
 
+	// edit menu and choices
 	QMenu * editmenu;
 	QAction *undoact;
 	QAction *redoact;
@@ -81,21 +76,53 @@ private:
 	QAction *pasteact;
 	QAction *selectallact;
 	QAction *findact;
+	QShortcut* findagain1;
+	QShortcut* findagain2;
 	QAction *replaceact;
 	QAction *beautifyact;
 	QAction *prefact;
 
+	// view menu
 	QMenu *viewmenu;
+	QAction *editWinVisibleAct;
+	QAction *textWinVisibleAct;
+	QAction *graphWinVisibleAct;
 	QAction *variableWinVisibleAct;
+	QAction *editWhitespaceAct;
+	QAction *graphGridVisibleAct;
+	QAction *fontact;
 
+	// run menu
 	QMenu *runmenu;
+	QAction * runact;
+	QAction * debugact;
+	QAction * stepact;
+	QAction * bpact;
+	QAction * stopact;
+
+	RunController *rc;
+    EditSyntaxHighlighter * editsyntax;
+
+	QString localecode;
+
+public slots:
+  void updateStatusBar(QString);
+  void updateWindowTitle(QString);
+
+private:
+
+	DockWidget * outdock;
+	DockWidget * graphdock;
+	QScrollArea * graphscroll;
+	DockWidget * vardock;
+
+	QToolBar *maintbar;
 
 	// void pointer to the run controller
 	// can't specify type because of circular reference
-	void *rcvoidpointer;		
+	//void *rcvoidpointer;		
 
 private slots:
-	void onlineHelp();
 	void updateRecent();
 	void about();
 };

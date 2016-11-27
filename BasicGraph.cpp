@@ -18,143 +18,206 @@
 
 
 #include <iostream>
-#include <QApplication>
-#include <QMutex>
-#include <QAction>
-#include <QPainter>
-#include <QPrinter>
-#include <QPrintDialog>
+
 #include <QClipboard>
-#include <QMessageBox>
-using namespace std;
+#include <QMutex>
+#include <QPainter>
 
+#include <QtPrintSupport/QPrintDialog>
+#include <QtPrintSupport/QPrinter>
+#include <QtWidgets/QAction>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QScrollArea>
+
+#include "BasicWidget.h"
 #include "BasicGraph.h"
-#include "MainWindow.h"
 
-extern QMutex keymutex;
+extern QMutex *mymutex;
 extern int currentKey;
 
-BasicGraph::BasicGraph(BasicOutput *o)
-{
-  image = NULL;
-  resize(GSIZE_INITIAL_WIDTH, GSIZE_INITIAL_HEIGHT);
-  output = o;
-  setMinimumSize(gwidth, gheight);
+BasicGraph::BasicGraph() {
+    image = NULL;
+    resize(GSIZE_INITIAL_WIDTH, GSIZE_INITIAL_HEIGHT);
+    setMinimumSize(gwidth, gheight);
+    gridlines = false;
+}
+
+BasicGraph::~BasicGraph() {
+    if (image) {
+		delete image;
+		image = NULL;
+	}
 }
 
 void
-BasicGraph::resize(int width, int height)
-{
-	if (image != NULL && width == image->width() && height == image->height()) {
-		return;
+BasicGraph::resize(int width, int height) {
+    if (image != NULL && width == image->width() && height == image->height()) {
+        return;
     }
-	gwidth  = width;
-	gheight = height;
-	delete image;
-	imagedata = new uchar[sizeof(int) * width * height];
-	image = new QImage(imagedata, width, height, QImage::Format_ARGB32);
-	image->fill(Qt::color0);
-	mouseX = 0;
-	mouseY = 0;
-	mouseB = 0;
-	clickX = 0;
-	clickY = 0;
-	clickB = 0;
-	setMouseTracking(true);
+    gwidth  = width;
+    gheight = height;
+    setMinimumSize(gwidth, gheight);
+    
+    // delete the old image and then create a new one the right size
+    delete image;
+    image = NULL;;
+    image = new QImage(width, height, QImage::Format_ARGB32);
+	image->fill(QColor(0,0,0,0));
+    
+    mouseX = 0;
+    mouseY = 0;
+    mouseB = 0;
+    clickX = 0;
+    clickY = 0;
+    clickB = 0;
+    setMouseTracking(true);
+    
+    // graphwinwidget is parent - force resize
+    BasicWidget * gww = (BasicWidget *) parentWidget();
+    if (gww) {
+		gww->adjustSize();
+		// now center scroll area
+		QScrollArea * sa = (QScrollArea *) gww->parentWidget();
+		if(sa) {
+			sa->ensureWidgetVisible(this, width/2, height/2);
+		}
+	}
+	
+
+ }
+
+bool BasicGraph::isVisibleGridLines() {
+    return gridlines;
+}
+
+void
+BasicGraph::paintEvent(QPaintEvent *) {
+    unsigned int tx, ty;
+
+    QPainter p2(this);
+    gtop = (height() - gheight) / 2;
+    gleft = (width() - gwidth) / 2;
+
+    if (gridlines) {
+        p2.setPen(QColor(128,128,128,255));
+        for(tx=0; tx<gwidth; tx=tx+10) {
+            if (tx%100==0) {
+                p2.setPen(QColor(64,64,64,255));
+            } else {
+                p2.setPen(QColor(128,128,128,255));
+            }
+            p2.drawLine(tx+gleft, gtop, tx+gleft, gheight+gtop);
+        }
+
+        for(ty=0; ty<gheight; ty=ty+10) {
+            if (ty%100==0) {
+                p2.setPen(QColor(64,64,64,255));
+            } else {
+                p2.setPen(QColor(128,128,128,255));
+            }
+            p2.drawLine(gleft, ty+gtop, gwidth+gleft, ty+gtop);
+        }
+
+        p2.setPen(QColor(64,64,64,255));
+        p2.setFont(QFont("Sans", 6, 100));
+        char buffer[64];
+        for(tx=0; tx<gwidth; tx=tx+100) {
+            for(ty=0; ty<gheight; ty=ty+100) {
+                sprintf(buffer, "%u,%u", tx, ty);
+                p2.drawText(gleft+tx+2, gtop+ty+(QFontMetrics(p2.font()).ascent())+1, buffer);
+            }
+        }
+    }
+
+    p2.drawImage(gleft, gtop, *image);
 }
 
 
 void
-BasicGraph::paintEvent(QPaintEvent *)
-{
-  QPainter p2(this);
-  gtop = (height() - gheight) / 2;
-  gleft = (width() - gwidth) / 2;
-  p2.drawImage(gleft, gtop, *image);
-}
+BasicGraph::keyPressEvent(QKeyEvent *e) {
+    e->accept();
 
-
-void 
-BasicGraph::keyPressEvent(QKeyEvent *e)
-{
-  e->accept();
-  
-  keymutex.lock();
-  currentKey = e->key();
-  keymutex.unlock();
+    mymutex->lock();
+    currentKey = e->key();
+    mymutex->unlock();
 }
 
 void BasicGraph::mouseMoveEvent(QMouseEvent *e) {
-    if (e->x() >= (int) gleft && e->x() < (int) (gleft+gwidth) && e->y() >= (int) gtop && e->y() < (int) (gtop+gheight)) { 
-		mouseX = e->x() - gleft;
-		mouseY = e->y() - gtop;
-		mouseB = e->buttons();
-	}
+    if (e->x() >= (int) gleft && e->x() < (int) (gleft+gwidth) && e->y() >= (int) gtop && e->y() < (int) (gtop+gheight)) {
+        mouseX = e->x() - gleft;
+        mouseY = e->y() - gtop;
+        mouseB = e->buttons();
+    }
 }
 
 void BasicGraph::mouseReleaseEvent(QMouseEvent *e) {
-	// cascade call to mouse move so we record clicks real time like moves
-	mouseMoveEvent(e);
+    // cascade call to mouse move so we record clicks real time like moves
+    mouseMoveEvent(e);
 }
 
 void BasicGraph::mousePressEvent(QMouseEvent *e) {
-    if (e->x() >= (int) gleft && e->x() < (int) (gleft+gwidth) && e->y() >= (int) gtop && e->y() < (int) (gtop+gheight)) { 
-		clickX = mouseX = e->x() - gleft;
-		clickY = mouseY = e->y() - gtop;
-		clickB = mouseB = e->buttons();
-	}
+    if (e->x() >= (int) gleft && e->x() < (int) (gleft+gwidth) && e->y() >= (int) gtop && e->y() < (int) (gtop+gheight)) {
+        clickX = mouseX = e->x() - gleft;
+        clickY = mouseY = e->y() - gtop;
+        clickB = mouseB = e->buttons();
+    }
     setFocus();
 }
 
-bool BasicGraph::initActions(QMenu * vMenu, ToolBar * vToolBar)
-{
-	if ((NULL == vMenu) || (NULL == vToolBar))
-	{
-		return false;
-	}
+bool BasicGraph::initActions(QMenu * vMenu, ToolBar * vToolBar) {
+    if ((NULL == vMenu) || (NULL == vToolBar)) {
+        return false;
+    }
 
-	QAction *copyAct = vMenu->addAction(QObject::tr("Copy"));
-	QAction *printAct = vMenu->addAction(QObject::tr("Print"));
+    QAction *copyAct = vMenu->addAction(QObject::tr("Copy"));
+    QAction *printAct = vMenu->addAction(QObject::tr("Print"));
 
-	vToolBar->addAction(copyAct);
-	vToolBar->addAction(printAct);
-	
-	QObject::connect(copyAct, SIGNAL(triggered()), this, SLOT(slotCopy()));
-	QObject::connect(printAct, SIGNAL(triggered()), this, SLOT(slotPrint()));
-		
-	m_usesToolBar = true;
-	m_usesMenu = true;
+    vToolBar->addAction(copyAct);
+    vToolBar->addAction(printAct);
 
-	return true;	
+    QObject::connect(copyAct, SIGNAL(triggered()), this, SLOT(slotCopy()));
+    QObject::connect(printAct, SIGNAL(triggered()), this, SLOT(slotPrint()));
+
+    m_usesToolBar = true;
+    m_usesMenu = true;
+
+    return true;
 }
 
-void BasicGraph::slotCopy()
-{
-	QClipboard *clipboard = QApplication::clipboard();
-	clipboard->setImage(*image);
+void BasicGraph::slotGridLines(bool visible) {
+    gridlines = visible;
+    update();
 }
 
-void BasicGraph::slotPrint()
-{
-	QPrinter printer(QPrinter::HighResolution);
-	QPrintDialog *dialog = new QPrintDialog(&printer, this);
-	dialog->setWindowTitle(QObject::tr("Print Graphics Output"));
-	
-	if (dialog->exec() == QDialog::Accepted) 
-	{
-		if ((printer.printerState() != QPrinter::Error) && (printer.printerState() != QPrinter::Aborted))
-		{
-			QPainter painter(&printer);
-			QRect rect = painter.viewport();
-			QSize size = image->size();
-			size.scale(rect.size(), Qt::KeepAspectRatio);
-			painter.setViewport(rect.x(), rect.y(), size.width(), size.height());
-			painter.setWindow(image->rect());
-			painter.drawImage(0, 0, *image);
-		}
-		else
-		{
-			QMessageBox::warning(this, QObject::tr("Print Error"), QObject::tr("Unable to carry out printing.\nPlease check your printer settings."));
-		}		
-	}	
+void BasicGraph::slotCopy() {
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setImage(*image);
+}
+
+void BasicGraph::slotPrint() {
+
+#ifdef ANDROID
+    QMessageBox::warning(this, QObject::tr("Print Error"), QObject::tr("Printing is not supported in this platform at this time."));
+#else
+
+    QPrinter printer(QPrinter::HighResolution);
+    QPrintDialog *dialog = new QPrintDialog(&printer, this);
+    dialog->setWindowTitle(QObject::tr("Print Graphics Output"));
+
+    if (dialog->exec() == QDialog::Accepted) {
+        if ((printer.printerState() != QPrinter::Error) && (printer.printerState() != QPrinter::Aborted)) {
+            QPainter painter(&printer);
+            QRect rect = painter.viewport();
+            QSize size = image->size();
+            size.scale(rect.size(), Qt::KeepAspectRatio);
+            painter.setViewport(rect.x(), rect.y(), size.width(), size.height());
+            painter.setWindow(image->rect());
+            painter.drawImage(0, 0, *image);
+        } else {
+            QMessageBox::warning(this, QObject::tr("Print Error"), QObject::tr("Unable to carry out printing.\nPlease check your printer settings."));
+        }
+    }
+#endif
+
 }

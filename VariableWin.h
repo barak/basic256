@@ -15,22 +15,22 @@
  **  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  **/
 
+#include <qglobal.h>
 
+#include <QtWidgets/QDockWidget>
+#include <QtWidgets/QTreeWidget>
 
-#include <QDockWidget>
-#include <QTreeWidget>
+#include "ViewWidgetIFace.h"
 
-class VariableWin : public QDockWidget
+class VariableWin : public QTreeWidget, public ViewWidgetIFace
 {
   Q_OBJECT;
  public:
-  VariableWin(QWidget * parent);
-  
+  VariableWin();
+    
  public slots:
-  void addVar(QString name, QString value, int arraylen);
-  void clearTable();
+  void varAssignment(int recurse, QString name, QString value, int arraylenx, int arrayleny);
   
  private:
-  QTreeWidget *table;
-  unsigned int rows;
+
 };

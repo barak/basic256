@@ -22,25 +22,49 @@
 #include <QImage>
 #include <QThread>
 #include <QFile>
+#include <QSerialPort>
 #include <QDir>
 #include <QTime>
 #include <stdio.h>
 #include <cmath>
-#include <sqlite3.h>
 #include <dirent.h>
 #include "BasicGraph.h"
 #include "Stack.h"
 #include "Variables.h"
 #include "ErrorCodes.h"
+#include "Sound.h"
+#include "Sleeper.h"
+
+
+#include <QtPrintSupport/QPrinter>
+#include <QtPrintSupport/QPrinterInfo>
+
+#include <QtSql/QSqlDatabase>
+#include <QtSql/QSqlQuery>
+#include <QtSql/QSqlRecord>
+#include <QtSql/QSqlError>
+
+#ifndef USEQSOUND
+	#include "BasicMediaPlayer.h"
+#endif
 
 #ifndef M_PI
-#define M_PI 3.14159265
+    #define M_PI 3.14159265
 #endif
 
 enum run_status {R_STOPPED, R_RUNNING, R_INPUT, R_INPUTREADY, R_ERROR, R_PAUSED};
 
 #define NUMFILES 8
 #define NUMSOCKETS 8
+#define NUMDBCONN 8
+#define NUMDBSET 8
+
+#define STRINGMAXLEN 16777216
+
+#define FILEWRITETIMEOUT		1			// on a file/serial write wait up to MS for the write to complete
+#define FILEREADTIMEOUT			1			// on a file/serial read wait up to MS for data to be there
+#define SERIALREADBUFFERSIZE	1024		// size of openserial read buffer
+
 
 struct byteCodeData
 {
@@ -49,19 +73,27 @@ struct byteCodeData
 };
 
 
+// used by function calls, subroutine calls, and gosubs for return location
 struct frame {
   frame *next;
-  unsigned char *returnAddr;
+  int *returnAddr;
 };
 
-  
+// used to track nested on-error and try/catch definitions
+struct onerrorframe {
+  onerrorframe *next;
+  int onerroraddress;
+  bool onerrorgosub;
+};
+
+// structure for the nested for statements  
 struct forframe {
-  forframe *prev;
   forframe *next;
   unsigned int variable;
-  unsigned char *returnAddr;
+  int *returnAddr;
   double endNum;
   double step;
+  int recurselevel;
 };
 
 typedef struct {
@@ -69,69 +101,82 @@ typedef struct {
 	QImage *underimage;
 	double x;
 	double y;
+	double r;	// rotate
+	double s;	// scale
 	bool visible;
-	bool active;
 } sprite;
 
 class Interpreter : public QThread
 {
   Q_OBJECT;
  public:
-  Interpreter(BasicGraph *);
+  Interpreter();
   ~Interpreter();
   int compileProgram(char *);
   void initialize();
-  byteCodeData *getByteCode(char *);
   bool isRunning();
   bool isStopped();
   bool isAwaitingInput();
   void setInputReady();
   void cleanup();
   void run();
-  bool debugMode;
+  int debugMode;			// 0=normal run, 1=step execution, 2=run to breakpoint
+  QList<int> *debugBreakPoints;	// map of line numbers where break points ( pointer to breakpoint list in basicedit)
+  QString returnString;		// return value from runcontroller emit
+  int returnInt;			// return value from runcontroller emit
 
  public slots:
   int execByteCode();
-  void pauseResume();
-  void stop();
-  void receiveInput(QString);
+  void runPaused();
+  void runResumed();
+  void runHalted();
+  void inputEntered(QString);
 
  signals:
   void fastGraphics();
-  void runFinished();
+  void stopRun();
   void goutputReady();
   void outputReady(QString);
-  void inputNeeded();
-  void clearText();
+  void getInput();
+  void outputClear();
   void getKey();
   void playSounds(int, int*);
   void setVolume(int);
-  void executeSystem(char*);
+  void executeSystem(QString);
   void speakWords(QString);
+  void goToLine(int);
+  void seekLine(int);
+  void varAssignment(int, QString, QString, int, int);
+  void mainWindowsResize(int, int, int);
+  void mainWindowsVisible(int, bool);
+  void dialogAlert(QString);
+  void dialogConfirm(QString, int);
+  void dialogPrompt(QString, QString);
+#if ANDROID
   void playWAV(QString);
   void waitWAV();
   void stopWAV();
-  void goToLine(int);
-  void highlightLine(int);
-  void varAssignment(QString name, QString value, int arraylen);
-  void mainWindowsResize(int, int, int);
-  void mainWindowsVisible(int, bool);
+#endif
 
  private:
-  int compareTwoStackVal(stackval *, stackval *);
+  Sleeper *sleeper;
+  int optype(int op);
+  QString opname(int);
   void waitForGraphics();
   void printError(int, QString);
   QString getErrorMessage(int);
+  QString getWarningMessage(int);
   int netSockClose(int);
-  QImage *image;
-  BasicGraph *graph;
   Variables variables;
   Stack stack;
-  QFile **stream;
-  unsigned char *op;
+  QIODevice **filehandle;
+  int *filehandletype;		// 0=QFile (normal), 1=QFile (binary), 2=QSerialPort
+  int *op;
   frame *callstack;
   forframe *forstack;
-  QColor pencolor;
+  onerrorframe *onerrorstack;
+  QPen drawingpen;
+  QBrush drawingbrush;
   run_status status;
   run_status oldstatus;
   bool fastgraphics;
@@ -147,18 +192,29 @@ class Interpreter : public QThread
   bool spritecollide(int, int);
   sprite *sprites;
   int nsprites;
-  void closeDatabase();
-  sqlite3 *dbconn;
-  sqlite3_stmt *dbset;
+  void closeDatabase(int);
   int errornum;
+  int errorvarnum;
   QString errormessage;
   int lasterrornum;
   QString lasterrormessage;
   int lasterrorline;
-  int onerroraddress;
   int netsockfd[NUMSOCKETS];
-  DIR *directorypointer;			// used by dir function
-  QTime runtimer;				// used by 
+  DIR *directorypointer;		// used by DIR function
+  QTime runtimer;				// used by MSEC function
+  Sound sound;
+  QString currentIncludeFile;	// set to current included file name for runtime error messages
+  bool regexMinimal;			// flag to tell QRegExp to be greedy (false) or minimal (true)
+
+  bool printing;
+  QPrinter *printdocument;
+  QPainter *printdocumentpainter;
+
+  QSqlQuery *dbSet[NUMDBCONN][NUMDBSET];		// allow NUMDBSET number of sets on a database connection
+
+#ifndef USEQSOUND
+  BasicMediaPlayer *mediaplayer;
+#endif
 
 };
 

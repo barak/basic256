@@ -15,21 +15,24 @@
  **  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  **/
 
-
-
-#include <QMessageBox>
-#include <QWidget>
-#include <QDialog>
-#include <QGridLayout>
-#include <QToolBar>
-#include <QLabel>
-#include <QLabel>
-#include <QLineEdit>
-#include <QCheckBox>
-#include <QPushButton>
-#include <QAction>
 #include <QObject>
 #include <QIcon>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QWidget>
+#include <QtWidgets/QDialog>
+#include <QtWidgets/QGridLayout>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QToolBar>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QLineEdit>
+#include <QtWidgets/QCheckBox>
+#include <QtWidgets/QComboBox>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QAction>
+#include <QtWidgets/QTabWidget>
+#include <QtWidgets/QGroupBox>
+#include <QtWidgets/QRadioButton>
+#include <QtWidgets/QSlider>
 
 #ifndef PREFERENCESWINH
 
@@ -37,10 +40,10 @@
 
 class PreferencesWin : public QDialog
 {
-  Q_OBJECT;
+  Q_OBJECT
 
  public:
-	PreferencesWin(QWidget * parent);
+	PreferencesWin(QWidget * parent, bool );
 	void closeEvent(QCloseEvent *);
 
 private slots:
@@ -49,11 +52,51 @@ private slots:
 
   
 private:
+	
+	// advanced Tab
+	QWidget * advancedtabwidget;
+	QGridLayout * advancedtablayout;
 	QLabel *passwordlabel;
 	QLineEdit *passwordinput;
 	QCheckBox *systemcheckbox;
 	QCheckBox *settingcheckbox;
 	QCheckBox *portcheckbox;
+	
+	// user tab
+	QWidget * usertabwidget;
+	QGridLayout * usertablayout;
+	QCheckBox *saveonruncheckbox;
+	QLabel *typeconvlabel;
+	QComboBox *typeconvcombo;
+	QLabel *decdigslabel;
+	QSlider *decdigsslider;
+	QLabel *debugspeedlabel;
+	QSlider *debugspeedslider;
+
+	// sound tab
+	QWidget * soundtabwidget;
+	QGridLayout * soundtablayout;
+	QLabel *voicelabel;
+	QComboBox *voicecombo;
+
+	// printer tab
+	QWidget * printertabwidget;
+	QGridLayout * printertablayout;
+	QGroupBox *resolutiongroup;
+	QRadioButton *resolutionhigh;
+	QRadioButton *resolutionscreen;
+	QGroupBox *orientgroup;
+	QRadioButton *orientportrait;
+	QRadioButton *orientlandscape;
+	QLabel *printerslabel;
+	QComboBox *printerscombo;
+	QLabel *pdffilelabel;
+	QLineEdit *pdffileinput;
+	QLabel *paperlabel;
+	QComboBox *papercombo;
+
+
+
 	QPushButton *cancelbutton;
 	QPushButton *savebutton;
 

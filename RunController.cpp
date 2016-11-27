@@ -15,685 +15,594 @@
  **  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  **/
 
-
-
 #include <math.h>
 #include <iostream>
+
+#include <QProcess>
+#include <QDesktopServices>
 #include <QMutex>
 #include <QWaitCondition>
-#include <QFileDialog>
-#include <QMessageBox>
-#include <QInputDialog>
 #include <QFile>
-#include <QApplication>
+#include <QDir>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QInputDialog>
+#include <QtWidgets/QFontDialog>
+#include <QtWidgets/QApplication>
+
 using namespace std;
 
 #include "RunController.h"
 #include "MainWindow.h"
+#include "DocumentationWin.h"
 #include "Settings.h"
 #include "md5.h"
+#include "Sleeper.h"
 
 #ifdef WIN32
-	#include <windows.h> 
-	#include <servprov.h>
-	#include <sapi.h>
-	#include <string>
-	#include <cstdlib>
-	#include <mmsystem.h>
+#include <windows.h>
+#include <servprov.h>
+#include <string>
+#include <cstdlib>
+//	#include <mmsystem.h>
 #else
-	#include <stdio.h>
-	#include <stdlib.h>
-	#include <fcntl.h>
-	#include <sys/ioctl.h>
-	#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <time.h>
+#include <unistd.h>
 #endif
 
 #ifdef LINUX
-   // sys/soundcard.h instead of linux/soundcard.h in Debian so that we don't
-   // FTBFS on kfreebsd (See Debian bug #594164).
-   #include <sys/soundcard.h>
+// sys/soundcard.h instead of linux/soundcard.h in Debian so that we don't
+// FTBFS on kfreebsd (See Debian bug #594164).
+#include <sys/soundcard.h>
 #endif
 
-
-#ifdef LINUX_ESPEAK
-	#include <speak_lib.h>
-#endif
-
-#ifdef LINUX_FLITE
-	#include <flite.h>
-	extern "C"
-	{
-		cst_voice* register_cmu_us_kal();
-	}
+#ifdef ESPEAK
+#include <speak_lib.h>
 #endif
 
 #ifdef USEQSOUND
-	#include <QSound>
-	QSound wavsound(QString(""));
+#include <QSound>
+QSound *wavsound;
 #endif
 
-#ifdef USESDL
-	#include <SDL/SDL.h>
-	#include <SDL/SDL_mixer.h>
-	#define SDL_CHAN_WAV 1
-	#define SDL_CHAN_SOUND 2
+#ifdef ANDROID
+#include "android/AndroidTTS.h"
+AndroidTTS *androidtts;
 #endif
 
-QMutex mutex;
-QMutex debugmutex;
-QWaitCondition waitCond;
-QWaitCondition waitDebugCond;
-QWaitCondition waitInput;
+extern QMutex* mymutex;
+extern QMutex* mydebugmutex;
+extern QWaitCondition* waitCond;
+extern QWaitCondition* waitDebugCond;
 
-RunController::RunController(MainWindow *mw)
-{
-	mainwin = mw;
-	//i = new Interpreter(mainwin->goutput->image, mainwin->goutput->imask);
-	i = new Interpreter(mainwin->goutput);
-	te = mainwin->editor;
-	output = mainwin->output;
-	goutput = mainwin->goutput;
-	statusbar = mainwin->statusBar();
+extern MainWindow * mainwin;
+extern BasicEdit * editwin;
+extern BasicOutput * outwin;
+extern BasicGraph * graphwin;
+extern VariableWin * varwin;
 
-	findwin = NULL;
-	replacewin = NULL;
 
-	soundVolume = 5;	// set default sound volume to 1/2
 
-	QObject::connect(i, SIGNAL(runFinished()), this, SLOT(stopRun()));
-	QObject::connect(i, SIGNAL(goutputReady()), this, SLOT(goutputFilter()));
-	QObject::connect(i, SIGNAL(outputReady(QString)), this, SLOT(outputFilter(QString)));
-	QObject::connect(i, SIGNAL(clearText()), this, SLOT(outputClear()));
+RunController::RunController() {
+    i = new Interpreter();
 
-	QObject::connect(this, SIGNAL(runPaused()), i, SLOT(pauseResume()));
-	QObject::connect(this, SIGNAL(runResumed()), i, SLOT(pauseResume()));
-	QObject::connect(this, SIGNAL(runHalted()), i, SLOT(stop()));
+    replacewin = NULL;
+    docwin = NULL;
 
-	QObject::connect(i, SIGNAL(inputNeeded()), output, SLOT(getInput()));
-	QObject::connect(output, SIGNAL(inputEntered(QString)), this, SLOT(inputFilter(QString)));
-	QObject::connect(output, SIGNAL(inputEntered(QString)), i, SLOT(receiveInput(QString)));
+#ifdef ANDROID
+    androidtts = new AndroidTTS();
+#endif
 
-	QObject::connect(i, SIGNAL(goToLine(int)), te, SLOT(goToLine(int)));
+    //signals for the Interperter (i)
+    QObject::connect(i, SIGNAL(goToLine(int)), editwin, SLOT(goToLine(int)));
+    QObject::connect(i, SIGNAL(seekLine(int)), editwin, SLOT(seekLine(int)));
 
-	QObject::connect(i, SIGNAL(setVolume(int)), this, SLOT(setVolume(int)));
-	QObject::connect(i, SIGNAL(executeSystem(char*)), this, SLOT(executeSystem(char*)));
-	QObject::connect(i, SIGNAL(playSounds(int, int*)), this, SLOT(playSounds(int, int*)));
-	QObject::connect(i, SIGNAL(speakWords(QString)), this, SLOT(speakWords(QString)));
+    QObject::connect(i, SIGNAL(outputClear()), this, SLOT(outputClear()));
+    QObject::connect(i, SIGNAL(dialogAlert(QString)), this, SLOT(dialogAlert(QString)));
+    QObject::connect(i, SIGNAL(dialogConfirm(QString, int)), this, SLOT(dialogConfirm(QString, int)));
+    QObject::connect(i, SIGNAL(dialogPrompt(QString, QString)), this, SLOT(dialogPrompt(QString, QString)));
+    QObject::connect(i, SIGNAL(executeSystem(QString)), this, SLOT(executeSystem(QString)));
+    QObject::connect(i, SIGNAL(goutputReady()), this, SLOT(goutputReady()));
+    QObject::connect(i, SIGNAL(mainWindowsResize(int, int, int)), this, SLOT(mainWindowsResize(int, int, int)));
+    QObject::connect(i, SIGNAL(mainWindowsVisible(int, bool)), this, SLOT(mainWindowsVisible(int, bool)));
+    QObject::connect(i, SIGNAL(outputReady(QString)), this, SLOT(outputReady(QString)));
+    QObject::connect(i, SIGNAL(stopRun()), this, SLOT(stopRun()));
+    QObject::connect(i, SIGNAL(speakWords(QString)), this, SLOT(speakWords(QString)));
+#ifdef ANDROID
 	QObject::connect(i, SIGNAL(playWAV(QString)), this, SLOT(playWAV(QString)));
-	QObject::connect(i, SIGNAL(waitWAV()), this, SLOT(waitWAV()));
 	QObject::connect(i, SIGNAL(stopWAV()), this, SLOT(stopWAV()));
-
-	QObject::connect(i, SIGNAL(highlightLine(int)), te, SLOT(highlightLine(int)));
-	QObject::connect(i, SIGNAL(varAssignment(QString, QString, int)), mainwin->vardock, SLOT(addVar(QString, QString, int)));
-
-	QObject::connect(i, SIGNAL(mainWindowsResize(int, int, int)), this, SLOT(mainWindowsResize(int, int, int)));
-	QObject::connect(i, SIGNAL(mainWindowsVisible(int, bool)), this, SLOT(mainWindowsVisible(int, bool)));
-
-
-#ifdef USESDL
-	//mono
-	Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, AUDIO_S16SYS, 1, 2048);
+	QObject::connect(i, SIGNAL(waitWAV()), this, SLOT(waitWAV()));
 #endif
-}
-
-RunController::~RunController()
-{
-	if(findwin!=NULL) findwin->close();
-	if(replacewin!=NULL) replacewin->close();
-	//printf("rcdestroy\n");
-}
-
-
-// play a list of counds 0,2,4... = frequency & 1,3,5... = duration in ms
-// notes is arraylength/2 (number of notes)
-void
-RunController::playSounds(int notes, int* freqdur)
-{
-
-#ifdef WIN32
-	
-	// code uses Microsoft's waveOut process to create a wave on the default sound card
-	// if soundcard is unopenable then use the system speaker
-	unsigned long errorcode;
-	HWAVEOUT      outHandle;
-	WAVEFORMATEX  waveFormat;
-	
-	double amplititude = tan((double) soundVolume / (double) 10) * (double) 0x7f;  // (half wave height)
-	
-	// Initialize the WAVEFORMATEX for 8-bit, 11.025KHz, mono
-	waveFormat.wFormatTag = WAVE_FORMAT_PCM;
-	waveFormat.nChannels = 1;
-	waveFormat.nSamplesPerSec = 11025;
-	waveFormat.wBitsPerSample = 8;
-	waveFormat.nBlockAlign = waveFormat.nChannels * (waveFormat.wBitsPerSample/8);
-	waveFormat.nAvgBytesPerSec = waveFormat.nSamplesPerSec * waveFormat.nBlockAlign;
-	waveFormat.cbSize = 0;
-
-	// Open the preferred Digital Audio Out device
-	errorcode = waveOutOpen(&outHandle, WAVE_MAPPER, &waveFormat, 0, 0, CALLBACK_NULL);
-	if (!errorcode) {
-	
-		double wave = 0;
-		int totaltime = 0;
-		for(int tnotes=0;tnotes<notes;tnotes++) {
-			totaltime += freqdur[tnotes*2+1];
-		}
-		int totallength = waveFormat.nSamplesPerSec * totaltime / 1000;
-		unsigned char * p = (unsigned char *) malloc(totallength * sizeof(unsigned char));
-		
-		int pos = 0; // current position
-		
-		for(int tnotes=0;tnotes<notes;tnotes++) {
-			// lets build a sine wave
-			int length = waveFormat.nSamplesPerSec * freqdur[tnotes*2+1] / 1000;
-			double wavebit = 2 * M_PI / ((double) waveFormat.nSamplesPerSec / (double) freqdur[tnotes*2]);
-		
-			for(int i = 0; i < length; i++) {
-				p[pos++] =  (unsigned char) (amplititude * (sin(wave)+1));
-				wave+=wavebit;
-			}
-		}
-
-		// create block header with sound data, length and repeat instructions
-		WAVEHDR header;
-		ZeroMemory(&header, sizeof(WAVEHDR));
-		header.dwBufferLength = totallength;
-		header.lpData = (CHAR*) p;
-
-		// get block ready for playback
-		errorcode = waveOutPrepareHeader(outHandle, &header, sizeof(WAVEHDR));
-		if (!errorcode) {
-			// write block now that it is ready
-			errorcode = waveOutWrite(outHandle, &header, sizeof(WAVEHDR));
-		}
-		//
-		while(waveOutClose(outHandle)==WAVERR_STILLPLAYING) {	
-			Sleep(10);
-		}
-	} 
-	
-#endif
-
-#ifdef USEDSPSOUND
-	// Code loosely based on idea from TONEGEN by Timothy Pozar
-	// - Plays a sine wave via the dsp or standard out.
- 
-	int stereo = 0;		// mono (stereo - false)
-	int rate = 11025;
-	int devfh;
-	int i, test;
-	double amplititude = tan((double) soundVolume / 10) * 0x7f;  // (half wave height)
-	
-	// lets build the output
-	double wave = 0;
-	int totaltime = 0;
-	for(int tnotes=0;tnotes<notes;tnotes++) {
-		totaltime += freqdur[tnotes*2+1];
-	}
-	int totallength = rate * totaltime / 1000;
-	unsigned char * p = (unsigned char *) malloc(totallength * sizeof(unsigned char));
-	
-	int pos = 0; // current position
-	
-	for(int tnotes=0;tnotes<notes;tnotes++) {
-		// lets build a sine wave
-		int length = rate * freqdur[tnotes*2+1] / 1000;
-		double wavebit = 2 * M_PI / ((double) rate / (double) freqdur[tnotes*2]);
-	
-		for(int i = 0; i < length; i++) {
-			p[pos++] = (unsigned char) ((sin(wave) + 1) * amplititude);
-			wave+=wavebit;
-		}
-	}
-
-	if ((devfh = open("/dev/dsp", O_WRONLY|O_SYNC)) != -1) {
-		// Set mono
-		test = stereo;
-		if(ioctl(devfh, SNDCTL_DSP_STEREO, &stereo) != -1) {
-			// set the sample rate
-			test = rate;
-			if(ioctl( devfh, SNDCTL_DSP_SPEED, &test) != -1) {
-   				int outwords = write(devfh, p, totallength);
-			}
-		}
-		close(devfh);
-	} else {
-		fprintf(stderr,"Unable to open /dev/dsp\n");
-	}
-#endif
-
-#ifdef USESDL
-	Mix_Chunk c;
-
-	c.allocated = 1; // sdl needs to free chunk data
-	c.volume = (unsigned char) (tan((double) soundVolume / 10) * 0x7f);
-	
-	// lets build the output
-	double wave = 0;
-	int totaltime = 0;
-	for(int tnotes=0;tnotes<notes;tnotes++) {
-		totaltime += freqdur[tnotes*2+1];
-	}
-	c.alen = MIX_DEFAULT_FREQUENCY * sizeof(short) * totaltime / 1000;
-	c.abuf = (unsigned char *) malloc(c.alen);
-	
-	int pos = 0; // current position
-	
-	for(int tnotes=0;tnotes<notes;tnotes++) {
-		// lets build a sine wave
-		int length = MIX_DEFAULT_FREQUENCY * freqdur[tnotes*2+1] / 1000;
-		double wavebit = 2 * M_PI / ((double) MIX_DEFAULT_FREQUENCY / (double) freqdur[tnotes*2]);
-		short s;
-		char *cs = (char *) &s;
-		for(int i = 0; i < length; i++) {
-			
-			s = (short) (sin(wave) * 0x7fff);
-			c.abuf[pos++] = cs[0];
-			c.abuf[pos++] = cs[1];
-			wave+=wavebit;
-		}
-	}
-
-    	Mix_PlayChannel(SDL_CHAN_SOUND,&c,0);
-	while(Mix_Playing(SDL_CHAN_SOUND)) usleep(1000);
-
-#endif
-}
-
-
-void
-RunController::speakWords(QString text)
-{
-#ifdef WIN32
-
-	// use microsoft sapi with the default voice
-	ISpVoice * pVoice = NULL;
-
-    if (FAILED(::CoInitialize(NULL))) return;
-
-    HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&pVoice);
-    if( SUCCEEDED( hr ) )
-    {
-		// convert qchar* wo wchar*
-		WCHAR *wutext = new WCHAR[text.length() + 1];
-		for (int i = 0; i < text.length(); ++i) wutext[i] = text[i].unicode();
-		wutext[text.length()] = 0;
-		
-        hr = pVoice->Speak(wutext, 0, NULL);
-        pVoice->Release();
-        pVoice = NULL;
-		
-		delete wutext;	// send to gc - just in case
-    }
-
-    ::CoUninitialize();
-#endif
-#ifdef LINUX_ESPEAK
-	//QMessageBox::information( 0, "BASIC-256", QString("ESpeak"));
     
-	// espeak tts library
-	char *data_path = NULL;   // use default path for espeak-data
-	int synth_flags = espeakCHARS_AUTO | espeakPHONEMES | espeakENDPAUSE;
+ 
+    QObject::connect(i, SIGNAL(getInput()), outwin, SLOT(getInput()));
 
-	int samplerate = espeak_Initialize(AUDIO_OUTPUT_SYNCH_PLAYBACK,0,data_path,0);
-       	if (samplerate!=-1) {
-		espeak_SetVoiceByName("default");
-		int size=text.length()+1;	// buffer length
-		espeak_ERROR err = espeak_Synth(text.toLatin1(),size,0,POS_CHARACTER,0,synth_flags,NULL,NULL);
-		if (err!=EE_OK) {
-			fprintf(stderr,"espeak synth error %i\n", err);
-		}
-		espeak_Synchronize();		// wait to finish
-		espeak_Terminate();		// clean up
+    QObject::connect(i, SIGNAL(varAssignment(int, QString, QString, int, int)), varwin, SLOT(varAssignment(int, QString, QString, int, int)));
 
-	} else {
-		fprintf(stderr,"Unable to initialize espeak\n");
-	}
+    QObject::connect(this, SIGNAL(runPaused()), i, SLOT(runPaused()));
+    QObject::connect(this, SIGNAL(runResumed()), i, SLOT(runResumed()));
+    QObject::connect(this, SIGNAL(runHalted()), i, SLOT(runHalted()));
+
+    QObject::connect(outwin, SIGNAL(inputEntered(QString)), i, SLOT(inputEntered(QString)));
+    QObject::connect(outwin, SIGNAL(inputEntered(QString)), this, SLOT(inputEntered(QString)));
+
+
+}
+
+RunController::~RunController() {
+    if(replacewin!=NULL) replacewin->close();
+    if(docwin!=NULL) docwin->close();
+
+    delete i;
+
+    //printf("rcdestroy\n");
+}
+
+
+void
+RunController::speakWords(QString text) {
+    mymutex->lock();
+#ifdef ESPEAK
+    SETTINGS;
+    espeak_ERROR err;
+
+    // espeak tts library
+    int synth_flags = espeakCHARS_UTF8 | espeakPHONEMES | espeakENDPAUSE;
+#ifdef WIN32
+    // use program install folder
+    int samplerate = espeak_Initialize(AUDIO_OUTPUT_SYNCH_PLAYBACK,0,(char *) QFileInfo(QCoreApplication::applicationFilePath()).absolutePath().toUtf8().data(),0);
+#else
+    // use default path for espeak-data
+    int samplerate = espeak_Initialize(AUDIO_OUTPUT_SYNCH_PLAYBACK,0,NULL,0);
 #endif
-#ifdef LINUX_FLITE
-	// CMU flite (compiled festival voices) from http://www.speech.cs.cmu.edu/flite/
-	cst_voice *v;
-	flite_init();
-	v = register_cmu_us_kal();
-	int length = flite_text_to_speech(text.toLatin1(),v,"play");
-	// wait for finish
-	//clock_t endwait = clock() + (length + 1) * CLOCKS_PER_SEC;
-  	//while (clock() < endwait) {}
-
+    if (samplerate!=-1) {
+        QString voicename = settings.value(SETTINGSESPEAKVOICE,SETTINGSESPEAKVOICEDEFAULT).toString();
+        if (voicename == SETTINGSESPEAKVOICEDEFAULT)
+                voicename = QLocale::languageToString(QLocale::system().language());  // language of system locale
+        err = espeak_SetVoiceByName(voicename.toUtf8());
+        if (err != EE_OK) err = espeak_SetVoiceByName(SETTINGSESPEAKVOICEDEFAULT);  // fallback to english if locale language not found
+        if(err==EE_OK) {
+            int size=text.length()+1;	// buffer length
+            err = espeak_Synth(text.toUtf8(),size,0,POS_CHARACTER,0,synth_flags,NULL,NULL);
+            if (err==EE_OK) {
+                espeak_Synchronize();		// wait to finish
+                espeak_Terminate();		// clean up
+            } else {
+                printf("espeak synth error %i\n", err);
+            }
+        } else {
+            printf("espeak st voice error %i\n", err);
+        }
+    } else {
+        printf("Unable to initialize espeak\n");
+    }
 #endif
-#ifdef LINUX_ESPEAK_EXECUTE
-	// easy espeak implementation when all else fails
-	text.replace("\""," quote ");
-	text.prepend("espeak \"");
-	text.append("\"");
-	executeSystem(text.toLatin1().data());
+#ifdef ESPEAK_EXECUTE
+    // easy espeak implementation when all else fails
+    text.replace("\""," quote ");
+    text.prepend("espeak \"");
+    text.append("\"");
+    executeSystem(text);
 #endif
 #ifdef MACX_SAY
-	// easy macosX implementation - call the command line say statement
-	text.replace("\""," quote ");
-	text.prepend("say \"");
-	text.append("\"");
-	executeSystem(text.toLatin1().data());
+    // easy macosX implementation - call the command line say statement
+    text.replace("\""," quote ");
+    text.prepend("say \"");
+    text.append("\"");
+    executeSystem(text);
 #endif
+#ifdef ANDROID
+    androidtts->say(text);
+#endif
+    waitCond->wakeAll();
+    mymutex->unlock();
+
 }
 
 void
-RunController::setVolume(int volume)
-{
-  // volume MUST be betwen 0(mute) and 10(all the way)
-  soundVolume = volume;
+RunController::executeSystem(QString text) {
+    // need to implement system as a function to return process output
+    // and to handle input
+
+    QProcess sy;
+    //fprintf(stderr,"system b4 %s\n", text);
+    mymutex->lock();
+
+
+    sy.start(text);
+    if (sy.waitForStarted()) {
+
+        //sy.write("Qt rocks!");
+        //sy.closeWriteChannel();
+
+        if (!sy.waitForFinished()) {
+            //QByteArray result = sy.readAll();
+        }
+    }
+
+
+    //system(text);
+    waitCond->wakeAll();
+    mymutex->unlock();
+    //fprintf(stderr,"system af %s\n", text);
+}
+
+
+void
+RunController::startDebug() {
+    if (i->isStopped()) {
+        outputClear();
+        int result = i->compileProgram((editwin->toPlainText() + "\n").toUtf8().data());
+        if (result < 0) {
+            i->debugMode = 0;
+            emit(runHalted());
+            return;
+        }
+        i->initialize();
+        i->debugMode = 1;
+        i->debugBreakPoints = editwin->breakPoints;
+        mainwin->statusBar()->showMessage(tr("Running"));
+        graphwin->setFocus();
+        i->start();
+        varwin->clear();
+        mainWindowSetRunning(2);
+        emit(debugStarted());
+    }
 }
 
 void
-RunController::executeSystem(char* text)
-{
-	//fprintf(stderr,"system b4 %s\n", text);
-	mutex.lock();
-	system(text);
-	waitCond.wakeAll();
-	mutex.unlock();
-	//fprintf(stderr,"system af %s\n", text);
+RunController::startRun() {
+    if (i->isStopped()) {
+        //
+        outputClear();
+        // Start Compile
+        int result = i->compileProgram((editwin->toPlainText() + "\n").toUtf8().data());
+        i->debugMode = 0;
+        if (result < 0) {
+            emit(runHalted());
+            return;
+        }
+        // if successful compile see if we need to save it
+        SETTINGS;
+        if(settings.value(SETTINGSIDESAVEONRUN, SETTINGSIDESAVEONRUNDEFAULT).toBool()) {
+            editwin->saveFile(true);
+            mainwin->statusBar()->showMessage(tr("Saved"));
+        }
+        //
+        // now setup and start the run
+        i->initialize();
+        mainwin->statusBar()->showMessage(tr("Running"));
+        graphwin->setFocus();
+        i->start();
+        varwin->clear();
+        mainWindowSetRunning(1);
+        emit(runStarted());
+    }
 }
 
-void RunController::playWAV(QString file)
-{
+
+void
+RunController::inputEntered(QString text) {
+    graphwin->setFocus();
+    mymutex->lock();
+    waitCond->wakeAll();
+    mymutex->unlock();
+}
+
+void
+RunController::outputClear() {
+    mymutex->lock();
+    outwin->clear();
+    waitCond->wakeAll();
+    mymutex->unlock();
+}
+
+void
+RunController::outputReady(QString text) {
+    mymutex->lock();
+    outwin->insertPlainText(text);
+    outwin->ensureCursorVisible();
+    waitCond->wakeAll();
+    mymutex->unlock();
+}
+
+void
+RunController::goutputReady() {
+    mymutex->lock();
+    graphwin->repaint();
+    waitCond->wakeAll();
+    mymutex->unlock();
+}
+
+void
+RunController::stepThrough() {
+	i->debugMode = 1; // step through debugging
+    mydebugmutex->lock();
+    waitDebugCond->wakeAll();
+    mydebugmutex->unlock();
+}
+void
+
+RunController::stepBreakPoint() {
+	i->debugMode = 2; // run to break point debugging
+    mydebugmutex->lock();
+    waitDebugCond->wakeAll();
+    mydebugmutex->unlock();
+}
+
+void
+RunController::stopRun() {
+    mainwin->statusBar()->showMessage(tr("Ready."));
+
+    mainWindowSetRunning(0);
+
+    mymutex->lock();
+    outwin->setReadOnly(true);
+    waitCond->wakeAll();
+    mymutex->unlock();
+
+    mydebugmutex->lock();
+    i->debugMode = 0;
+    waitDebugCond->wakeAll();
+    mydebugmutex->unlock();
+
+    emit(runHalted());
+}
+
+
+void
+RunController::pauseResume() {
+    if (paused) {
+        mainwin->statusBar()->showMessage(tr("Running"));
+        paused = false;
+        emit(runResumed());
+    } else {
+        mainwin->statusBar()->showMessage(tr("Paused"));
+        paused = true;
+        emit(runPaused());
+    }
+}
+
+void
+RunController::showDocumentation() {
+    if (!docwin) docwin = new DocumentationWin(mainwin);
+    docwin->show();
+    docwin->raise();
+    docwin->go("");
+    docwin->activateWindow();
+}
+
+
+void RunController::showOnlineDocumentation() {
+    QDesktopServices::openUrl(QUrl("http://doc.basic256.org"));
+}
+
+void
+RunController::showContextDocumentation() {
+    QString w = editwin->getCurrentWord();
+    if (!replacewin) docwin = new DocumentationWin(mainwin);
+    docwin->show();
+    docwin->raise();
+    docwin->go(w);
+    docwin->activateWindow();
+}
+
+void RunController::showOnlineContextDocumentation() {
+    QString w = editwin->getCurrentWord();
+    QDesktopServices::openUrl(QUrl("http://doc.basic256.org/doku.php?id=en:" + w));
+}
+
+void
+RunController::showPreferences() {
+    bool advanced = true;
+    SETTINGS;
+    QString prefpass = settings.value(SETTINGSPREFPASSWORD,"").toString();
+    if (prefpass.length()!=0) {
+        char * digest;
+        QString text = QInputDialog::getText(mainwin, tr("BASIC-256 Advanced Preferences and Settings"),
+                                             tr("Password:"), QLineEdit::Password, QString:: null);
+        digest = MD5(text.toUtf8().data()).hexdigest();
+        advanced = (QString::compare(digest, prefpass)==0);
+        free(digest);
+    }
+    PreferencesWin *w = new PreferencesWin(mainwin, advanced);
+    w->show();
+    w->raise();
+    w->activateWindow();
+}
+
+
+void RunController::showReplace() {
+    if (!replacewin) replacewin = new ReplaceWin();
+    replacewin->setReplaceMode(true);
+    replacewin->show();
+    replacewin->raise();
+    replacewin->activateWindow();
+}
+
+void RunController::showFind() {
+    if (!replacewin) replacewin = new ReplaceWin();
+    replacewin->setReplaceMode(false);
+    replacewin->show();
+    replacewin->raise();
+    replacewin->activateWindow();
+}
+
+void RunController::findAgain() {
+    if (!replacewin) replacewin = new ReplaceWin();
+    replacewin->setReplaceMode(false);
+    replacewin->show();
+    replacewin->raise();
+    replacewin->activateWindow();
+    replacewin->findAgain();
+}
+
+void
+RunController::mainWindowsVisible(int w, bool v) {
+    if (w==0) mainwin->editWinVisibleAct->setChecked(v);
+    if (w==1) mainwin->graphWinVisibleAct->setChecked(v);
+    if (w==2) mainwin->textWinVisibleAct->setChecked(v);
+}
+
+void
+RunController::mainWindowsResize(int w, int width, int height) {
+    // only resize graphics window now - may add other windows later
+    mymutex->lock();
+    if (w==1) {
+        graphwin->resize(width, height);
+    }
+    waitCond->wakeAll();
+    mymutex->unlock();
+}
+
+
+void
+RunController::dialogAlert(QString prompt) {
+    QMessageBox msgBox(mainwin);
+    msgBox.setText(prompt);
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.setDefaultButton(QMessageBox::Ok);
+    // actualy show alert (take exclusive control)
+    mymutex->lock();
+    msgBox.exec();
+    waitCond->wakeAll();
+    mymutex->unlock();
+}
+
+void
+RunController::dialogConfirm(QString prompt, int dflt) {
+    QMessageBox msgBox(mainwin);
+    msgBox.setText(prompt);
+    msgBox.setStandardButtons(QMessageBox::Yes|QMessageBox::No);
+    if (dflt!=-1) {
+        if (dflt!=0) {
+            msgBox.setDefaultButton(QMessageBox::Yes);
+        } else {
+            msgBox.setDefaultButton(QMessageBox::No);
+        }
+    }
+    // actualy show confirm (take exclusive control)
+    mymutex->lock();
+    if (msgBox.exec()==QMessageBox::Yes) {
+        i->returnInt = 1;
+    } else {
+        i->returnInt = 0;
+    }
+    waitCond->wakeAll();
+    mymutex->unlock();
+}
+
+void
+RunController::dialogPrompt(QString prompt, QString dflt) {
+    QInputDialog in(mainwin);
+    in.setLabelText(prompt);
+    in.setTextValue(dflt);
+    // actualy show prompt (take exclusive control)
+    mymutex->lock();
+    if (in.exec()==QDialog::Accepted) {
+        i->returnString = in.textValue();
+    } else {
+        i->returnString = dflt;
+    }
+    waitCond->wakeAll();
+    mymutex->unlock();
+}
+
+void RunController::dialogFontSelect() {
+    bool ok;
+    SETTINGS;
+    QFont newf = QFontDialog::getFont(&ok, editwin->font(), mainwin);
+    if (ok) {
+        settings.setValue(SETTINGSFONT, newf.toString());
+
+        mymutex->lock();
+        editwin->setFont(newf);
+        outwin->setFont(newf);
+        waitCond->wakeAll();
+        mymutex->unlock();
+    }
+}
+
+void RunController::mainWindowSetRunning(int type) {
+    // set the menus, menu options, and tool bar items to
+    // correct state based on the stop/run/debug status
+    // type 0 - stop, 1-run, 2-debug
+
+    editwin->setReadOnly(type!=0);
+    QTextCursor textCursor = editwin->textCursor();
+    textCursor.clearSelection();
+    editwin->setTextCursor( textCursor );
+
+    // file menu
+    mainwin->newact->setEnabled(type==0);
+    mainwin->openact->setEnabled(type==0);
+    mainwin->saveact->setEnabled(type==0);
+    mainwin->saveasact->setEnabled(type==0);
+    mainwin->printact->setEnabled(type==0);
+    for(int t=0; t<SETTINGSGROUPHISTN; t++) mainwin->recentact[t]->setEnabled(type==0);
+    mainwin->exitact->setEnabled(true);
+
+    // edit menu
+    mainwin->undoact->setEnabled(type==0);
+    mainwin->redoact->setEnabled(type==0);
+    mainwin->cutact->setEnabled(false);
+    mainwin->copyact->setEnabled(false);
+    mainwin->pasteact->setEnabled(type==0);
+    mainwin->selectallact->setEnabled(true);
+    mainwin->findact->setEnabled(type==0);
+    mainwin->findagain1->setEnabled(type==0);
+    mainwin->findagain2->setEnabled(type==0);
+    mainwin->replaceact->setEnabled(type==0);
+    mainwin->beautifyact->setEnabled(type==0);
+    mainwin->prefact->setEnabled(type==0);
+
+    // run menu
+    mainwin->runact->setEnabled(type==0);
+    mainwin->debugact->setEnabled(type==0);
+    mainwin->stepact->setEnabled(type==2);
+    mainwin->bpact->setEnabled(type==2);
+    mainwin->stopact->setEnabled(type!=0);
+
+}
+
+void RunController::mainWindowEnableCopy(bool stuffToCopy) {
+    // only enable the copy buttons when there is stuff to copy
+    mainwin->cutact->setEnabled(stuffToCopy && mainwin->pasteact->isEnabled());
+    mainwin->copyact->setEnabled(stuffToCopy);
+}
+
 #ifdef USEQSOUND
-	if(QSound::isAvailable()) {
-		wavsound.play(file);
-	}
-#endif
-#ifdef USESDL
-	Mix_HaltChannel(SDL_CHAN_WAV);
-	Mix_Chunk *music;
-    	music = Mix_LoadWAV((char *) file.toUtf8().data());
-    	Mix_PlayChannel(SDL_CHAN_WAV,music,0);
-#endif
+// this is the old way (2014-04-13 <1.1.1 of doing WAV play statements)
+// the QMediaPlayer object is not complete on ANDROID so this has been
+// left for that platform
+// Hopefully soon QT 5.3+ we can remove this logic and use BasicMediaPlayer for everything
+
+void RunController::playWAV(QString file) {
+	mymutex->lock();
+	wavsound->play(file);
+	waitCond->wakeAll();
+	mymutex->unlock();
 }
 
-
-void RunController::waitWAV()
-{
-#ifdef USEQSOUND
-	if(QSound::isAvailable()) {
-		while(!wavsound.isFinished())
-#ifdef WIN32
-	Sleep(1);
-#else
-	usleep(1000);
-#endif
-	}
-#endif
-#ifdef USESDL
-	while(Mix_Playing(SDL_CHAN_WAV))
-#ifdef WIN32
-	Sleep(1);
-#else
-	usleep(1000);
-#endif
-#endif
+void RunController::waitWAV() {
+	mymutex->lock();
+	Sleeper *sleeper = new Sleeper();
+	while(!wavsound->isFinished())
+        sleeper->sleepMS(100);
+	waitCond->wakeAll();
+	mymutex->unlock();
 }
-
 void RunController::stopWAV()
 {
-#ifdef USEQSOUND
-	if(QSound::isAvailable()) {
-		wavsound.stop();
-	}
+	mymutex->lock();
+	wavsound->stop();
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
 #endif
-#ifdef USESDL
-	Mix_HaltChannel(SDL_CHAN_WAV);
-#endif
-}
-
-void
-RunController::startDebug()
-{
-	if (i->isStopped())
-	{
-		int result = i->compileProgram((te->toPlainText() + "\n").toUtf8().data());
-		if (result < 0)
-		{
-			i->debugMode = false;
-			emit(runHalted());
-			return;
-		}
-		i->initialize();
-		i->debugMode = true;
-		output->clear();
-		statusbar->showMessage(tr("Running"));
-		goutput->setFocus();
-		i->start();
-		mainwin->vardock->clearTable();
-		mainwin->runact->setEnabled(false);
-		mainwin->debugact->setEnabled(false);
-		mainwin->stepact->setEnabled(true);
-		mainwin->stopact->setEnabled(true);
-		emit(debugStarted());
-	}
-}
-
-void
-RunController::startRun()
-{
-	if (i->isStopped())
-	{
-		int result = i->compileProgram((te->toPlainText() + "\n").toUtf8().data());
-		i->debugMode = false;
-		if (result < 0)
-		{
-			emit(runHalted());
-			return;
-		}
-		i->initialize();
-		output->clear();
-		statusbar->showMessage(tr("Running"));
-		goutput->setFocus();
-		i->start();
-		mainwin->vardock->clearTable();
-		mainwin->runact->setEnabled(false);
-		mainwin->debugact->setEnabled(false);
-		mainwin->stepact->setEnabled(false);
-		mainwin->stopact->setEnabled(true);
-		emit(runStarted());
-	}
-}
-
-
-void
-RunController::inputFilter(QString text)
-{
-	goutput->setFocus();
-	mutex.lock();
-	waitInput.wakeAll();
-	mutex.unlock();
-}
-
-void
-RunController::outputClear()
-{
-	mutex.lock();
-	output->clear();
-	waitCond.wakeAll();
-	mutex.unlock();
-}
-
-void
-RunController::outputFilter(QString text)
-{
-	mutex.lock();
-	output->insertPlainText(text);
-	output->ensureCursorVisible();
-	waitCond.wakeAll();
-	mutex.unlock();
-}
-
-void
-RunController::goutputFilter()
-{
-	mutex.lock();
-	goutput->repaint();
-	waitCond.wakeAll();
-	mutex.unlock();
-}
-
-void
-RunController::stepThrough()
-{
-	debugmutex.lock();
-	waitDebugCond.wakeAll();
-	debugmutex.unlock();
-}
-
-void
-RunController::stopRun()
-{
-	statusbar->showMessage(tr("Ready."));
-
-	mainwin->runact->setEnabled(true);
-	mainwin->debugact->setEnabled(true);
-	mainwin->stepact->setEnabled(false);
-	mainwin->stopact->setEnabled(false);
-
-	stopWAV();
-
-	//need to fix waiting for input here.
-	mutex.lock();
-	waitInput.wakeAll();
-	waitCond.wakeAll();
-	mutex.unlock();
-
-	debugmutex.lock();
-	i->debugMode = false;
-	waitDebugCond.wakeAll();
-	debugmutex.unlock();
-
-	emit(runHalted());
-}
-
-
-void
-RunController::pauseResume()
-{
-	if (paused)
-	{
-		statusbar->showMessage(tr("Running"));
-		paused = false;
-		emit(runResumed());
-	}
-	else
-	{
-		statusbar->showMessage(tr("Paused"));
-		paused = true;
-		emit(runPaused());
-	}
-}
-
-
-
-void
-RunController::saveByteCode()
-{
-	byteCodeData *bc = i->getByteCode((te->toPlainText() + "\n").toAscii().data());
-	if (bc == NULL)
-	{
-		return;
-	}
-
-	if (bytefilename == "")
-	{
-		bytefilename = QFileDialog::getSaveFileName(NULL, tr("Save file as"), ".", tr("BASIC-256 Compiled File ") + "(*.kbc);;" + tr("Any File ") + "(*.*)");
-	}
-
-	if (bytefilename != "")
-	{
-		QRegExp rx("\\.[^\\/]*$");
-		if (rx.indexIn(bytefilename) == -1)
-		{
-			bytefilename += ".kbc";
-			//FIXME need to test for existence here
-		}
-		QFile f(bytefilename);
-		f.open(QIODevice::WriteOnly | QIODevice::Truncate);
-		f.write((const char *) bc->data, bc->size);
-		f.close();
-	}
-	delete bc;
-}
-
-void
-RunController::showDocumentation()
-{
-     DocumentationWin *docwin = new DocumentationWin(mainwin);
-     docwin->show();
-     docwin->raise();
-     docwin->activateWindow();
-}
-
-void
-RunController::showPreferences()
-{
-	bool good = true;
-	QSettings settings(SETTINGSORG, SETTINGSAPP);
-	QString prefpass = settings.value(SETTINGSPREFPASSWORD,"").toString();
-	if (prefpass.length()!=0) {
-		char * digest;
-		QString text = QInputDialog::getText(mainwin, tr("BASIC-256 Preferences and Settings"),
-			tr("Password:"), QLineEdit::Password, QString:: null);
-		digest = MD5(text.toUtf8().data()).hexdigest();
-		good = (QString::compare(digest, prefpass)==0);
-		free(digest);
-	}
-	if (good) {
-		PreferencesWin *w = new PreferencesWin(mainwin);
-		w->show();
-		w->raise();
-		w->activateWindow();
-	} else {
-		QMessageBox msgBox;
-		msgBox.setText("Incorrect password.");
-		msgBox.setStandardButtons(QMessageBox::Ok);
-		msgBox.setDefaultButton(QMessageBox::Ok);
-		msgBox.exec();
-	}
-}
-
-void RunController::showFind()
-{
-     if (!findwin) findwin = new FindWin(te);
-     findwin->show();
-     findwin->raise();
-     findwin->activateWindow();
-}
-
-void RunController::showReplace()
-{
-     if (!replacewin) replacewin = new ReplaceWin(te);
-     replacewin->show();
-     replacewin->raise();
-     replacewin->activateWindow();
-}
-
-void
-RunController::mainWindowsVisible(int w, bool v)
-{
-	//printf("mwv %i %i\n",w,v);
-	if (w==0) mainwin->editWinVisibleAct->setChecked(v);
-	if (w==1) mainwin->graphWinVisibleAct->setChecked(v);
-	if (w==2) mainwin->textWinVisibleAct->setChecked(v);
-}
-
-void
-RunController::mainWindowsResize(int w, int width, int height)
-{
-	// only resize graphics window now - may add other windows later
-	mutex.lock();
-	if (w==1) {
-		goutput->resize(width, height);
-		goutput->setMinimumSize(goutput->image->width(), goutput->image->height());
-	}
-	waitCond.wakeAll();
-	mutex.unlock();
-}
-
-
 

@@ -19,23 +19,35 @@
 #ifndef __BASICEDIT_H
 #define __BASICEDIT_H
 
+#include <qglobal.h>
 
-#include <QApplication>
-#include <QTextEdit>
-#include <QMainWindow>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QPlainTextEdit>
+#include <QtWidgets/QMainWindow>
 #include <QKeyEvent>
+#include <QList>
 
 #include "ViewWidgetIFace.h"
 
-class BasicEdit : public QTextEdit, public ViewWidgetIFace
+class BasicEdit : public QPlainTextEdit, public ViewWidgetIFace
 {
-  Q_OBJECT;
+  Q_OBJECT
+
  public:
-  BasicEdit(QMainWindow *);
+  BasicEdit();
+  ~BasicEdit();
+
   void loadFile(QString);
+  void saveFile(bool);
   void findString(QString, bool, bool);
-  void replaceString(QString, QString, bool, bool);
+  void replaceString(QString, QString, bool, bool, bool);
   bool codeChanged;
+  QString getCurrentWord();
+  void lineNumberAreaPaintEvent(QPaintEvent *event);
+  void lineNumberAreaMouseClickEvent(QMouseEvent *event);
+  int lineNumberAreaWidth();
+  QList<int> *breakPoints;
+  void clearBreakPoints();
 
  public slots:
   void newProgram();
@@ -44,13 +56,10 @@ class BasicEdit : public QTextEdit, public ViewWidgetIFace
   void loadProgram();
   void cursorMove();
   void goToLine(int);
-  void highlightLine(int);
+  void seekLine(int);
   void slotPrint();
   void beautifyProgram();
-  void fontSmall();
-  void fontMedium();
-  void fontLarge();
-  void fontHuge();
+  void slotWhitespace(bool);
   void loadRecent0();
   void loadRecent1();
   void loadRecent2();
@@ -61,9 +70,13 @@ class BasicEdit : public QTextEdit, public ViewWidgetIFace
   void loadRecent7();
   void loadRecent8();
 
+signals:
+	void changeStatusBar(QString);
+	void changeWindowTitle(QString);
  
  protected:
   void keyPressEvent(QKeyEvent *);
+  void resizeEvent(QResizeEvent *event);
 
  private:
   QMainWindow *mainwin;
@@ -72,10 +85,17 @@ class BasicEdit : public QTextEdit, public ViewWidgetIFace
   int startPos;
   int linePos;
   QString filename;
-  void changeFontSize(unsigned int);
+//  void changeFontSize(unsigned int);
   void addFileToRecentList(QString);
- void loadRecent(int);
+  void loadRecent(int);
+  QWidget *lineNumberArea;
+  
+private slots:
+  void updateLineNumberAreaWidth(int newBlockCount);
+  void updateLineNumberArea(const QRect &, int);
+  void highlightCurrentLine();
 
+   
 };
 
 

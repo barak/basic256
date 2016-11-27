@@ -19,9 +19,14 @@
 #ifndef __BASICGRAPH_H
 #define __BASICGRAPH_H
 
-#include <QWidget>
+#include <stdio.h>
+
+#include <qglobal.h>
+
+#include <QtWidgets/QWidget>
 #include <QPainter>
 #include <QKeyEvent>
+
 
 #include "ViewWidgetIFace.h"
 #include "BasicOutput.h"
@@ -31,9 +36,10 @@
 
 class BasicGraph : public QWidget, public ViewWidgetIFace
 {
-  Q_OBJECT;
+  Q_OBJECT
  public:
-  BasicGraph(BasicOutput *);
+  BasicGraph();
+  ~BasicGraph();
   QImage *image;
   bool initActions(QMenu *, ToolBar *);
   // used to store current location of mouse
@@ -46,10 +52,12 @@ class BasicGraph : public QWidget, public ViewWidgetIFace
   int clickX;
   int clickY;
   int clickB;
+  bool isVisibleGridLines();
 
  
  public slots:
   void resize(int, int);
+  void slotGridLines(bool);
   void slotCopy();
   void slotPrint();
  
@@ -62,11 +70,11 @@ class BasicGraph : public QWidget, public ViewWidgetIFace
   
  private:
   uchar *imagedata;
-  BasicOutput *output;
   unsigned int gwidth;
   unsigned int gheight;
   unsigned int gtop;	// position of image in basicgraph widget
   unsigned int gleft;
+  bool gridlines;		// show the grid lines or not
 
 };
 

@@ -19,11 +19,13 @@
 #ifndef __TOOLBAR_H
 #define __TOOLBAR_H
 
-#include <QToolBar>
+#include <qglobal.h>
+
+#include <QtWidgets/QToolBar>
 
 class ToolBar : public QToolBar
 {
-  	Q_OBJECT;
+    Q_OBJECT
 	
 public:
 	ToolBar(QString & title, QWidget * parent = 0);
