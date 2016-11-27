@@ -15,8 +15,6 @@
  ** 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  **/
 
- 
- 
 #include <iostream>
 using namespace std;
 
@@ -24,66 +22,93 @@ using namespace std;
 #include "MainWindow.h"
 
 DocumentationWin::DocumentationWin (QWidget * parent)
-		:QDialog(parent)
-{
-	QString localecode = ((MainWindow *) parent)->localecode;
-	QString windowsPath = QApplication::applicationDirPath() + "/help/";
-	QString linuxPath = "/usr/share/basic256/help/";
-	QString currentPath = "./";
-	QString indexfile = "index.html";
+    :QDialog(parent) {
+    localecode = ((MainWindow *) parent)->localecode;
+    indexfile = "start.html";
 
-	// position where it was last on screen
-	QSettings settings(SETTINGSORG, SETTINGSAPP);
-	resize(settings.value(SETTINGSDOCSIZE, QSize(700, 500)).toSize());
-	move(settings.value(SETTINGSDOCPOS, QPoint(150, 150)).toPoint());
+    // position where it was last on screen
+    SETTINGS;
+    resize(settings.value(SETTINGSDOCSIZE, QSize(700, 500)).toSize());
+    move(settings.value(SETTINGSDOCPOS, QPoint(150, 150)).toPoint());
 
-	docs = new QTextBrowser( this );
-	toolbar = new QToolBar( this );
+    docs = new QTextBrowser( this );
+    toolbar = new QToolBar( this );
 
-	QAction *backward = new QAction(QIcon(":images/backward.png"), tr("&Back"), this);
-	connect(backward, SIGNAL(triggered()), docs, SLOT(backward()));
-	connect(docs, SIGNAL(backwardAvailable(bool)), backward, SLOT(setEnabled(bool)));
-	toolbar->addAction(backward);
+    QAction *backward = new QAction(QIcon(":images/backward.png"), tr("&Back"), this);
+    connect(backward, SIGNAL(triggered()), docs, SLOT(backward()));
+    connect(docs, SIGNAL(backwardAvailable(bool)), backward, SLOT(setEnabled(bool)));
+    toolbar->addAction(backward);
 
-	QAction *forward = new QAction(QIcon(":images/forward.png"), tr("&Forward"), this);
-	connect(forward, SIGNAL(triggered()), docs, SLOT(forward()));
-	connect(docs, SIGNAL(forwardAvailable(bool)), forward, SLOT(setEnabled(bool)));
-	toolbar->addAction(forward);
+    QAction *forward = new QAction(QIcon(":images/forward.png"), tr("&Forward"), this);
+    connect(forward, SIGNAL(triggered()), docs, SLOT(forward()));
+    connect(docs, SIGNAL(forwardAvailable(bool)), forward, SLOT(setEnabled(bool)));
+    toolbar->addAction(forward);
 
-	QAction *home = new QAction(QIcon(":images/home.png"), tr("&Home"), this);
-	connect(home, SIGNAL(triggered()), docs, SLOT(home()));
-	toolbar->addAction(home);
+    QAction *home = new QAction(QIcon(":images/home.png"), tr("&Home"), this);
+    connect(home, SIGNAL(triggered()), docs, SLOT(home()));
+    toolbar->addAction(home);
 
-	toolbar->addSeparator();
+    toolbar->addSeparator();
 
-	QAction *exit = new QAction(QIcon(":images/exit.png"), tr("&Exit"), this);
-	connect(exit, SIGNAL(triggered()), this, SLOT(close()));
-	toolbar->addAction(exit);
+    QAction *exit = new QAction(QIcon(":images/exit.png"), tr("&Exit"), this);
+    connect(exit, SIGNAL(triggered()), this, SLOT(close()));
+    toolbar->addAction(exit);
 
-	layout = new QVBoxLayout;
-	layout->addWidget(toolbar);
-	layout->addWidget(docs);
+    layout = new QVBoxLayout;
+    layout->addWidget(toolbar);
+    layout->addWidget(docs);
 
-	this->setLayout(layout);
-	this->setWindowTitle(QObject::tr("BASIC-256 Reference"));
-	this->show();
+    this->setLayout(layout);
+    this->setWindowTitle(QObject::tr("BASIC-256 Reference"));
+    this->show();
 
-	docs->setSearchPaths(QStringList()
-		<< windowsPath+localecode.left(2)
-		<< linuxPath+localecode.left(2)
-		<< currentPath+localecode.left(2)
-		<< windowsPath+"en"
-		<< linuxPath+"en"
-		<< currentPath+"en");
-	docs->setSource(QUrl(indexfile));
+    docs->setSearchPaths(QStringList()
+                         <<	QApplication::applicationDirPath() + "/help/"
+                         <<	"/usr/share/basic256/help/"
+                         <<	"/usr/local/share/basic256/help/"
+                         <<	"./"
+                         <<	QApplication::applicationDirPath() + "/../wikihelp/help/"
+                         <<	QApplication::applicationDirPath() + "/wikihelp/help/"
+                        );
+
 }
 
+void DocumentationWin::go(QString word) {
+
+    if (word == "") {
+        QString u = localecode.left(2) + "_" + indexfile;
+        docs->setSource(QUrl(u.toLower()));
+        if(docs->toPlainText().length() == 0) {
+			docs->setSource(QUrl(indexfile));
+			if(docs->toPlainText().length() == 0) {
+				QMessageBox msgBox;
+				msgBox.setText(tr("Off-line help does not appear to be installed.  Please use on-line help."));
+				msgBox.setStandardButtons(QMessageBox::Ok);
+				msgBox.setDefaultButton(QMessageBox::Ok);
+				msgBox.exec();
+			}
+        }
+    } else {
+        QString u = localecode.left(2) + "_" + word + ".html";
+        docs->setSource(QUrl(u.toLower()));
+        if(docs->toPlainText().length() == 0) {
+            go("");
+            QMessageBox msgBox;
+            msgBox.setText(tr("Contextual help for the word '") + word + tr("' is not available."));
+            msgBox.setStandardButtons(QMessageBox::Ok);
+            msgBox.setDefaultButton(QMessageBox::Ok);
+            msgBox.exec();
+        }
+    }
+}
+
+
 void DocumentationWin::resizeEvent(QResizeEvent *e) {
-	this->resize(size());
+    this->resize(size());
 }
 
 void DocumentationWin::closeEvent(QCloseEvent *e) {
-	QSettings settings(SETTINGSORG, SETTINGSAPP);
-	settings.setValue(SETTINGSDOCSIZE, size());
-	settings.setValue(SETTINGSDOCPOS, pos());
+    SETTINGS;
+    settings.setValue(SETTINGSDOCSIZE, size());
+    settings.setValue(SETTINGSDOCPOS, pos());
 }

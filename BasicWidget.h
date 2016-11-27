@@ -19,8 +19,10 @@
 #ifndef __BASICWIDGET_H
 #define __BASICWIDGET_H
 
-#include <QVBoxLayout>
-#include <QWidget>
+#include <qglobal.h>
+
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QWidget>
 
 class QMenu;
 class ToolBar;
@@ -28,13 +30,14 @@ class ViewWidgetIFace;
 	
 class BasicWidget : public QWidget
 {
-  	Q_OBJECT;
+    Q_OBJECT
 public:
   	BasicWidget(const QString & title = QString::null, QWidget * parent = 0, Qt::WindowFlags f = 0);
 	~BasicWidget();
 	
 	bool setViewWidget(QWidget * view);
 	bool usesToolBar();
+	bool isVisibleToolBar();
 	bool usesMenu();
 	QMenu *getMenu() { return m_menu; }
 

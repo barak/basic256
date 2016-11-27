@@ -19,7 +19,9 @@
 #ifndef __VIEWWIDGETIFACE_H
 #define __VIEWWIDGETIFACE_H
 
-#include <QMenu>
+#include <qglobal.h>
+
+#include <QtWidgets/QMenu>
 #include "ToolBar.h"
 
 class ViewWidgetIFace

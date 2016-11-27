@@ -32,6 +32,7 @@ rem draw the ball
 gosub drawBall
 if xvel * xvel < 0.0001 then
    refresh
+   imgsave "basic256_icon.png"
    end
 end if
 goto loop1

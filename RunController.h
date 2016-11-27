@@ -18,27 +18,28 @@
 
 #ifndef __RUNCONTROLLER_H
 #define __RUNCONTROLLER_H
- 
-#include <QTextEdit>
-#include <QPushButton>
-#include <QStatusBar>
+
+#include <qglobal.h>
+
+#include <QtWidgets/QTextEdit>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QStatusBar>
 
 #include "BasicEdit.h"
 #include "BasicOutput.h"
 #include "BasicGraph.h"
+#include "DocumentationWin.h"
 #include "Interpreter.h"
-#include "MainWindow.h"
-#include "FindWin.h"
 #include "ReplaceWin.h"
 
 class RunController : public QObject
 {
-  Q_OBJECT;
+  Q_OBJECT
  public:
-  RunController(MainWindow *);
+  RunController();
   ~RunController();
-  FindWin *findwin;
   ReplaceWin *replacewin;
+  DocumentationWin *docwin;
 
  signals:
   void debugStarted();
@@ -46,44 +47,48 @@ class RunController : public QObject
   void runHalted();
   void runPaused();
   void runResumed();
-
+ 
  public slots:
-  void playSounds(int, int*);
   void speakWords(QString);
-  void setVolume(int);
-  void executeSystem(char*);
-  void playWAV(QString);
-  void stopWAV();
-  void waitWAV();
-  void inputFilter(QString text);
-  void outputFilter(QString text);
+  void executeSystem(QString);
+  void inputEntered(QString text);
+  void outputReady(QString text);
   void outputClear();
-  void goutputFilter();
+  void goutputReady();
   void mainWindowsResize(int, int, int);
   void startDebug();
   void startRun();
   void stopRun();
   void pauseResume();
-  void saveByteCode();
   void stepThrough();
+  void stepBreakPoint();
   void showDocumentation();
+  void showContextDocumentation();
+  void showOnlineDocumentation();
+  void showOnlineContextDocumentation();
   void showPreferences();
-  void showFind();
   void showReplace();
+  void showFind();
+  void findAgain();
   void mainWindowsVisible(int, bool);
+  void dialogAlert(QString);
+  void dialogConfirm(QString, int);
+  void dialogPrompt(QString, QString);
+  void dialogFontSelect();
+  void mainWindowSetRunning(int);
+  void mainWindowEnableCopy(bool);
+  
+#ifdef USEQSOUND
+	void playWAV(QString);
+	void stopWAV();
+	void waitWAV(); 
+#endif
 
  private:
   Interpreter *i;
-  BasicEdit *te;
-  BasicOutput *output;
-  BasicGraph *goutput;
-  QStatusBar *statusbar;
   bool paused;
   run_status oldStatus;
   QString bytefilename;
-  MainWindow *mainwin;
-  int soundVolume;
-
 };
 
 

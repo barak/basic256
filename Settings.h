@@ -23,12 +23,57 @@
 	#define SETTINGSH
 	#define SETTINGSORG "BASIC-256 Consortium"
 	#define SETTINGSAPP "BASIC-256 IDE"
+	#define SETTINGSPORTABLEINI	"BASIC256_IDE.ini"
 
 	// main window
-	#define SETTINGSSIZE "Main/Size"
+	#define SETTINGSVISIBLE "Main/Visible"
 	#define SETTINGSPOS "Main/Pos"
-	#define SETTINGSFONTSIZE "Main/FontSize"
-	#define SETTINGSFONTSIZEDEFAULT 10
+	#define SETTINGSDEFAULT_X 100
+	#define SETTINGSDEFAULT_Y 100
+	#define SETTINGSSIZE "Main/Size"
+	#define SETTINGSDEFAULT_W 800
+	#define SETTINGSDEFAULT_H 600
+    #define SETTINGSFONT "Main/Font"
+    #define SETTINGSTOOLBAR "Main/Toolbar"
+    #define SETTINGSFONTDEFAULT "Courier,10,-1,5,50,0,0,0,0,0"
+
+    #define SETTINGSEDITWHITESPACE "Edit/Whitespace"
+    #define SETTINGSEDITWHITESPACEDEFAULT false
+    
+    #define SETTINGSOUTVISIBLE "OutDock/Visible"
+    #define SETTINGSOUTFLOAT "OutDock/Float"
+    #define SETTINGSOUTPOS "OutDock/Pos"
+	#define SETTINGSOUTDEFAULT_X 100
+	#define SETTINGSOUTDEFAULT_Y 100
+    #define SETTINGSOUTSIZE "OutDock/Size"
+	#define SETTINGSOUTDEFAULT_W 400
+	#define SETTINGSOUTDEFAULT_H 400
+    #define SETTINGSOUTTOOLBAR "OutDock/Toolbar"
+
+    #define SETTINGSGRAPHVISIBLE "GraphDock/Visible"
+    #define SETTINGSGRAPHFLOAT "GraphDock/Float"
+    #define SETTINGSGRAPHPOS "GraphDock/Pos"
+	#define SETTINGSGRAPHDEFAULT_X 100
+	#define SETTINGSGRAPHDEFAULT_Y 100
+    #define SETTINGSGRAPHSIZE "GraphDock/Size"
+	#define SETTINGSGRAPHDEFAULT_W 400
+	#define SETTINGSGRAPHDEFAULT_H 400
+    #define SETTINGSGRAPHTOOLBAR "GraphDock/Toolbar"
+    #define SETTINGSGRAPHGRIDLINES "GraphDock/GridLines"
+
+    #define SETTINGSVARVISIBLE "VarDock/Visible"
+    #define SETTINGSVARFLOAT "VarDock/Float"
+    #define SETTINGSVARPOS "VarDock/Pos"
+	#define SETTINGSVARDEFAULT_X 100
+	#define SETTINGSVARDEFAULT_Y 100
+    #define SETTINGSVARSIZE "VarDock/Size"
+	#define SETTINGSVARDEFAULT_W 400
+	#define SETTINGSVARDEFAULT_H 400
+    
+	// other IDE preferences
+	#define SETTINGSIDESAVEONRUN "IDE/SaveOnRun"
+	#define SETTINGSIDESAVEONRUNDEFAULT false
+	
 	
 	// documentation window
 	#define SETTINGSDOCSIZE "Doc/Size"
@@ -38,20 +83,14 @@
 	#define SETTINGSPREFPOS "Pref/Pos"
 	#define SETTINGSPREFPASSWORD "Pref/Password"
 
-	// Find window
-	#define SETTINGSFINDPOS "Find/Pos"
-	#define SETTINGSFINDSTRING "Find/String"
-	#define SETTINGSFINDCASE "Find/Case"
-	#define SETTINGSFINDCASEDEFAULT false
-	#define SETTINGSFINDBACK "Find/Back"
-	#define SETTINGSFINDBACKDEFAULT false
-
 	// Replace window
 	#define SETTINGSREPLACEPOS "Replace/Pos"
 	#define SETTINGSREPLACEFROM "Replace/From"
 	#define SETTINGSREPLACETO "Replace/To"
 	#define SETTINGSREPLACECASE "Replace/Case"
 	#define SETTINGSREPLACECASEDEFAULT false
+	#define SETTINGSREPLACEBACK "Replace/Back"
+	#define SETTINGSREPLACEBACKDEFAULT false
 
 	// permissions
 	#define SETTINGSALLOWSYSTEM "Allow/System"
@@ -61,12 +100,54 @@
 	#define SETTINGSALLOWPORT "Allow/Port"
 	#define SETTINGSALLOWPORTDEFAULT true
 
+
+	// user settings
+	#define SETTINGSTYPECONV "Runtime/TypeConv"
+	#define SETTINGSTYPECONVDEFAULT 0
+	#define SETTINGSTYPECONVNONE 0
+	#define SETTINGSTYPECONVWARN 1
+	#define SETTINGSTYPECONVERROR 2
+	#define SETTINGSDEBUGSPEED "Runtime/DebugSpeed"
+	#define SETTINGSDEBUGSPEEDDEFAULT 10
+	#define SETTINGSDEBUGSPEEDMIN 1
+	#define SETTINGSDEBUGSPEEDMAX 2000
+	#define SETTINGSDECDIGS "Runtime/DecDigs"
+	#define SETTINGSDECDIGSDEFAULT 12
+	#define SETTINGSDECDIGSMIN 9
+	#define SETTINGSDECDIGSMAX 14
+	
+	
+	
+	// espeak language settings
+	#define SETTINGSESPEAKVOICE "eSpeak/Voice"
+	#define SETTINGSESPEAKVOICEDEFAULT "default"
+	
+	// printersettings
+	#define SETTINGSPRINTERPRINTER "Printer/Printer"
+	#define SETTINGSPRINTERPDFFILE "Printer/PDFFile"
+	#define SETTINGSPRINTERPAPER "Printer/Paper"
+	#define SETTINGSPRINTERPAPERDEFAULT 2
+	#define SETTINGSPRINTERRESOLUTION "Printer/Resolution"
+	#define SETTINGSPRINTERRESOLUTIONDEFAULT 0
+	#define SETTINGSPRINTERORIENT "Printer/Orient"
+	#define SETTINGSPRINTERORIENTDEFAULT 0
+
 	// store history of files as SaveHistory/0 ... SaveHistory/8 
 	#define SETTINGSGROUPHIST "SaveHistory"
 	#define SETTINGSGROUPHISTN 9
 
 	// store user settings (setsetting/getsetting) in seperate group
 	#define SETTINGSGROUPUSER "UserSettings"
+
+
+    // You need an SETTINGS; statement when you are using settings in a function
+    // this defines a QSettings variable named "setings" for your use
+    #ifdef WIN32PORTABLE
+		#include <QCoreApplication>
+        #define SETTINGS QSettings settings( QCoreApplication::applicationDirPath() + "/../../Data/settings/"  + SETTINGSPORTABLEINI, QSettings::IniFormat );
+    #else
+        #define SETTINGS QSettings settings(SETTINGSORG, SETTINGSAPP);
+    #endif
 
 
 #endif

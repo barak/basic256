@@ -19,113 +19,124 @@
 
 #include <iostream>
 
-#include <QApplication>
 #include <QTranslator>
 #include <QLocale>
-#include <QStatusBar>
 #include <QFileInfo>
+#include <QtPlugin>
+#include <QLibraryInfo>
+
+//Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin);
+
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QStatusBar>
+
 #include <locale.h>
 #if !defined(WIN32) || defined(__MINGW32__)
 #include <unistd.h>
-#endif 
+#endif
+
+#include "MainWindow.h"
+#include "BasicEdit.h"
 
 using namespace std;
 
+extern MainWindow * mainwin;
+extern BasicEdit * editwin;
+
 #include "MainWindow.h"
 
-int main(int argc, char *argv[])
-{
-	QApplication qapp(argc, argv);
-	char *lang = NULL;		// locale code passed with argument -l on command line
-	bool loadandgo = false;		// if -r option then run code in loadandgo mode
-	bool ok;
-	QString localecode;		// either lang or the system localle - stored on mainwin for help display
+int main(int argc, char *argv[]) {
+    QApplication qapp(argc, argv);
+    char *lang = NULL;		// locale code passed with argument -l on command line
+    bool loadandgo = false;		// if -r option then run code in loadandgo mode
+    bool ok;
+    QString localecode;		// either lang or the system localle - stored on mainwin for help display
 
-	#if !defined(WIN32) || defined(__MINGW32__)
+#if !defined(WIN32) || defined(__MINGW32__)
 
-		while (true)
-		{
-			int opt = getopt(argc, argv, "rl:");
-			if (opt == -1) break;
+    while (true) {
+        int opt = getopt(argc, argv, "rl:");
+        if (opt == -1) break;
 
-			switch ((char) opt)
-			{
-				case 'l':
-					lang = optarg;
-					break;
-				case 'r':
-					loadandgo = true;
-					break;
-				default:
-					break;
-			}
-		}
-	#endif
+        switch ((char) opt) {
+            case 'l':
+                lang = optarg;
+                break;
+            case 'r':
+                loadandgo = true;
+                break;
+            default:
+                break;
+        }
+    }
+#endif
 
-	if (lang) {
-		localecode = QString(lang);
-	} else {
-		localecode = QLocale::system().name();
-	}
+    if (lang) {
+        localecode = QString(lang);
+    } else {
+        localecode = QLocale::system().name();
+    }
 
-	QTranslator qtTranslator;
-	#ifdef WIN32
-		ok = qtTranslator.load("qt_" + localecode);
-	#else
-		ok = qtTranslator.load("qt_" + localecode, "/usr/share/qt4/translations/");
-	#endif
-	qapp.installTranslator(&qtTranslator);
+    QTranslator qtTranslator;
+#ifdef WIN32
+    ok = qtTranslator.load("qt_" + localecode);
+#else
+    ok = qtTranslator.load("qt_" + localecode, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+#endif
+    qapp.installTranslator(&qtTranslator);
 
-	QTranslator kbTranslator;
-	#ifdef WIN32
-		ok = kbTranslator.load("basic256_" + localecode, qApp->applicationDirPath() + "/Translations/");
-	#else
-		ok = kbTranslator.load("basic256_" + localecode, "/usr/share/basic256/");
-	#endif
-	qapp.installTranslator(&kbTranslator);
+    QTranslator kbTranslator;
+#ifdef WIN32
+    ok = kbTranslator.load("basic256_" + localecode, qApp->applicationDirPath() + "/Translations/");
+#else
+    ok = kbTranslator.load("basic256_" + localecode, "/usr/share/basic256/");
+    if (!ok) ok = kbTranslator.load("basic256_" + localecode, "/usr/local/share/basic256/");  // alternative location
+#endif
+    qapp.installTranslator(&kbTranslator);
 
-	MainWindow *mainwin = new MainWindow();
+    MainWindow mainwin;
 
-	mainwin->setObjectName( "mainwin" );
-	//mainwin->setWindowState(mainwin->windowState() & Qt::WindowMaximized);
-	//mainwin->resize(800,600);
-	mainwin->setWindowTitle(QObject::tr("Untitled - BASIC-256"));
-	mainwin->statusBar()->showMessage(QObject::tr("Ready."));
-	mainwin->localecode = localecode;
-	mainwin->show();
+    mainwin.setObjectName( "mainwin" );
+    mainwin.setWindowTitle(QObject::tr("Untitled - BASIC-256"));
+    mainwin.statusBar()->showMessage(QObject::tr("Ready."));
+    mainwin.localecode = localecode;
+    mainwin.show();
 
-	#if !defined(WIN32) || defined(__MINGW32__)
-		// load initial file -- POSIX style
-		if (optind < argc) {
-			// printf("extra arg %s\n",argv[optind]);
-			QString s = QString::fromUtf8(argv[optind]);
-			if (s.endsWith(".kbs")) {
-				QFileInfo fi(s);
-				if (fi.exists()) {
-					mainwin->editor->loadFile(fi.absoluteFilePath());
-				}
-			}
-		}
-	#else
-		// load initial file -- Win style
-		if (argc >= 1 && argv[1] != NULL)
-		{
-			QString s = QString::fromUtf8(argv[1]);
-			if (s.endsWith(".kbs")) {
-				QFileInfo fi(s);
-				if (fi.exists()) {
-					mainwin->editor->loadFile(fi.absoluteFilePath());
-				}
-			}
-		}
-	#endif
+#if defined(WIN32)
+    // load initial file -- Win style
+    if (argc >= 1 && argv[1] != NULL) {
+        QString s = QString::fromUtf8(argv[1]);
+        if (s.endsWith(".kbs")) {
+            QFileInfo fi(s);
+            if (fi.exists()) {
+                editwin->loadFile(fi.absoluteFilePath());
+            }
+        }
+    }
+#else
+#ifdef ANDROID
+    // android - dont load initial file but set default folder to sdcard if exists
+    if (QDir("/storage/sdcard0").exists()) {
+        QDir::setCurrent("/storage/sdcard0");
+    }
+#else
+    // load initial file -- POSIX style
+    if (optind < argc) {
+        // printf("extra arg %s\n",argv[optind]);
+        QString s = QString::fromUtf8(argv[optind]);
+        if (s.endsWith(".kbs")) {
+            QFileInfo fi(s);
+            if (fi.exists()) {
+                editwin->loadFile(fi.absoluteFilePath());
+            }
+        }
+    }
+#endif // ANDROID
+#endif // WIN32
 
-	setlocale(LC_ALL,"C");
+    setlocale(LC_ALL,"C");
 
-	if (loadandgo) mainwin->loadAndGoMode();
+    if (loadandgo) mainwin.loadAndGoMode();
 
-	int returnval = qapp.exec();
-
-	mainwin->~MainWindow();
- 	return returnval;
+    return qapp.exec();
 }
