@@ -14,7 +14,7 @@ Build-Depends: debhelper (>= 10),
  libsqlite3-dev,
  qtbase5-dev,
  qtmultimedia5-dev,
-Standards-Version: 3.9.3
+Standards-Version: 3.9.8
 Homepage: http://www.basic256.org/
 Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/basic256.git
 Vcs-Git: https://anonscm.debian.org/git/collab-maint/basic256.git
