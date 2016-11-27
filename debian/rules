@@ -4,4 +4,4 @@
 	dh $@
 
 override_dh_auto_configure:
-	qmake
+	qmake BASIC256.pro
