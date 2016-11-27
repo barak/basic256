@@ -9,6 +9,8 @@ basic256 (1.1.4.0-1) UNRELEASED; urgency=medium
   * Switch to debhelper 10
   * Update debian/watch
   * Use secure URIs for VCS fields
+  * Switch to dh --buildsystem qmake, enable hardening flags
+    and link with --as-needed
 
  -- Graham Inggs <ginggs@debian.org>  Sun, 27 Nov 2016 16:10:31 +0200
 
