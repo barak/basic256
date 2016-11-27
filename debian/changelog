@@ -1,9 +1,9 @@
-basic256 (1.1.4.0-1) UNRELEASED; urgency=medium
+basic256 (1.1.4.0-1) unstable; urgency=medium
 
-  * New upstream release
+  * New upstream release (Closes: #756836)
     - Fixes FTBFS with GCC 6 (Closes: #811799)
   * Clean generated LEX/lex.yy.c (Closes: #746100)
-  * Switch from Qt4 to Qt5 and adjust build-dependencies
+  * Switch from Qt4 to Qt5 and adjust build-dependencies (Closes: #784452)
   * Drop debian/menu, see #741573
   * Use basic256.png as the icon instead of basic256.xpm
   * Switch to debhelper 10
@@ -14,7 +14,7 @@ basic256 (1.1.4.0-1) UNRELEASED; urgency=medium
   * Bump Standards-Version to 3.9.8, no further changes
   * Add myself to Uploaders
 
- -- Graham Inggs <ginggs@debian.org>  Sun, 27 Nov 2016 16:10:31 +0200
+ -- Graham Inggs <ginggs@debian.org>  Sun, 27 Nov 2016 21:01:45 +0200
 
 basic256 (0.9.6.69a-1) unstable; urgency=low
 
