@@ -1,43 +1,16 @@
-# Description: use dh_installexamples to install examples, not the Makefiles.
-# Author: Ryan Kavanagh <ryanakca@kubuntu.org>
-# Origin: vendor
-# Forwarded: not-needed
-# Last-Update: 2011-07-13
-Index: basic256/BASIC256.pro
-===================================================================
---- basic256.orig/BASIC256.pro	2011-07-07 09:27:58.359695593 -0400
-+++ basic256/BASIC256.pro	2011-07-07 09:28:41.943911712 -0400
-@@ -63,27 +63,27 @@
- 	examplesDiceFiles.files = ./Examples/dice/*.kbs \
- 				./Examples/dice/*.wav
- 	examplesDiceFiles.path = /usr/share/basic256/Examples/dice
--	INSTALLS += examplesDiceFiles
-+	# INSTALLS += examplesDiceFiles
- 	examplesImgloadFiles.files = ./Examples/imgload/*.kbs \
- 				./Examples/imgload/*.png \
- 				./Examples/imgload/*.bmp
- 	examplesImgloadFiles.path = /usr/share/basic256/Examples/imgload
--	INSTALLS += examplesImgloadFiles
-+	# INSTALLS += examplesImgloadFiles
- 	examplesNetworkingFiles.files = ./Examples/networking/*.kbs
- 	examplesNetworkingFiles.path = /usr/share/basic256/Examples/networking
--	INSTALLS += examplesNetworkingFiles
-+ 	# INSTALLS += examplesNetworkingFiles
- 	examplesSpritesFiles.files = ./Examples/sprites/*.kbs \
- 				./Examples/sprites/*.wav \
- 				./Examples/sprites/*.png \
- 				./Examples/sprites/*.bmp
- 	examplesSpritesFiles.path = /usr/share/basic256/Examples/sprites
--	INSTALLS += examplesSpritesFiles
-+ 	# INSTALLS += examplesSpritesFiles
- 	examplesTestingFiles.files = ./Examples/testing/*.kbs
- 	examplesTestingFiles.path = /usr/share/basic256/Examples/testing
--	INSTALLS += examplesTestingFiles
-+	# INSTALLS += examplesTestingFiles
- 	examplesFiles.files = ./Examples/*.kbs
- 	examplesFiles.path = /usr/share/basic256/Examples
--	INSTALLS += examplesFiles
-+	# INSTALLS += examplesFiles
- 	transFiles.files = ./Translations/*.qm
- 	transFiles.path = /usr/share/basic256
- 	INSTALLS += transFiles
+Description: use dh_installexamples to install examples, not the Makefiles.
+Author: Ryan Kavanagh <ryanakca@kubuntu.org>
+Origin: vendor
+Forwarded: not-needed
+Last-Update: 2016-11-27
+--- a/BASIC256.pro
++++ b/BASIC256.pro
+@@ -111,7 +111,7 @@
+ 	########
+ 	exampleFiles.files		=	./Examples
+ 	exampleFiles.path		=	/usr/share/basic256
+-	INSTALLS				+=	exampleFiles
++	# INSTALLS				+=	exampleFiles
+ 
+ 	helpHTMLFiles.files		=	./wikihelp/help
+ 	helpHTMLFiles.path		=	/usr/share/basic256

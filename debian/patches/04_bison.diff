@@ -1,15 +1,15 @@
 Description: remove generated bison parser files during clean
 Origin: vendor
-Bug-Debian: http://bugs.debian.org/652244
+Bug-Debian: https://bugs.debian.org/652244
 Forwarded: no
 Author: gregor herrmann <gregoa@debian.org>
-Last-Update: 2012-02-21
+Last-Update: 2016-11-27
 
 --- a/BASIC256.pro
 +++ b/BASIC256.pro
-@@ -211,3 +211,6 @@
- SOURCES			+=	ReplaceWin.cpp
- SOURCES			+=	md5.cpp
+@@ -161,3 +161,6 @@
+ SOURCES 					+=	LEX/basicParse.tab.c 
+ SOURCES 					+=	*.cpp
  
 +# Generated Bison parser files
 +QMAKE_CLEAN		+=	LEX/basicParse.tab.h
