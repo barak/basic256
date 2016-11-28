@@ -8,7 +8,7 @@ export QT_SELECT=qt5
 
 override_dh_auto_clean:
 	if [ -f $(CURDIR)/Makefile ]; then \
-	    sed -i -e 's/\/usr\/lib\/x86_64-linux-gnu\/qt5\/bin\/qmake/\/usr\/bin\/qmake/' $(CURDIR/)Makefile; \
+	    sed -i -e 's/\/usr\/lib\/x86_64-linux-gnu\/qt5\/bin\/qmake/\/usr\/bin\/qmake/' $(CURDIR)/Makefile; \
 	fi
 	dh_auto_clean
 
