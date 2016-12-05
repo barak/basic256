@@ -1,4 +1,4 @@
-basic256 (1.1.4.0-2) UNRELEASED; urgency=medium
+basic256 (1.1.4.0-2) unstable; urgency=medium
 
   * Fix typo in debian/rules
   * Fix privacy breach in documentation
@@ -6,7 +6,7 @@ basic256 (1.1.4.0-2) UNRELEASED; urgency=medium
   * Machine-readable debian/copyright
   * Add keywords to basic256.desktop
 
- -- Graham Inggs <ginggs@debian.org>  Mon, 28 Nov 2016 22:48:04 +0200
+ -- Graham Inggs <ginggs@debian.org>  Mon, 05 Dec 2016 15:14:30 +0200
 
 basic256 (1.1.4.0-1) unstable; urgency=medium
 
