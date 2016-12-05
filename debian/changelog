@@ -3,6 +3,7 @@ basic256 (1.1.4.0-2) UNRELEASED; urgency=medium
   * Fix typo in debian/rules
   * Fix privacy breach in documentation
   * Fix spelling error in binary
+  * Machine-readable debian/copyright
 
  -- Graham Inggs <ginggs@debian.org>  Mon, 28 Nov 2016 22:48:04 +0200
 
