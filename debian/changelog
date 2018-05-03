@@ -1,3 +1,9 @@
+basic256 (1.1.4.0-3) UNRELEASED; urgency=medium
+
+  * Update Vcs-* URIs for move to salsa.debian.org
+
+ -- Graham Inggs <ginggs@debian.org>  Thu, 03 May 2018 11:35:40 +0000
+
 basic256 (1.1.4.0-2) unstable; urgency=medium
 
   * Fix typo in debian/rules
