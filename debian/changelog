@@ -1,6 +1,7 @@
 basic256 (1.1.4.0-3) UNRELEASED; urgency=medium
 
   * Update Vcs-* URIs for move to salsa.debian.org
+  * Turn debhelper up to 11
 
  -- Graham Inggs <ginggs@debian.org>  Thu, 03 May 2018 11:35:40 +0000
 
