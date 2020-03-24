@@ -1,8 +1,7 @@
 Source: basic256
 Section: devel
 Priority: optional
-Maintainer: Ryan Kavanagh <rak@debian.org>
-Uploaders: Graham Inggs <ginggs@debian.org>
+Maintainer: Debian QA Group <packages@qa.debian.org>
 Build-Depends: debhelper-compat (= 12),
  bison,
  flex,
