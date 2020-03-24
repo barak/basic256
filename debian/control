@@ -3,7 +3,7 @@ Section: devel
 Priority: optional
 Maintainer: Ryan Kavanagh <rak@debian.org>
 Uploaders: Graham Inggs <ginggs@debian.org>
-Build-Depends: debhelper (>= 11),
+Build-Depends: debhelper-compat (= 12),
  bison,
  flex,
  flite1-dev,
