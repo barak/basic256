@@ -2,14 +2,18 @@
 export DEB_BUILD_MAINT_OPTIONS=hardening=+all
 export QT_SELECT=qt5
 
+include /usr/share/dpkg/architecture.mk
+ifeq ($(DEB_BUILD_ARCH),$(DEB_HOST_ARCH))
+QMAKE = qmake
+else
+QMAKE = $(DEB_HOST_GNU_TYPE)-qmake
+endif
+
 %:
 	dh $@ --buildsystem=qmake
 
 override_dh_auto_clean:
-	if [ -f $(CURDIR)/Makefile ]; then \
-	    sed -i -e 's/\/usr\/lib\/x86_64-linux-gnu\/qt5\/bin\/qmake/\/usr\/bin\/qmake/' $(CURDIR)/Makefile; \
-	fi
-	dh_auto_clean
+	dh_auto_clean -- QMAKE=$(QMAKE)
 
 override_dh_auto_configure:
 	dh_auto_configure -- BASIC256.pro

@@ -1,9 +1,13 @@
 basic256 (1.1.4.0+dfsg-2) UNRELEASED; urgency=medium
 
+  [ Graham Inggs ]
   * QA upload
   * Switch to debhelper 13
   * Set Rules-Requires-Root: no
   * Do not link with -Wl,--as-needed, it is now the default
+
+  [ Helmut Grohne ]
+  * Fix FTCBFS: Use a cross qmake during dh_auto_clean. (Closes: #924868)
 
  -- Graham Inggs <ginggs@debian.org>  Wed, 15 Jul 2020 11:13:52 +0000
 
