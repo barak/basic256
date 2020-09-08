@@ -1,3 +1,10 @@
+basic256 (1.1.4.0+dfsg-3) UNRELEASED; urgency=low
+
+  * Use secure URI in Homepage field.
+  * Set upstream metadata fields: Archive, Repository.
+
+ -- Debian Janitor <janitor@jelmer.uk>  Tue, 18 Aug 2020 08:15:05 -0000
+
 basic256 (1.1.4.0+dfsg-2) unstable; urgency=medium
 
   [ Graham Inggs ]
