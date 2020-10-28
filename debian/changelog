@@ -10,8 +10,12 @@ basic256 (2.0.0.11-1) unstable; urgency=low
   * Forward port patches, 2 of 4 no longer necessary
   * Update desktop icon file
   * Adopt Package (closes: #845980)
+  * Update debian/copyright
+    - no longer need to repack
+    - source file removed, can remove corresponding stanza
+  * Run lrelease to refresh translations because why not
 
- -- Barak A. Pearlmutter <bap@debian.org>  Wed, 28 Oct 2020 21:44:22 +0000
+ -- Barak A. Pearlmutter <bap@debian.org>  Wed, 28 Oct 2020 22:13:56 +0000
 
 basic256 (1.1.4.0+dfsg-2) unstable; urgency=medium
 
