@@ -17,3 +17,13 @@ override_dh_auto_clean:
 
 override_dh_auto_configure:
 	dh_auto_configure -- BASIC256.pro
+
+# Install desktop icon, must be renamed so do it here rather than basic256.install
+# Available icons files:
+#  Examples/basic256_icon.png: PNG image data, 512 x 512, 8-bit/color RGBA, non-interlaced
+#  resources/images/logo_300x300.png: PNG image data, 300 x 300, 8-bit/color RGB, non-interlaced
+execute_after_dh_install:
+	mkdir -p debian/basic256/usr/share/icons/hicolor/300x300/apps
+	mkdir -p debian/basic256/usr/share/icons/hicolor/512x512/apps
+	cp resources/images/logo_300x300.png debian/basic256/usr/share/icons/hicolor/300x300/apps/basic256.png
+	cp Examples/basic256_icon.png        debian/basic256/usr/share/icons/hicolor/512x512/apps/basic256.png
