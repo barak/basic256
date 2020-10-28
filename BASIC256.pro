@@ -4,160 +4,155 @@ lessThan(QT_MAJOR_VERSION, 5) {
 }
 
 
-TEMPLATE					=	app
-TARGET						=	basic256
-DEPENDPATH					+=	.
-INCLUDEPATH					+=	.
-QMAKE_CXXFLAGS				+=	-g 
-CONFIG						+=	 qt debug_and_release
-OBJECTS_DIR					=	tmp/obj
-MOC_DIR						=	tmp/moc
+TEMPLATE						=	app
+TARGET							=	basic256
+DEPENDPATH						+=	.
+INCLUDEPATH						+=	.
+QMAKE_CXXFLAGS					+=	-g
+QMAKE_CXXFLAGS					+=	-std=c++11
+CONFIG							+=	 qt debug_and_release
+CONFIG							+=	 console
+OBJECTS_DIR						=	tmp/obj
+MOC_DIR							=	tmp/moc
 
-QT						+=	webkit
-QT						+=	gui
-QT						+=	sql
-QT						+=	widgets
-QT						+=	printsupport
-QT						+=	serialport
+#QT								+=	webkitwidgets
+#QT								+=	webkit
+QT								+=	gui
+QT								+=	sql
+QT								+=	widgets
+QT								+=	printsupport
+QT								+=	serialport
 
-RESOURCES					+=	resources/resource.qrc
-RC_FILE						=	resources/basic256.rc
-TRANSLATIONS				=	Translations/basic256_en.ts \
-								Translations/basic256_de.ts \
-								Translations/basic256_ru.ts \
-								Translations/basic256_es.ts \
-								Translations/basic256_fr.ts \
-								Translations/basic256_pt.ts \
-								Translations/basic256_nl.ts \
-								Translations/basic256_it.ts
+RESOURCES						+=	resources/resource.qrc
+TRANSLATIONS					=	Translations/basic256_en.ts \
+									Translations/basic256_de.ts \
+									Translations/basic256_ru.ts \
+									Translations/basic256_es.ts \
+									Translations/basic256_fr.ts \
+									Translations/basic256_pt.ts \
+									Translations/basic256_nl.ts \
+									Translations/basic256_it.ts
+
+#### uncomment to display fprintf debugging messages
+#### shows each pcode statement at the stack - really slow but really good
+#### debugging the interpreter
+###DEFINES += DEBUG
 
 win32 {
-	DEFINES 				+=	WIN32
-	DEFINES 				+=	USEQMEDIAPLAYER
-	LIBS					+=	-lole32 \
-								-lws2_32 \
-								-lwinmm
-				
-	QMAKE_CXXFLAGS			+=	-mstackrealign
-	QMAKE_CXXFLAGS_RELEASE	+=	-mstackrealign
+	DEFINES 					+=	WIN32
+	DEFINES 					+=	USEQMEDIAPLAYER
+	RC_FILE						=	resources/windows.rc
+	LIBS						+=	-lole32 \
+									-lws2_32 \
+									-lwinmm
+
+###CONFIG += console  ## enable for printf debugging in windows
+###QMAKE_CXXFLAGS				+=-DYYDEBUG=1
+	QMAKE_CXXFLAGS				+=	-mstackrealign
+	QMAKE_CXXFLAGS_RELEASE		+=	-mstackrealign
 
 	########
 	# TTS control - How Say statement works
 	########
 	# uncomment one of the options
 
-	## TTS Option 1 - ececute 'espak' command to speak 
-	#DEFINES				+=	ESPEAK_EXECUTE
+	## TTS Option 1 - ececute 'espak' command to speak
+	#DEFINES					+=	ESPEAK_EXECUTE
 
 	## TTS Option 2 - use the espeak library
-	DEFINES					+=	ESPEAK
-	LIBS					+=	-lespeak
+	DEFINES						+=	ESPEAK
+	LIBS						+=	-lespeak
 
 	########
 	# Sound class - How Sound statement works
 	########
-	# uncomment one of the options
+	QT							+=	multimedia
+	INCLUDEPATH					+=	QtMultimediaKit
+	INCLUDEPATH					+=	QtMobility
+	CONFIG						+=	mobility
+	MOBILITY					+=	multimedia
 
-	# Sound - Option 0 - Microsoft built in 32 bit API
-	#DEFINES				+=	SOUND_WIN32
-
-	# Sound - Option 1 - QT Mobility Multimedia AudioOut
-	DEFINES					+=	SOUND_QMOBILITY
-	QT						+=	multimedia
-	INCLUDEPATH				+=	QtMultimediaKit
-	INCLUDEPATH				+=	QtMobility
-	CONFIG					+=	mobility
-	MOBILITY				+=	multimedia
-
-
+	# DEFINES 					+= WIN32PORTIO
 }
 
 unix:!macx {
 	## this is the LINUX (unix-non-mac)
-	DEFINES					+=	LINUX
-	
+	DEFINES						+=	LINUX
+	QMAKE_CXXFLAGS				+=	-std=c++11
+
 	########
 	# TTS control - How Say statement works
 	########
 	# uncomment one of the options
 
-	## TTS Option 1 - ececute 'espak' command to speak 
-	#DEFINES				+=	ESPEAK_EXECUTE
+	## TTS Option 1 - ececute 'espak' command to speak
+	#DEFINES					+=	ESPEAK_EXECUTE
 
 	## TTS Option 2 - use the espeak library
-	DEFINES					+=	ESPEAK
-	INCLUDEPATH				+=	/usr/include/espeak
-	LIBS					+=	-lespeak
-
-	LIBS					+=	-lm
+	DEFINES						+=	ESPEAK
+	INCLUDEPATH					+=	/usr/include/espeak
+	LIBS						+=	-lespeak
+	LIBS						+=	-lm
 
 	########
 	# Sound class - How Sound statement works
 	########
-	# uncomment one of the options
-
-	# Sound - Option 0 - /dev/dsp
-	#DEFINES				+=	SOUND_DSP
-
-	# Sound - QT Mobility Multimedia AudioOut
-	DEFINES					+=	SOUND_QMOBILITY
-	QT						+=	multimedia
-	INCLUDEPATH				+=	QtMultimediaKit
-	INCLUDEPATH				+=	QtMobility
+	QT							+=	multimedia
+	INCLUDEPATH					+=	QtMultimediaKit
+	INCLUDEPATH					+=	QtMobility
 
 
 	########
 	# rules for make install
 	########
-	exampleFiles.files		=	./Examples
-	exampleFiles.path		=	/usr/share/basic256
-	INSTALLS				+=	exampleFiles
+	exampleFiles.files			=	./Examples
+	exampleFiles.path			=	/usr/share/basic256
+	INSTALLS					+=	exampleFiles
 
-	helpHTMLFiles.files		=	./wikihelp/help
-	helpHTMLFiles.path		=	/usr/share/basic256
-	INSTALLS				+=	helpHTMLFiles
+	helpHTMLFiles.files			=	./wikihelp/help
+	helpHTMLFiles.path			=	/usr/share/basic256
+	INSTALLS					+=	helpHTMLFiles
 
-	transFiles.files		=	./Translations/*.qm
-	transFiles.path			=	/usr/share/basic256
-	INSTALLS				+=	transFiles
+	transFiles.files			=	./Translations/*.qm
+	transFiles.path				=	/usr/share/basic256
+	INSTALLS					+=	transFiles
 
 	# main program executable
-	target.path				=	/usr/bin
-	INSTALLS				+=	target
+	target.path					=	/usr/bin
+	INSTALLS					+=	target
 
 }
 
 macx {
 	# macintosh
-	DEFINES					+=	MACX
-	DEFINES					+=	MACX_SAY
-	
-	ICON					=	resources/basic256.icns
+	DEFINES						+=	MACX
+	DEFINES						+=	MACX_SAY
 
-	LIBS					+=	-L/opt/local/lib
-	INCLUDEPATH				+=	/opt/local/include
+	ICON						=	resources/basic256.icns
 
-	## include libraries for SDL audio for wav and sound output
-	DEFINES 				+=	SOUND_SDL
-	LIBS					+=	-lSDL
-	LIBS					+=	-lSDL_mixer
+	LIBS						+=	-L/opt/local/lib
+	INCLUDEPATH					+=	/opt/local/include
 
-	
+	# Sound - QT Mobility Multimedia AudioOut
+	QT							+=	multimedia
+	INCLUDEPATH					+=	QtMultimediaKit
+	INCLUDEPATH					+=	QtMobility
+
+
 }
 
 exists( ./LEX/Makefile ) {
 	message( Running make for ./LEX/Makefile )
 	system( make -C ./LEX )
-} else { 
-        error( Could not make LEX project - aborting... )
+} else {
+	error( Could not make LEX project - aborting... )
 }
 
 
 # Input
-HEADERS 					+=	LEX/basicParse.tab.h 
-HEADERS 					+=	*.h
+HEADERS 						+=	LEX/basicParse.tab.h
+HEADERS 						+=	*.h
 
-SOURCES 					+=	LEX/lex.yy.c 
-SOURCES 					+=	LEX/basicParse.tab.c 
-SOURCES 					+=	*.cpp
-
+SOURCES 						+=	LEX/lex.yy.c
+SOURCES 						+=	LEX/basicParse.tab.c
+SOURCES 						+=	*.cpp

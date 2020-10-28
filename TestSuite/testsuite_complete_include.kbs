@@ -4,7 +4,7 @@
 # date		programmer	description
 # 20140529	j.m.reneau	original coding
 
-# macos and android do not have 3 button mouses
+currentsuite = "complete"
 
 # This section of the testsuite searches all of the programs
 # in the TestSuite folder using regular expressions to
@@ -35,7 +35,7 @@ if exists("../LEX/basicParse.l") then
    do
       pos = instr(l$,' ')
       if pos>1 then
-         if left(l$,6)<> "error_" and left(l$,8)<> "warning_" then
+         if left(l$,6)<> "error_" and left(l$,8)<> "warning_" and left(l$,pos-1)<> "label" then
             token$[ntoken] = left(l$,pos-1)
             regex$[ntoken] = mid(l$,pos+1,99999)
             kount[ntoken] = 0

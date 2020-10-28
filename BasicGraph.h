@@ -21,15 +21,11 @@
 
 #include <stdio.h>
 
-#include <qglobal.h>
-
 #include <QtWidgets/QWidget>
+#include <QtWidgets/QToolBar>
 #include <QPainter>
 #include <QKeyEvent>
-
-
 #include "ViewWidgetIFace.h"
-#include "BasicOutput.h"
 
 #define GSIZE_INITIAL_WIDTH   300
 #define GSIZE_INITIAL_HEIGHT   300
@@ -41,7 +37,12 @@ class BasicGraph : public QWidget, public ViewWidgetIFace
   BasicGraph();
   ~BasicGraph();
   QImage *image;
-  bool initActions(QMenu *, ToolBar *);
+  QImage *gridlinesimage;
+  QImage *displayedimage;
+  QImage *spritesimage;
+  QRegion sprites_clip_region;
+  bool draw_sprites_flag;
+  bool initActions(QMenu *, QToolBar *);
   // used to store current location of mouse
   // default value of -1 when no mouse recorded over graphic output
   int mouseX;
@@ -53,29 +54,43 @@ class BasicGraph : public QWidget, public ViewWidgetIFace
   int clickY;
   int clickB;
   bool isVisibleGridLines();
+  void updateScreenImage();
+  QAction *copyAct;
+  QAction *printAct;
+  QAction *clearAct;
 
- 
+
  public slots:
-  void resize(int, int);
+  void resize(int, int, qreal);
   void slotGridLines(bool);
   void slotCopy();
   void slotPrint();
- 
+  void slotClear();
+  void slotSetZoom(double);
+  double getZoom();
+
  protected:
   void paintEvent(QPaintEvent *);
   void keyPressEvent(QKeyEvent *);
+  void keyReleaseEvent(QKeyEvent *);
   void mousePressEvent(QMouseEvent *);
   void mouseReleaseEvent(QMouseEvent *);
   void mouseMoveEvent(QMouseEvent *);
-  
- private:
-  uchar *imagedata;
-  unsigned int gwidth;
-  unsigned int gheight;
-  unsigned int gtop;	// position of image in basicgraph widget
-  unsigned int gleft;
-  bool gridlines;		// show the grid lines or not
+  void mouseDoubleClickEvent(QMouseEvent * );
+  void focusOutEvent(QFocusEvent* );
 
+ private:
+  int gwidth;
+  int gheight;
+  qreal gscale;
+  qreal gzoom;
+  qreal oldzoom;
+  bool gridlines;		// show the grid lines or not
+  void drawGridLines();
+  QTransform gtransform;
+  QTransform gtransforminverted;
+  void setTrasformationMaps();
+  void resizeWindowToFitContent();
 };
 
 

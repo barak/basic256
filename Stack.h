@@ -13,54 +13,65 @@
 #include <limits>
 
 #include <QString>
-#include "ErrorCodes.h"
+#include <QLocale>
 
-#define BASIC256EPSILON 0.00000001
+#include "Error.h"
+#include "Convert.h"
+#include "DataElement.h"
+#include "Settings.h"
 
-enum b_type {T_FLOAT, T_STRING, T_BOOL, T_ARRAY, T_STRARRAY, T_UNUSED, T_VARREF, T_VARREFSTR};
-// stack types T_VARREF, T_VARREFSTR are to pass a variable reference to a subroutine or function (BYREF passing)
 
-struct stackdata
-{
-  b_type type;
-  QString string;
-  double floatval; 
-};
 
 class Stack
 {
- public:
-  Stack();
-  ~Stack();
-  
-  void pushstring(QString);
-  void pushint(int);
-  void pushfloat(double);
-  void pushvarref(int);
-  void pushvarrefstr(int);
-  void swap();
-  void swap2();
-  void topto2();
-  void dup();
-  void dup2();
-  int peekType();
-  int popint();
-  double popfloat();
-  QString popstring();
-  void clear();
-  QString debug();
-  int height();
-  int compareTopTwo();
-  int compareFloats(double, double);
-  int error();
-  void clearerror();
-  void settypeconverror(int);
-  void setdecimaldigits(int);
+	public:
+		Stack(Convert *, QLocale *);
+		~Stack();
 
- private:
-  std::list<stackdata*> stacklist;
-  int errornumber;		// internal storage of last stack error
-  int typeconverror;	// 0-return no errors on type conversion, 1-warn, 2-error
-  int decimaldigits;	// display n decinal digits 12 default - 8 to 15 valid
-  stackdata *popelement();
+		Convert *convert;
+		void pushDE(DataElement*);
+		void pushBool(bool);
+		void pushQString(QString);
+		void pushVariant(QString, int);
+		void pushInt(int);
+		void pushLong(long);
+		void pushRef(int, int);
+		void pushDouble(double);
+		void swap();
+		void swap2();
+		void topto2();
+		void dup();
+		void dup2();
+		int peekType();
+		int peekType(int);
+		DataElement *popDE();
+		int popInt();
+		int popBool();
+		long popLong();
+		double popDouble();
+		double popMusicalNote();
+		QString popQString();
+		QString debug();
+		int height();
+		void drop(int);
+
+
+		static int getError() {
+			return getError(false);
+		}
+
+		static int getError(int clear) {
+			int olde = e;
+			if (clear) e = ERROR_NONE;
+			return olde;
+		}
+
+	private:
+		std::vector<DataElement*> stackdata;
+		int stackpointer; //faster than unsigned int and is quite enough as size
+		int stacksize;
+		void stackGrow();
+		QLocale *locale;
+		
+		static int e;		// error number thrown - will be 0 if no error
 };

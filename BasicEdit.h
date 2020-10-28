@@ -26,76 +26,97 @@
 #include <QtWidgets/QMainWindow>
 #include <QKeyEvent>
 #include <QList>
+#include <QMimeData>
+
+#include <QMimeDatabase>
 
 #include "ViewWidgetIFace.h"
 
 class BasicEdit : public QPlainTextEdit, public ViewWidgetIFace
 {
-  Q_OBJECT
+	Q_OBJECT
 
- public:
-  BasicEdit();
-  ~BasicEdit();
+	public:
+        BasicEdit(const QString &defaulttitle = QString());
+		~BasicEdit();
 
-  void loadFile(QString);
-  void saveFile(bool);
-  void findString(QString, bool, bool);
-  void replaceString(QString, QString, bool, bool, bool);
-  bool codeChanged;
-  QString getCurrentWord();
-  void lineNumberAreaPaintEvent(QPaintEvent *event);
-  void lineNumberAreaMouseClickEvent(QMouseEvent *event);
-  int lineNumberAreaWidth();
-  QList<int> *breakPoints;
-  void clearBreakPoints();
+        void saveFile(bool);
+		void findString(QString, bool, bool, bool);
+        void replaceString(QString, QString, bool, bool, bool, bool);
+		QString getCurrentWord();
+		void lineNumberAreaPaintEvent(QPaintEvent *event);
+        void lineNumberAreaMouseClickEvent(QMouseEvent *event);
+        void lineNumberAreaMouseWheelEvent(QWheelEvent *event);
+		int lineNumberAreaWidth();
+        QList<int> *breakPoints;
+        void updateBreakPointsList();
+		void setFont(QFont);
+        int runState; //0 - stop, 1-run, 2-debug
+        QString title;
+        QString windowtitle;
+        QString filename;
+        QString path;
+        QAction *action;
+        void setTitle(QString newTitle);
+        void dropEvent(QDropEvent *event);
+        void dragEnterEvent(QDragEnterEvent *event);
+        bool undoButton;
+        bool redoButton;
+        bool copyButton;
+        bool isBreakPoint();
 
- public slots:
-  void newProgram();
-  void saveProgram();
-  void saveAsProgram();
-  void loadProgram();
-  void cursorMove();
-  void goToLine(int);
-  void seekLine(int);
-  void slotPrint();
-  void beautifyProgram();
-  void slotWhitespace(bool);
-  void loadRecent0();
-  void loadRecent1();
-  void loadRecent2();
-  void loadRecent3();
-  void loadRecent4();
-  void loadRecent5();
-  void loadRecent6();
-  void loadRecent7();
-  void loadRecent8();
 
-signals:
-	void changeStatusBar(QString);
-	void changeWindowTitle(QString);
- 
- protected:
-  void keyPressEvent(QKeyEvent *);
-  void resizeEvent(QResizeEvent *event);
+	public slots:
+		void saveProgram();
+        void saveAllStep(int);
+		void saveAsProgram();
+        void cursorMove();
+		void goToLine(int);
+		void seekLine(int);
+		void slotPrint();
+		void beautifyProgram();
+		void slotWhitespace(bool);
+        void highlightCurrentLine();
+		int  indentSelection();
+		void unindentSelection();
+        void clearBreakPoints();
+        void toggleBreakPoint();
+        void updateTitle();
+        void setEditorRunState(int);
+        void fileChangedOnDiskSlot(QString);
 
- private:
-  QMainWindow *mainwin;
-  int currentMaxLine;
-  int currentLine;
-  int startPos;
-  int linePos;
-  QString filename;
-//  void changeFontSize(unsigned int);
-  void addFileToRecentList(QString);
-  void loadRecent(int);
-  QWidget *lineNumberArea;
-  
-private slots:
-  void updateLineNumberAreaWidth(int newBlockCount);
-  void updateLineNumberArea(const QRect &, int);
-  void highlightCurrentLine();
 
-   
+	signals:
+		void changeStatusBar(QString);
+        void updateWindowTitle(BasicEdit*);
+        void addFileToRecentList(QString);
+        void updateEditorButtons();
+        void setCurrentEditorTab(BasicEdit*);
+
+
+	protected:
+		void keyPressEvent(QKeyEvent *);
+        void resizeEvent(QResizeEvent *event);
+
+	private:
+		const int STATECLEAR = -1;
+		const int STATEBREAKPOINT = 1;
+		int currentLine;
+		int startPos;
+		int linePos;
+        QWidget *lineNumberArea;
+        int rightClickBlockNumber;
+        int lastLineNumberAreaWidth = -1;
+        bool fileChangedOnDiskFlag; //used to mark this event during running a program
+        void handleFileChangedOnDisk();
+
+	private slots:
+        void updateLineNumberAreaWidth(int newBlockCount);
+        void updateLineNumberArea(const QRect &, int);
+        void slotUndoAvailable(bool);
+        void slotRedoAvailable(bool);
+        void slotCopyAvailable(bool);
+        void actionWasTriggered();
 };
 
 

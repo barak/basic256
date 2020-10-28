@@ -21,8 +21,10 @@
 #include <QTextCursor>
 #include <QMutex>
 #include <QClipboard>
+#include <QMimeData>
 
 #include <QtWidgets/QAction>
+#include <QtWidgets/QToolBar>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMessageBox>
 #include <QtPrintSupport/QPrintDialog>
@@ -30,82 +32,132 @@
 
 #include "Settings.h"
 #include "BasicOutput.h"
+#include "BasicKeyboard.h"
 
 extern QMutex *mymutex;
-extern int currentKey;
+extern BasicKeyboard *basicKeyboard;
 
 BasicOutput::BasicOutput( ) : QTextEdit () {
-    setInputMethodHints(Qt::ImhNoPredictiveText);
-    setFocusPolicy(Qt::StrongFocus);
-    setAcceptRichText(false);
-    gettingInput = false;
-
+    inputText.clear();
+    setReadOnly(true);
+	setInputMethodHints(Qt::ImhNoPredictiveText);
+	setFocusPolicy(Qt::StrongFocus);
+	setAcceptRichText(false);
+	setUndoRedoEnabled(false);
+	gettingInput = false;
+	connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(cursorChanged()));
+	connect(this, SIGNAL(selectionChanged()), this, SLOT(cursorChanged()));
 }
 
 BasicOutput::~BasicOutput( ) {
     // destructor for basic output
 }
 
-void
-BasicOutput::getInput() {
+void BasicOutput::getInput() {
+    // move cursor to the end of the existing text and start input
+    inputText.clear();
     gettingInput = true;
-    startPos = textCursor().position();
-    setReadOnly(false);
-    setFocus();
+	emit(mainWindowsVisible(2,true));
+	QTextCursor t(textCursor());
+	t.movePosition(QTextCursor::End);
+	setTextCursor(t);
+	startPos = t.position();
+	setReadOnly(false);
+	setFocus();
+    updatePasteButton();
 }
 
-void
-BasicOutput::keyPressEvent(QKeyEvent *e) {
+void BasicOutput::stopInput() {
+	gettingInput = false;
+	setReadOnly(true);
+    updatePasteButton();
+}
+
+
+void BasicOutput::keyPressEvent(QKeyEvent *e) {
     e->accept();
     if (!gettingInput) {
         mymutex->lock();
-        currentKey = e->key();
-        mymutex->unlock();
-        //QTextEdit::keyPressEvent(e);
+        basicKeyboard->keyPressed(e);
+        QTextEdit::keyPressEvent(e);
+		mymutex->unlock();
     } else {
         if (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter) {
             QTextCursor t(textCursor());
-            t.setPosition(startPos, QTextCursor::KeepAnchor);
-            emit(inputEntered(t.selectedText())); // send the string back to the interperter and run controller
+            t.setPosition(startPos);
+            t.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+            inputText=t.selectedText();
+            t.movePosition(QTextCursor::End);
+            setTextCursor(t);
             insertPlainText("\n");
-            gettingInput = false;
-            setReadOnly(true);
-       } else if (e->key() == Qt::Key_Backspace || e->key() == Qt::Key_Left) {
+            stopInput();
+            emit(inputEntered(inputText)); // send the string back to the interperter and run controller
+
+       } else if (e->key() == Qt::Key_Backspace) {
             QTextCursor t(textCursor());
             t.movePosition(QTextCursor::PreviousCharacter);
             if (t.position() >= startPos)
                 QTextEdit::keyPressEvent(e);
-        } else if (e->key() == Qt::Key_Home || e->key() == Qt::Key_PageUp || e->key() == Qt::Key_Up) {
-            QTextCursor t(textCursor());
-            t.setPosition(startPos);
-            setTextCursor(t);
         } else {
             QTextEdit::keyPressEvent(e);
         }
     }
 }
 
-bool BasicOutput::initActions(QMenu * vMenu, ToolBar * vToolBar) {
-    if ((NULL == vMenu) || (NULL == vToolBar)) {
-        return false;
-    }
 
-    QAction *copyAct = vMenu->addAction(QObject::tr("Copy"));
-    QAction *pasteAct = vMenu->addAction(QObject::tr("Paste"));
-    QAction *printAct = vMenu->addAction(QObject::tr("Print"));
+void BasicOutput::keyReleaseEvent(QKeyEvent *e) {
+	e->accept();
+	if (!gettingInput) {
+        mymutex->lock();
+        basicKeyboard->keyReleased(e);
+        QTextEdit::keyReleaseEvent(e);
+		mymutex->unlock();
+	}
+}
 
-    vToolBar->addAction(copyAct);
-    vToolBar->addAction(pasteAct);
+void BasicOutput::focusOutEvent(QFocusEvent* ){
+    //clear pressed keys list when lose focus to avoid detecting still pressed keys
+    basicKeyboard->reset();
+}
+
+bool BasicOutput::initActions(QMenu * vMenu, QToolBar * vToolBar) {
+	if ((NULL == vMenu) || (NULL == vToolBar)) {
+		return false;
+	}
+
+	vToolBar->setObjectName("outtoolbar");
+
+
+    copyAct = vMenu->addAction(QObject::tr("Copy"));
+    copyAct->setShortcutContext(Qt::WidgetShortcut);
+    copyAct->setShortcuts(QKeySequence::keyBindings(QKeySequence::Copy));
+    copyAct->setEnabled(false);
+    pasteAct = vMenu->addAction(QObject::tr("Paste"));
+    pasteAct->setShortcutContext(Qt::WidgetShortcut);
+    pasteAct->setShortcuts(QKeySequence::keyBindings(QKeySequence::Paste));
+    pasteAct->setEnabled(false);
+    printAct = vMenu->addAction(QObject::tr("Print"));
+    printAct->setShortcutContext(Qt::WidgetShortcut);
+    printAct->setShortcuts(QKeySequence::keyBindings(QKeySequence::Print));
+    clearAct = vMenu->addAction(QObject::tr("Clear"));
+    clearAct->setEnabled(false);
+
+	vToolBar->addAction(copyAct);
+	vToolBar->addAction(pasteAct);
     vToolBar->addAction(printAct);
+    vToolBar->addAction(clearAct);
 
-    QObject::connect(copyAct, SIGNAL(triggered()), this, SLOT(copy()));
-    QObject::connect(pasteAct, SIGNAL(triggered()), this, SLOT(paste()));
-    QObject::connect(printAct, SIGNAL(triggered()), this, SLOT(slotPrint()));
+	QObject::connect(copyAct, SIGNAL(triggered()), this, SLOT(copy()));
+	QObject::connect(pasteAct, SIGNAL(triggered()), this, SLOT(paste()));
+	QObject::connect(printAct, SIGNAL(triggered()), this, SLOT(slotPrint()));
+    QObject::connect(this, SIGNAL(copyAvailable(bool)), copyAct, SLOT(setEnabled(bool)));
+    QObject::connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(updatePasteButton()));
+    QObject::connect(clearAct, SIGNAL(triggered()), this, SLOT(slotClear()));
 
-    m_usesToolBar = true;
-    m_usesMenu = true;
+	m_usesToolBar = true;
+	m_usesMenu = true;
 
-    return true;
+	return true;
 }
 
 void BasicOutput::slotPrint() {
@@ -126,3 +178,61 @@ void BasicOutput::slotPrint() {
     }
 #endif
 }
+
+
+//User can navigate or select text only in permitted area when BASIC-256 wait for input
+void BasicOutput::cursorChanged() {
+	if (gettingInput) {
+		QTextCursor t(textCursor());
+		int position=t.position();
+		int anchor=t.anchor();
+		if (position < startPos || anchor < startPos) {
+			if (position < startPos) position = startPos;
+			if (anchor < startPos) anchor = startPos;
+			t.setPosition(anchor, QTextCursor::MoveAnchor);
+			t.setPosition(position, QTextCursor::KeepAnchor);
+			setTextCursor(t);
+		}
+	}
+}
+
+
+// Ensure that drag and drop is allowed only in permitted area when BASIC-256 wait for input
+void BasicOutput::dragEnterEvent(QDragEnterEvent *e){
+	if (e->mimeData()->hasFormat("text/plain") && gettingInput && !isReadOnly()  )
+		e->acceptProposedAction();
+}
+
+void BasicOutput::dragMoveEvent (QDragMoveEvent *event){
+	QTextCursor t = cursorForPosition(event->pos());
+	if (t.position() >= startPos){
+		event->acceptProposedAction();
+		QDragMoveEvent move(event->pos(),event->dropAction(), event->mimeData(), event->mouseButtons(),
+			event->keyboardModifiers(), event->type());
+		QTextEdit::dragMoveEvent(&move); // Call the parent function (show cursor and keep selection)
+	} else {
+		event->ignore();
+	}
+}
+
+
+//Ensure that drang and drop operation or paste operation will add only first line of the copied text.
+void BasicOutput::insertFromMimeData(const QMimeData* source)
+{
+	if (source->hasText()) {
+		QString s = source->text();
+		QStringList l = s.split(QRegExp("[\r\n]"),QString::SkipEmptyParts);
+		textCursor().insertText(l.at(0));
+		setFocus();
+	}
+}
+
+void BasicOutput::updatePasteButton(){
+     pasteAct->setEnabled(this->canPaste());
+}
+
+void BasicOutput::slotClear(){
+     clearAct->setEnabled(false);
+     clear();
+}
+

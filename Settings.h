@@ -25,56 +25,56 @@
 	#define SETTINGSAPP "BASIC-256 IDE"
 	#define SETTINGSPORTABLEINI	"BASIC256_IDE.ini"
 
+	// error reporting options
+	#define SETTINGSERRORNONE 0
+	#define SETTINGSERRORWARN 1
+	#define SETTINGSERROR 2
+	
+	// ALLOW options
+	#define SETTINGSALLOWNO 0
+	#define SETTINGSALLOWASK 1
+	#define SETTINGSALLOWYES 2
+	
 	// main window
-	#define SETTINGSVISIBLE "Main/Visible"
-	#define SETTINGSPOS "Main/Pos"
-	#define SETTINGSDEFAULT_X 100
-	#define SETTINGSDEFAULT_Y 100
-	#define SETTINGSSIZE "Main/Size"
-	#define SETTINGSDEFAULT_W 800
-	#define SETTINGSDEFAULT_H 600
-    #define SETTINGSFONT "Main/Font"
-    #define SETTINGSTOOLBAR "Main/Toolbar"
-    #define SETTINGSFONTDEFAULT "Courier,10,-1,5,50,0,0,0,0,0"
+    #define SETTINGSMAINGEOMETRY "Main/Geometry/"
+    #define SETTINGSMAINSTATE "Main/State/"
 
-    #define SETTINGSEDITWHITESPACE "Edit/Whitespace"
-    #define SETTINGSEDITWHITESPACEDEFAULT false
+    #define SETTINGSFONT "Main/Font/"
+    #define SETTINGSTOOLBARVISIBLE "Main/ToolbarVisible/"
+    #define SETTINGSTOOLBARVISIBLEDEFAULT true
+    #define SETTINGSFONTDEFAULT "DejaVu Sans Mono,11,-1,5,50,0,0,0,0,0"
+
     
-    #define SETTINGSOUTVISIBLE "OutDock/Visible"
-    #define SETTINGSOUTFLOAT "OutDock/Float"
-    #define SETTINGSOUTPOS "OutDock/Pos"
-	#define SETTINGSOUTDEFAULT_X 100
-	#define SETTINGSOUTDEFAULT_Y 100
-    #define SETTINGSOUTSIZE "OutDock/Size"
-	#define SETTINGSOUTDEFAULT_W 400
-	#define SETTINGSOUTDEFAULT_H 400
-    #define SETTINGSOUTTOOLBAR "OutDock/Toolbar"
+    #define SETTINGSEDITVISIBLE "Edit/Visible/"
+    #define SETTINGSEDITVISIBLEDEFAULT true
+    #define SETTINGSEDITWHITESPACE "Edit/Whitespace/"
+    #define SETTINGSEDITWHITESPACEDEFAULT false
 
-    #define SETTINGSGRAPHVISIBLE "GraphDock/Visible"
-    #define SETTINGSGRAPHFLOAT "GraphDock/Float"
-    #define SETTINGSGRAPHPOS "GraphDock/Pos"
-	#define SETTINGSGRAPHDEFAULT_X 100
-	#define SETTINGSGRAPHDEFAULT_Y 100
-    #define SETTINGSGRAPHSIZE "GraphDock/Size"
-	#define SETTINGSGRAPHDEFAULT_W 400
-	#define SETTINGSGRAPHDEFAULT_H 400
-    #define SETTINGSGRAPHTOOLBAR "GraphDock/Toolbar"
-    #define SETTINGSGRAPHGRIDLINES "GraphDock/GridLines"
+    #define SETTINGSOUTVISIBLE "Out/Visible/"
+    #define SETTINGSOUTVISIBLEDEFAULT true
+    #define SETTINGSOUTTOOLBARVISIBLE "Out/ToolbarVisible/"
+    #define SETTINGSOUTTOOLBARVISIBLEDEFAULT true
 
-    #define SETTINGSVARVISIBLE "VarDock/Visible"
-    #define SETTINGSVARFLOAT "VarDock/Float"
-    #define SETTINGSVARPOS "VarDock/Pos"
-	#define SETTINGSVARDEFAULT_X 100
-	#define SETTINGSVARDEFAULT_Y 100
-    #define SETTINGSVARSIZE "VarDock/Size"
-	#define SETTINGSVARDEFAULT_W 400
-	#define SETTINGSVARDEFAULT_H 400
+    #define SETTINGSGRAPHVISIBLE "Graph/Visible/"
+    #define SETTINGSGRAPHVISIBLEDEFAULT true
+    #define SETTINGSGRAPHTOOLBARVISIBLE "Graph/ToolbarVisible/"
+    #define SETTINGSGRAPHTOOLBARVISIBLEDEFAULT true
+    #define SETTINGSGRAPHGRIDLINES "Graph/GridLines/"
+    #define SETTINGSGRAPHGRIDLINESDEFAUT false
+    
+    #define SETTINGSVARVISIBLE "Var/Visible/"
+    #define SETTINGSVARVISIBLEDEFAULT false
     
 	// other IDE preferences
 	#define SETTINGSIDESAVEONRUN "IDE/SaveOnRun"
 	#define SETTINGSIDESAVEONRUNDEFAULT false
-	
-	
+
+    // startup
+    #define SETTINGSWINDOWSRESTORE "Startup/Restore"
+    #define SETTINGSWINDOWSRESTOREDEFAULT true
+    #define SETTINGSCHECKFORUPDATE "Startup/CheckForUpdate"
+    #define SETTINGSCHECKFORUPDATEDEFAULT true
+
 	// documentation window
 	#define SETTINGSDOCSIZE "Doc/Size"
 	#define SETTINGSDOCPOS "Doc/Pos"
@@ -85,42 +85,64 @@
 
 	// Replace window
 	#define SETTINGSREPLACEPOS "Replace/Pos"
-	#define SETTINGSREPLACEFROM "Replace/From"
-	#define SETTINGSREPLACETO "Replace/To"
-	#define SETTINGSREPLACECASE "Replace/Case"
-	#define SETTINGSREPLACECASEDEFAULT false
-	#define SETTINGSREPLACEBACK "Replace/Back"
-	#define SETTINGSREPLACEBACKDEFAULT false
 
-	// permissions
+    // permissions (SYSTEM and PORTIN/PORTOUT)
 	#define SETTINGSALLOWSYSTEM "Allow/System"
-	#define SETTINGSALLOWSYSTEMDEFAULT true
-	#define SETTINGSALLOWSETTING "Allow/Setting"
-	#define SETTINGSALLOWSETTINGDEFAULT true
+    #define SETTINGSALLOWSYSTEMDEFAULT SETTINGSALLOWNO
 	#define SETTINGSALLOWPORT "Allow/Port"
-	#define SETTINGSALLOWPORTDEFAULT true
-
+    #define SETTINGSALLOWPORTDEFAULT SETTINGSALLOWNO
+    //permissions (setsetting/getsetting)
+    #define SETTINGSSETTINGSACCESS "Settings/AccesLevel"
+    #define SETTINGSSETTINGSACCESSDEFAULT 0
+    #define SETTINGSSETTINGSMAX "Settings/MaxKeys"
+    #define SETTINGSSETTINGSMAXDEFAULT 100
+    #define SETTINGSALLOWSETTING "Settings/Allow"
+    #define SETTINGSALLOWSETTINGDEFAULT true
+    // store user settings (setsetting/getsetting) in seperate group
+    #define SETTINGSGROUPUSER "UserSettings"
 
 	// user settings
 	#define SETTINGSTYPECONV "Runtime/TypeConv"
-	#define SETTINGSTYPECONVDEFAULT 0
-	#define SETTINGSTYPECONVNONE 0
-	#define SETTINGSTYPECONVWARN 1
-	#define SETTINGSTYPECONVERROR 2
+	#define SETTINGSTYPECONVDEFAULT SETTINGSERRORNONE
+	#define SETTINGSVARNOTASSIGNED "Runtime/VNA"
+	#define SETTINGSVARNOTASSIGNEDDEFAULT SETTINGSERROR
 	#define SETTINGSDEBUGSPEED "Runtime/DebugSpeed"
 	#define SETTINGSDEBUGSPEEDDEFAULT 10
 	#define SETTINGSDEBUGSPEEDMIN 1
 	#define SETTINGSDEBUGSPEEDMAX 2000
 	#define SETTINGSDECDIGS "Runtime/DecDigs"
 	#define SETTINGSDECDIGSDEFAULT 12
-	#define SETTINGSDECDIGSMIN 9
-	#define SETTINGSDECDIGSMAX 14
+    #define SETTINGSDECDIGSMIN 10
+    #define SETTINGSDECDIGSMAX 16
+	#define SETTINGSFLOATTAIL "Runtime/FloatTail"
+	#define SETTINGSFLOATTAILDEFAULT true
+    #define SETTINGSFLOATLOCALE "Runtime/FloatLocale"
+    #define SETTINGSFLOATLOCALEDEFAULT false
+
+    // sound settings
+    #define SETTINGSSOUNDVOLUME "Sound/Volume"
+    #define SETTINGSSOUNDVOLUMEDEFAULT 5
+    #define SETTINGSSOUNDVOLUMEMIN 0
+    #define SETTINGSSOUNDVOLUMEMAX 10
+    #define SETTINGSSOUNDNORMALIZE "Sound/Normalize"
+    #define SETTINGSSOUNDNORMALIZEDEFAULT 1000
+    #define SETTINGSSOUNDNORMALIZEMIN 200
+    #define SETTINGSSOUNDNORMALIZEMAX 2000
+    #define SETTINGSSOUNDVOLUMERESTORE "Sound/VolumeRestore"
+    #define SETTINGSSOUNDVOLUMERESTOREDEFAULT 1000
+    #define SETTINGSSOUNDVOLUMERESTOREMIN 100
+    #define SETTINGSSOUNDVOLUMERESTOREMAX 2000
+    #define SETTINGSSOUNDSAMPLERATE "Sound/SampleRate"
+    #define SETTINGSSOUNDSAMPLERATEDEFAULT 22050
+
 	
-	
-	
-	// espeak language settings
+	// espeak - library
 	#define SETTINGSESPEAKVOICE "eSpeak/Voice"
 	#define SETTINGSESPEAKVOICEDEFAULT "default"
+	
+	// espeak - statement
+	#define SETTINGSESPEAKSTATEMENT "eSpeak/Statement"
+	#define SETTINGSESPEAKSTATEMENTDEFAULT "espeak \"WORD\""
 	
 	// printersettings
 	#define SETTINGSPRINTERPRINTER "Printer/Printer"
@@ -134,10 +156,12 @@
 
 	// store history of files as SaveHistory/0 ... SaveHistory/8 
 	#define SETTINGSGROUPHIST "SaveHistory"
-	#define SETTINGSGROUPHISTN 9
+    #define SETTINGSGROUPHISTN 10
 
-	// store user settings (setsetting/getsetting) in seperate group
-	#define SETTINGSGROUPUSER "UserSettings"
+    // Graphics window zoom
+    #define SETTINGSZOOM "View/Zoom"
+    #define SETTINGSZOOMDEFAULT 1.0
+
 
 
     // You need an SETTINGS; statement when you are using settings in a function

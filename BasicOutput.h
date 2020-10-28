@@ -22,6 +22,7 @@
 #include <QKeyEvent>
 #include <QPaintEvent>
 #include <QtWidgets/QTextEdit>
+#include <QtWidgets/QToolBar>
 
 #include <qglobal.h>
 
@@ -35,24 +36,40 @@ class BasicOutput : public QTextEdit, public ViewWidgetIFace
   ~BasicOutput();
   
   char *inputString;
+  int currentKey;			// store the last key pressed for key function
   void inputStart();
+  QAction *copyAct;
+  QAction *pasteAct;
+  QAction *printAct;
+  QAction *clearAct;
 
-  virtual bool initActions(QMenu *, ToolBar *);
-  
+  virtual bool initActions(QMenu *, QToolBar *);
+
  public slots:
   void getInput();
+  void stopInput();
   void slotPrint();
- 
+  void cursorChanged();
+  void updatePasteButton();
+  void slotClear();
+
  signals:
   void inputEntered(QString);
+  void mainWindowsVisible(int, bool);
   
  protected:
   void keyPressEvent(QKeyEvent *);
- 
+  void keyReleaseEvent(QKeyEvent *);
+  void dragEnterEvent(QDragEnterEvent *e);
+  void dragMoveEvent(QDragMoveEvent *e);
+  void insertFromMimeData(const QMimeData *source);
+  void focusOutEvent(QFocusEvent* );
+
  private:
   int startPos;
   bool gettingInput;
   void changeFontSize(unsigned int);
+  QString inputText;
 };
 
 

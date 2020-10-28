@@ -25,10 +25,11 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QStatusBar>
 
+#include <QLocale>
+
 #include "BasicEdit.h"
 #include "BasicOutput.h"
 #include "BasicGraph.h"
-#include "DocumentationWin.h"
 #include "Interpreter.h"
 #include "ReplaceWin.h"
 
@@ -39,31 +40,26 @@ class RunController : public QObject
   RunController();
   ~RunController();
   ReplaceWin *replacewin;
-  DocumentationWin *docwin;
-
+  
  signals:
-  void debugStarted();
-  void runStarted();
   void runHalted();
-  void runPaused();
-  void runResumed();
  
  public slots:
   void speakWords(QString);
   void executeSystem(QString);
   void inputEntered(QString text);
   void outputReady(QString text);
+  void outputError(QString text);
   void outputClear();
   void goutputReady();
-  void mainWindowsResize(int, int, int);
+  void resizeGraphWindow(int, int, qreal);
   void startDebug();
+  void debugNextStep();
   void startRun();
-  void stopRun();
-  void pauseResume();
+  void stopRun();				// user pressed the stop button
+  void stopRunFinalized(bool ok);		// called when interperter finally finished stoprun and pass if there was an error or not
   void stepThrough();
   void stepBreakPoint();
-  void showDocumentation();
-  void showContextDocumentation();
   void showOnlineDocumentation();
   void showOnlineContextDocumentation();
   void showPreferences();
@@ -74,21 +70,26 @@ class RunController : public QObject
   void dialogAlert(QString);
   void dialogConfirm(QString, int);
   void dialogPrompt(QString, QString);
-  void dialogFontSelect();
-  void mainWindowSetRunning(int);
-  void mainWindowEnableCopy(bool);
-  
-#ifdef USEQSOUND
-	void playWAV(QString);
-	void stopWAV();
-	void waitWAV(); 
-#endif
+  void dialogAllowPortInOut(QString);
+  void dialogAllowSystem(QString);
+  void playSound(QString, bool);
+  void playSound(std::vector<std::vector<double>>, bool);
+  void loadSoundFromArray(QString, QByteArray*);
+  void soundStop(int);
+  void soundPlay(int);
+  void soundFade(int, double, int, int);
+  void soundVolume(int, double);
+  //void soundExit();
+  void soundPlayerOff(int);
+  void soundSystem(int);
 
  private:
   Interpreter *i;
   bool paused;
   run_status oldStatus;
   QString bytefilename;
+  QLocale *locale;
+  BasicEdit *currentEditor;
 };
 
 
