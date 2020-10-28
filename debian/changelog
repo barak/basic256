@@ -1,9 +1,17 @@
-basic256 (1.1.4.0+dfsg-3) UNRELEASED; urgency=low
+basic256 (2.0.0.11-1) unstable; urgency=low
 
+  [ Debian Janitor ]
   * Use secure URI in Homepage field.
   * Set upstream metadata fields: Archive, Repository.
 
- -- Debian Janitor <janitor@jelmer.uk>  Tue, 18 Aug 2020 08:15:05 -0000
+  [ Barak A. Pearlmutter ]
+  * New Upstream Version
+  * Adopt Package
+  * Forward port patches, 2 of 4 no longer necessary
+  * Update desktop icon file
+  * Adopt Package (closes: #845980)
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Wed, 28 Oct 2020 21:44:22 +0000
 
 basic256 (1.1.4.0+dfsg-2) unstable; urgency=medium
 
