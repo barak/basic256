@@ -4,95 +4,70 @@
 
 #pragma once
 
-#include <map>
-#include <vector>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "Error.h"
+#include "DataElement.h"
 
-#include <QString>
-
-#include "ErrorCodes.h"
-#include "Stack.h"
-
-
-#define VARIABLE_MAXARRAYELEMENTS 1048576
 #define MAX_RECURSE_LEVELS	1048576
 
-typedef struct VariableArrayData {
-  double floatval;
-  QString string;
-} VariableArrayData;
-  
-typedef struct VariableArrayPart
-{
-  int xdim;
-  int ydim;
-  int size;
-  std::map<int,VariableArrayData*> datamap;
-} VariableArrayPart;
 
-
-struct variable
+class Variable
 {
-  b_type type;
-  QString string;
-  double floatval; 
-  VariableArrayPart *arr;
+	public:
+		Variable();
+		~Variable();
+
+		DataElement *data;
 };
 
 
-class Variables
+class Variables: public QObject
 {
+	Q_OBJECT;
 	public:
-		Variables();
+		Variables(int);
 		~Variables();
 		//
-		void clear();
+		QString debug();
 		void increaserecurse();
 		void decreaserecurse();
 		int getrecurse();
 		//
 		int type(int);
-		int error();
-		int errorvarnum();
 		//
-		void setvarref(int, int);
-		//
-		void setfloat(int, double);
-		double getfloat(int);
-		//
-		void setstring(int, QString);
-		QString getstring(int);
-		//
-		void arraydim(b_type, int, int, int, bool);
-		//
-		int arraysize(int);
-		int arraysizex(int);
-		int arraysizey(int);
-		//
-		void arraysetfloat(int, int, double);
-		void array2dsetfloat(int, int, int, double);
-		double arraygetfloat(int, int);
-		double array2dgetfloat(int, int, int);
-		//
-		void arraysetstring(int, int, QString);
-		void array2dsetstring(int, int, int, QString);
-		QString arraygetstring(int, int);
-		QString array2dgetstring(int, int, int);
+		Variable* get(int, int);
+		Variable* get(int);
+		Variable* getAt(int, int);
+		Variable* getAt(int);
+		DataElement *getData(int);
+
+		void setData(int, DataElement *);
+		void setData(int, long);
+		void setData(int, double);
+		void setData(int, QString);
+		void unassign(int);
 		//
 		void makeglobal(int);
 
+		static int getError() {
+			return getError(false);
+		}
+
+		static int getError(int clear) {
+			int olde = e;
+			if (clear) e = ERROR_NONE;
+			return olde;
+		}
 
 	private:
-		int lasterror;
-		int lasterrorvar;
+		int real_varnum;		// set by get and getAt for the actual variable number and level returned (deref/global)
+		int real_level;
+		int numsyms;		// size of the symbol table
 		int recurselevel;
-		std::map<int, std::map<int,variable*> > varmap;
-		std::map<int, bool> globals;
-		void clearvariable(variable*);
-		variable* getv(int, bool);
-        VariableArrayData* getarraydata(variable*, int);
-		bool isglobal(int);
-
+		int maxrecurselevel;
+		std::vector<Variable**> varmap;
+		bool *isglobal;
+		void allocateRecurseLevel();
+		void clearRecurseLevel();
+		void clearvariable(Variable *);
+		static int e;		// error number thrown - will be 0 if no error
 };

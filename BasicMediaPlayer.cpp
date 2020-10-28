@@ -15,13 +15,19 @@
  **  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  **/
 
-#ifndef USEQSOUND
-
 #include "BasicMediaPlayer.h"
 
+BasicMediaPlayer::BasicMediaPlayer() {
+	mediasleeper = new Sleeper();
+}
+
+
 void BasicMediaPlayer::loadFile(QString file) {
-    // blocking load adapted from http://qt-project.org/wiki/seek_in_sound_file
-    setMedia(QUrl::fromLocalFile(QFileInfo(file).absoluteFilePath()));
+    if(QFileInfo(file).exists()){
+        setMedia(QUrl::fromLocalFile(QFileInfo(file).absoluteFilePath()));
+    }else{
+        setMedia(QUrl::fromUserInput(file));
+    }
     waitForSeekable(2000);
 }
 
@@ -34,6 +40,7 @@ void BasicMediaPlayer::waitForSeekable(int ms) {
 		timer.setInterval(ms);
 		loop.connect(&timer, SIGNAL(timeout()), &loop, SLOT(quit()) );
         loop.connect(this, SIGNAL(seekableChanged(bool)), &loop, SLOT(quit()));
+        loop.connect(this, SIGNAL(error(QMediaPlayer::Error)), &loop, SLOT(quit()));
 		loop.exec();
 	}
 }
@@ -59,38 +66,36 @@ int BasicMediaPlayer::state() {
 	
 	int s;
 	qint64 starttime, endtime;
-	Sleeper *sleeper = new Sleeper();
-    s = QMediaPlayer::state();
+	s = QMediaPlayer::state();
 	if (s==QMediaPlayer::PlayingState) {
         starttime = QMediaPlayer::position();
-		sleeper->sleepMS(30);
+		mediasleeper->sleepRQM(30);
         endtime = QMediaPlayer::position();
 		if (starttime==endtime) {
 			stop();
 			s = QMediaPlayer::StoppedState; // stopped
 		}
 	}
-	delete sleeper;
 	return(s);
 }
 
 void BasicMediaPlayer::stop() {
 	// force stop to reset position at the begining of the file
 	// and to totally stop
+	mediasleeper->wake();
 	setPosition(0);
 	QMediaPlayer::stop();
 //	waitForState(QMediaPlayer::StoppedState, 1000);
 }
 
 void BasicMediaPlayer::wait() {
+	waitForSeekable(500);
 	// wait for the media file to complete
-	Sleeper *sleeper = new Sleeper();
-    do {
-		sleeper->sleepMS(100);
-	} while (state()==QMediaPlayer::PlayingState);
+	if (state()==QMediaPlayer::PlayingState) {
+		mediasleeper->sleepMS(QMediaPlayer::duration()-QMediaPlayer::position());
+	}
 	setPosition(0);
-	QMediaPlayer::pause();
-	delete sleeper;
+	QMediaPlayer::stop();
 }
 
 bool BasicMediaPlayer::seek(double time) {
@@ -98,7 +103,7 @@ bool BasicMediaPlayer::seek(double time) {
 	waitForSeekable(500);
 	//qDebug ("mediaStatus %d\n",mediaStatus()); 
 	if(isSeekable()) {
-		QMediaPlayer::setPosition(ms);
+		if (ms!=QMediaPlayer::position()) QMediaPlayer::setPosition(ms);
 		return true;
 	} else {
 		return false;
@@ -131,6 +136,4 @@ int BasicMediaPlayer::error() {
 	return QMediaPlayer::error();
 }
 
-
-#endif
 

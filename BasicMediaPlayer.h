@@ -19,8 +19,6 @@
 #ifndef __BASICMEDIAPLAYER_H
 #define __BASICMEDIAPLAYER_H
 
-#ifndef USEQSOUND
-
 #include <QMediaPlayer>
 #include <QFileInfo>
 #include <QEventLoop>
@@ -33,7 +31,7 @@ class BasicMediaPlayer : private QMediaPlayer
     Q_OBJECT
 public:
 
-
+	BasicMediaPlayer();
     void loadFile(QString file);
 	int state();
     void stop();
@@ -48,10 +46,10 @@ public:
 public slots:
 
 private:
+	Sleeper *mediasleeper;
     void waitForSeekable(int);
     void waitForState(QMediaPlayer::State, int);
 
 };
 
-#endif
 #endif

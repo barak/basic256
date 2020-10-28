@@ -22,7 +22,9 @@
 #include <qglobal.h>
 
 #include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QToolBar>
 #include <QtWidgets/QWidget>
+#include <QScrollArea>
 
 class QMenu;
 class ToolBar;
@@ -32,8 +34,8 @@ class BasicWidget : public QWidget
 {
     Q_OBJECT
 public:
-  	BasicWidget(const QString & title = QString::null, QWidget * parent = 0, Qt::WindowFlags f = 0);
-	~BasicWidget();
+    BasicWidget(const QString & title = QString(), const QString & name = QString(), QWidget * viewWidget = 0, QScrollArea * scrollArea = 0);
+    ~BasicWidget();
 	
 	bool setViewWidget(QWidget * view);
 	bool usesToolBar();
@@ -46,9 +48,10 @@ public slots:
 
 private:
 	ViewWidgetIFace *m_viewWidget;
-	ToolBar *m_toolBar;
+	QToolBar *m_toolBar;
 	QMenu *m_menu;
 	QVBoxLayout *m_layout;
+    QScrollArea *m_scrollArea;
 };
 
 #endif

@@ -3,6 +3,10 @@
 # Modification History
 # date		programmer	description
 # 20140204	j.m.reneau	split from testsuite
+# 20160330	j.m.reneau	modulo works only with int - per the documentation
+# 20160807	j.m.reneau	added floor
+
+currentsuite = "math"
 
 
 # Numeric Assignment
@@ -28,7 +32,7 @@ call n("5%3", 5%3, 2)
 call n("3%5", 3%5, 3)
 call n("10\4", 10\4, 2)
 call n("4\10", 4\10, 0)
-call n("5.5%2.5", 5.5%2.5, .5)
+call n("5.5%2.5", 5.5%2.5, 1)
 call n("5.5\2.5", 5.5\2.5, 2)
 
 # Order of Numeric Operations
@@ -85,12 +89,14 @@ call nclose("atan(1)", atan(1), pi/4)
 call nclose("atab(0)", atan(0), 0)
 call n("ceil(9.1)", ceil(9.1), 10)
 call n("ceil(-5.4)", ceil(-5.4), -5)
+call n("floor(9.1)", floor(9.1), 9)
+call n("floor(-5.4)", floor(-5.4), -6)
 call nclose("cos(pi/2)", cos(pi/2), 0)
 call nclose("cos(0)", cos(0),1)
 call nclose("sin(pi/2)", sin(pi/2), 1)
 call nclose("sin(0)", sin(0), 0)
 call nclose("tan(pi/4)", tan(pi/4), 1)
-call nclose("tab(0)", tan(0), 0)
+call nclose("tan(0)", tan(0), 0)
 call nclose("exp(1)", exp(1), 2.718282)
 call nclose("exp(log(10))", exp(log(10)), 10)
 call nclose("log10(100)", log10(100), 2)

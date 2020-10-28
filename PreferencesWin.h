@@ -16,7 +16,6 @@
  **/
 
 #include <QObject>
-#include <QIcon>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QDialog>
@@ -33,51 +32,118 @@
 #include <QtWidgets/QGroupBox>
 #include <QtWidgets/QRadioButton>
 #include <QtWidgets/QSlider>
+#include <QToolTip>
+#include <QFileIconProvider>
+#include <QTreeWidget>
 
 #ifndef PREFERENCESWINH
 
 #define PREFERENCESWINH
 
+
+class SettingsBrowser : public QDialog
+{
+  Q_OBJECT
+
+public:
+    SettingsBrowser(QWidget * parent);
+    //void closeEvent(QCloseEvent *);
+
+private slots:
+    void treeWidgetCheckboxChanged();
+    void clickDeleteButton();
+
+private:
+    QTreeWidget *treeWidgetSettings;
+    QPushButton *deleteselectedsettings;
+    QPushButton *canceldeletesettings;
+};
+
+
 class PreferencesWin : public QDialog
 {
   Q_OBJECT
 
- public:
-	PreferencesWin(QWidget * parent, bool );
+public:
+    PreferencesWin(QWidget * parent, bool );
 	void closeEvent(QCloseEvent *);
 
 private slots:
 	void clickCancelButton();
 	void clickSaveButton();
-
+    void setDigitsValue(int);
+    void setDebugSpeedValue(int);
+    void setVolumeValue(int);
+    void setNormalizeValue(int);
+    void setVolumeRestoreValue(int);
+    void clickClearSavedData();
+    void clickBrowseSavedData();
   
 private:
-	
+    QPushButton *clearsaveddata;
+    QPushButton *browsesaveddata;
+
 	// advanced Tab
 	QWidget * advancedtabwidget;
 	QGridLayout * advancedtablayout;
 	QLabel *passwordlabel;
 	QLineEdit *passwordinput;
-	QCheckBox *systemcheckbox;
 	QCheckBox *settingcheckbox;
-	QCheckBox *portcheckbox;
-	
+
+    QGroupBox *settingsgroup;
+    QRadioButton *settingsacces0;
+    QRadioButton *settingsacces1;
+    QRadioButton *settingsacces2;
+
+    QLabel *allowsystemlabel;
+    QComboBox *allowsystemcombo;
+    QLabel *allowportlabel;
+    QComboBox *allowportcombo;
+    QLabel *settingsaccesslabel;
+    QComboBox *settingsaccesscombo;
+    QLabel *settingsmaxlabel;
+    QComboBox *settingsmaxcombo;
+
+    SettingsBrowser *settingsbrowser;
+
 	// user tab
 	QWidget * usertabwidget;
 	QGridLayout * usertablayout;
 	QCheckBox *saveonruncheckbox;
 	QLabel *typeconvlabel;
 	QComboBox *typeconvcombo;
+	QLabel *varnotassignedlabel;
+	QComboBox *varnotassignedcombo;
 	QLabel *decdigslabel;
+    QLabel *decdigsvalue;
 	QSlider *decdigsslider;
-	QLabel *debugspeedlabel;
+    QCheckBox *floattailcheckbox;
+    QCheckBox *floatlocalecheckbox;
+    QLabel *debugspeedlabel;
+    QLabel *debugspeedvalue;
 	QSlider *debugspeedslider;
+    QCheckBox *windowsrestorecheckbox;
+    QLabel *startuplabel;
+    QCheckBox *checkupdatecheckbox;
 
 	// sound tab
 	QWidget * soundtabwidget;
 	QGridLayout * soundtablayout;
 	QLabel *voicelabel;
 	QComboBox *voicecombo;
+	QLabel *speakstmtlabel;
+	QLineEdit *speakstmtinput;
+   QLabel *soundvolumelabel;
+    QLabel *soundvolumevalue;
+    QSlider *soundvolumeslider;
+    QLabel *soundnormalizelabel;
+    QLabel *soundnormalizevalue;
+    QSlider *soundnormalizeslider;
+    QLabel *soundvolumerestorelabel;
+    QLabel *soundvolumerestorevalue;
+    QSlider *soundvolumerestoreslider;
+    QLabel *soundsampleratelabel;
+    QComboBox *soundsampleratecombo;
 
 	// printer tab
 	QWidget * printertabwidget;

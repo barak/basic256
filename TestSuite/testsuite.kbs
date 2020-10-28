@@ -33,13 +33,31 @@
 #				added time include
 # 20140530	j.m.reneau	added network include
 # 20141025	j.m.reneau	added serial include
+# 20151114	j.m.reneau	added types include
+# 20151127	j.m.reneau	moved requirement to 1.99.99.2
+# 20151204	j.m.reneau	added neq preverence for VNA errors 1.99.99.6
+# 20160203      j.m.reneau      added reverse for loop testing and requirement for
+#                               system to be enabled
+# 20160327	j.m.reneau	added binaryop include
+# 20160510      j.m.reneau      moved input and key to external include
+# 20160805	j.m.reneau		move requirement to 1.99.99.53
+# 21060807	j.m.reneau		split out arrays and rewrite - updated to 1.99.99.55
+# 20160908	j.m.reneau		change sprite for new slice logic
+#							added serialize and unserialize test to arrays
+# 20161117  j.m.reneau      adjusted function calling for ref defined at call
+# 20170506  j.m.reneau      added image... test
+# 20170513  j.m.reneau      changed allow/system test to not 0
+# 20200403  j.m.reneau      added slice suite
+# 20200421  j.m.reneau      added print suite
+# 20200421  j.m.reneau      added arraybase suite
+# 20200423  j.m.reneau      added map suite
 
 include "testsuite_common_include.kbs"
 
 ###################################################
 call section("Runtime Version")
 ###################################################
-call versiontest(1010400)
+call versiontest(2000000)
 function versiontestgood(needed)
    return version >= needed
 end function
@@ -56,18 +74,23 @@ call section("Runtime Preferences")
 print "It is required for this suite to run that a few preferences be set in advance"
 print "On the 'User' tab"
 print "  'Runtime Handling of bad type conversion' must set to Warn"
+print "  'Runtime Handling of variable not assigned' must set to Warn"
+print "  'Always show decimal point on floting point numbers' must be checked"
 print "On the 'Printing' tab"
 print "  'Printer' must set to PDF File Output"
 print "  'PDF FileName' must be set to a name of a temporary file with the pdf extension"
-print 
-call s("Type Conversion Setting", getSetting("SYSTEM","Runtime/TypeConv"),"1")
+print "On the 'Advanced' tab"
+print "  'Allow SYSTEM statement' must be ask or allow"
+print
+call same("Float Tail", getSetting("SYSTEM","Runtime/FloatTail"),"true")
+call same("Type Conversion Setting", getSetting("SYSTEM","Runtime/TypeConv"),"1")
+call same("Variable Not Assigned", getSetting("SYSTEM","Runtime/VNA"),"1")
 # make sure printer setting are correct
-call s("Printer - PDF setting", getsetting("SYSTEM","Printer/Printer"), "-1")
-call sne("Printer - PDF setting", getsetting("SYSTEM","Printer/PDFFile"), "")
+call different("Allow SYSTEM Statement", getSetting("SYSTEM","Allow/System"),0)
+call same("Printer - PDF setting", getsetting("SYSTEM","Printer/Printer"), "-1")
+call different("Printer - PDF setting", getsetting("SYSTEM","Printer/PDFFile"), "")
 
-# create arrays to use
-dim c(10)
-dim twod(10,10)
+##goto section_unattended
 
 ###################################################
 ###################################################
@@ -87,146 +110,15 @@ call section("TestSuite Completeness Check")
 include "testsuite_complete_include.kbs"
 
 ###################################################
-call section("1D Numeric Array")
+call section("TestSuite Arrays")
 ###################################################
-c = {9,8,7,6,5,4,3,2,1,0}
-call n("c[1]=8 after immediate assign",c[1],8)
-call n("c[8]=1 after immediate assign",c[8],1)
-c[0] = c[0] + c[8] : call n("c[0] after c[0] = c[0] + c[8]", c[0], 10)
-c[0] += c[7] : call n("c[0] after c[0] += c[7]", c[0], 12)
-c[0] -= c[6] : call n("c[0] after c[0] -= c[6]", c[0], 9)
-c[1] *= c[2] : call n("c[1] after c[1] *= c[2]", c[1], 56)
-c[1] /= c[7] : call n("c[1] after c[1] /= c[7]", c[1], 28)
-redim c(20)
-call n("c[1]=28 after redim",c[1],28)
-call n("c[9]=0 after redim",c[9],0)
-input "Input the number -3.14 > ", c[2]
-call n("c[2]=-3.14 after rinput",c[2],-3.14)
-input "Input the string 'crap' > ", c[2]
-call n("c[2]=0 after input crap",c[2],0)
+include "testsuite_array_include.kbs"
 
-###################################################
-call section("2D Numeric Array")
-###################################################
-for t = 0 to twod[?,]-1
-   for u = 0 to twod[,?]-1
-      twod[t,u] = t*100+u
-   next u
-next t
-call n("twod[5,7]=507 after assign",twod[5,7],507)
-twod[5,7]+=7
-call n("twod[5,7] after twod[5,7]+=7",twod[5,7],514)
-twod[5,7]-=7
-call n("twod[5,7] after twod[5,7]-=7",twod[5,7],507)
-twod[5,7]*=7
-call n("twod[5,7] after twod[5,7]*=7",twod[5,7],3549)
-twod[5,7]/=7
-call n("twod[5,7] after twod[5,7]/=7",twod[5,7],507)
-twod[5,7]++
-call n("twod[5,7] after twod[5,7]++",twod[5,7],508)
-twod[5,7]--
-call n("twod[5,7] after twod[5,7]--",twod[5,7],507)
-for t = 0 to twod[?,]-1
-   for u = 0 to twod[,?]-1
-      call n("twod["+t+","+u+"] as originally assigned",twod[t,u],t*100+u)
-      twod[t,u] = t*100+u
-   next u
-next t
-input "Input the number -3.14 > ", twod[2,1]
-call n("twod[2,1]=-3.14 after rinput",twod[2,1],-3.14)
-input "Input the string 'crap' > ", twod[3,2]
-call n("twod[3,2]=0 after input crap",twod[3,2],0)
-
-###################################################
-call section("1D/2D String Array")
-###################################################
-c$ = {"A","B","C","D","E","F"}	#autodim
-call s("c$[0]=A",c$[0],"A")
-call s("c$[1]=B",c$[1],"B")
-call s("c$[2]=C",c$[2],"C")
-call s("c$[3]=D",c$[3],"D")
-call s("c$[4]=E",c$[4],"E")
-call s("c$[5]=F",c$[5],"F")
-#
-input "input string 'able' >", c$[5]
-for x = 1 to length(c$[5])
-print x + '"' + mid(c$[5],x,1) + '"' + " " + asc(mid(c$[5],x,1))
-next x
-call s("c$[5]='able'",c$[5],"able")
-#
-redim c$(5,2)
-call s("c$[0,0]=A",c$[0,0],"A")
-call s("c$[0,1]=B",c$[0,1],"B")
-call s("c$[1,0]=C",c$[1,0],"C")
-call s("c$[1,1]=D",c$[1,1],"D")
-call s("c$[2,0]=E",c$[2,0],"E")
-call s("c$[2,1]=able",c$[2,1],"able")
-call s("c$[3,0]=''",c$[3,0],"")
-call s("c$[3,1]=''",c$[3,1],"")
-call s("c$[4,0]=''",c$[3,0],"")
-call s("c$[4,1]=''",c$[3,1],"")
-# switch
-t$ = c$[0,1]
-c$[0,1]=c$[0,0]
-c$[0,0] = t$
-call s("c$[0,0]=B",c$[0,0],"B")
-call s("c$[0,1]=A",c$[0,1],"A")
-#
-input "input string 'alpha' > ", c$[3,1]
-call s("c$[3,1]='alpha'",c$[3,1],"alpha")
-
+section_input:
 ###################################################
 call section("Input, Key, and Prompt")
 ###################################################
-a$ = "foo"
-input "input the string 'abcd' ?", a$
-call s("input prompt $",a$,"abcd")
-print "input the string 'able' ?";
-input a$
-call s("input $",a$,"able")
-input "Press enter?", a$
-call s("input enter $",a$,"")
-a = 99
-input "input the number 99.99 ?", a
-call n("input prompt #",a,99.99)
-print "input the number -1.234 ?";
-input a
-call s("input #",a,-1.234)
-input "input the string 'abcd' ?", a
-call n("input prompt bad #",a,0)
-input "Press enter?", a
-call s("input enter #",a,0)
-
-## key
-if ostype() <> 3 then
-   print "Press the space bar"
-   # debounce
-   do
-      a = key
-   until a = 0
-   # get key
-   do
-      a = key
-   until a <> 0
-   call n("key space",a,32)
-   print "Press the shift key."
-   # debounce
-   do
-      a = key
-   until a = 0
-   # get key
-   do
-      a = key
-   until a <> 0
-   call n("key shift",a,16777248)
-end if
-
-a$=prompt("Click OK to accept the default","abcd")
-call s("prompt dialog default",a$,"abcd")
-a$=prompt("Change the value and click cancel","abcd")
-call s("prompt dialog cancel default",a$,"abcd")
-a$=prompt("Change the value to 'able' and click OK")
-call s("prompt dialog",a$,"able")
+include "testsuite_inputkey_include.kbs"
 
 section_graphics:
 ###################################################
@@ -234,59 +126,43 @@ call section("Basic Graphics")
 ###################################################
 include "testsuite_graphics_include.kbs"
 
+section_slice:
+###################################################
+call section("screen slicing")
+###################################################
+include "testsuite_slice_include.kbs"
+
+section_image:
+###################################################
+call section("Image... Statements")
+###################################################
+include "testsuite_image_include.kbs"
+
 section_sound:
 ###################################################
 call section("TTS and Sound")
 ###################################################
-include "testsuite_sound_include.kbs"
+if yn("Do TTS and Sound Testing?") then
+   include "testsuite_sound_include.kbs"
+endif
 
 section_wav:
 ###################################################
 call section("WAVPLAY...")
 ###################################################
-include "testsuite_wav_include.kbs"
+if yn("Do WAVPLAY Testing?") then
+   include "testsuite_wav_include.kbs"
+endif
 
 ###################################################
 call section("IMGSave, IMGLoad, Kill and Exists")
 ###################################################
-clg
-penwidth 1
-for t = 1 to 20
-   color rgb(rand*256,rand*256,rand*256,rand*256)
-   line rand*graphwidth, rand*graphheight, 10*rand, 10*rand
-next t
-refresh
-imgsave "testimgsave.png"
-pause .5
-clg
-refresh
-pause .5
-imgload graphwidth/2,graphheight /2,"testimgsave.png"
-call q("imgload - did the image wink out?")
-clg
-for t = 0 to 2* pi step .1
-   imgload graphwidth/2,graphheight /2,t/2,t,"testimgsave.png"
-   refresh
-next t
-call q("imgload - did the image spin out?")
-kill "testimgsave.png"
-call n("delete temp imgsave image",exists("testimgsave.png"),false)
+include "testsuite_imagesave_include.kbs"
 
 ###################################################
 call section("Poly and Stamp")
 ###################################################
-clg
-penwidth 5
-color red, black
-poly {100,100,30,200,170,200}
-refresh
-call q("poly black triangle red border?")
-clg
-for t = 0 to 2 * pi step .1
-   stamp 150,150,t / (2*pi),t,{0,0,-70,100,70,100}
-   refresh
-next t
-call q("stamp growing and rotating black triangle red border?")
+include "testsuite_polystamp_include.kbs"
 
 section_mouse:
 ###################################################
@@ -310,13 +186,23 @@ section_network:
 ###################################################
 call section("Networking")
 ###################################################
-include "testsuite_network_include.kbs"
+if yn("Do Networking Testing?") then
+   include "testsuite_network_include.kbs"
+endif
 
 section_serial:
 ###################################################
 call section("Serial Port")
 ###################################################
-include "testsuite_serialio_include.kbs"
+if yn("Do Serial Port Test?") then
+   include "testsuite_serialio_include.kbs"
+endif
+
+section_print:
+###################################################
+call section("Console Printing")
+###################################################
+include "testsuite_print_include.kbs"
 
 
 
@@ -331,8 +217,7 @@ include "testsuite_serialio_include.kbs"
 
 
 
-
-
+section_unattended:
 ###################################################
 ###################################################
 ###################################################
@@ -356,37 +241,7 @@ include "testsuite_radix_include.kbs"
 ###################################################
 call section("Functions and Subroutines")
 ###################################################
-function funone(a, ref(b), c$, ref(d$))
-   # old way of returning (prev to 0.9.9.21)
-   a *= 2
-   funone = a + b
-   c$ = funtwo$(ref(b), ref(d$))
-end function
-
-function funtwo$(ref(r), ref(s$))
-   r *=3
-   s$ += s$
-   return "squiggy"
-end function
-
-subroutine subone(a, b$)
-   # set globals
-   globala += a
-   globalb$ += b$
-end subroutine
-
-global globala, globalb$
-globala = 99
-globalb$ = "globalb"
-call subone(1,"foo")
-call n("globala=100 after sub",globala,100)
-call s("globalb$='globalbfoo' after sub",globalb$,"globalbfoo")
-a = 9
-b$ = "hi"
-c = funone(7, ref(a), "junk", ref(b$))
-call n("return from funone",c,23)
-call n("a=27 return from funone",a,27)
-call s("b$='hihi' return from funone",b$,"hihi")
+include "testsuite_function_include.kbs"
 
 section_error:
 ###################################################
@@ -435,6 +290,11 @@ call section("Loops with Exit and Continue")
 ###################################################
 include "testsuite_loop_include.kbs"
 
+###################################################
+call section("TestSuite FOR/NEXT")
+###################################################
+include "testsuite_fornext_include.kbs"
+
 section_sprites:
 ###################################################
 call section("Sprites")
@@ -447,11 +307,29 @@ call section("Directory and File-System Checks")
 ###################################################
 include "testsuite_dir_include.kbs"
 
+section_binaryop:
+###################################################
+call section("Binary Operations and Type Conversions")
+###################################################
+include "testsuite_binaryop_include.kbs"
 
+section_types:
+###################################################
+call section("Variable and Stack Types Tests")
+###################################################
+include "testsuite_types_include.kbs"
 
+array_base:
+###################################################
+call section("Array index base (arraybase 0/1)")
+###################################################
+include "testsuite_arraybase_include.kbs"
 
-
-
+map_base:
+###################################################
+call section("Map")
+###################################################
+include "testsuite_map_include.kbs"
 
 
 
