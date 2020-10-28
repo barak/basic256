@@ -1,7 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: BASIC-256
 Source: https://sourceforge.net/projects/kidbasic/
-Files-Excluded: *.exe
 
 Files: *
 Copyright: 2006-2014 The BASIC-256 Team,
