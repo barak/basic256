@@ -25,9 +25,9 @@
 	#include <stdlib.h>
 	#include <stdio.h>
 	#include <string.h>
-        #include <math.h>
-        #include <errno.h>
-        #include "../BasicTypes.h"
+	#include <math.h>
+	#include <errno.h>
+	#include "../BasicTypes.h"
 	#include "../Constants.h"
 	#include "../WordCodes.h"
 	#include "../CompileErrors.h"
@@ -47,9 +47,9 @@
 	extern int linenumber;
 	extern char *lexingfilename;
 	extern int numincludes;
-        extern int filenumber;
-        extern char* include_filenames[];
-        extern int include_filenames_counter;
+	extern int filenumber;
+	extern char* include_filenames[];
+	extern int include_filenames_counter;
 
 	int *wordCode = NULL;
 	unsigned int maxwordoffset = 0;		// size of the current wordCode array
@@ -221,7 +221,7 @@
 				if (iftabletype[numifs-1]==IFTABLETYPECATCH) return COMPERR_CATCHNOEND;
 				if (iftabletype[numifs-1]==IFTABLETYPEBEGINCASE) return COMPERR_BEGINCASENOEND;
 				if (iftabletype[numifs-1]==IFTABLETYPECASE) return COMPERR_CASENOEND;
-                                if (iftabletype[numifs-1]==IFTABLETYPESUBROUTINE) return COMPERR_SUBROUTINENOEND;
+				if (iftabletype[numifs-1]==IFTABLETYPESUBROUTINE) return COMPERR_SUBROUTINENOEND;
 			}
 		}
 		return 0;
@@ -262,20 +262,20 @@
 				return i;
 		}
 
-                //allocate memory if there is no more room for new symbol
-                if(numsyms>=maxsymtable-1){
-                    maxsymtable += 1024;
-                    symtable = realloc(symtable, maxsymtable * sizeof(char*));
-                    symtableaddress = realloc(symtableaddress, maxsymtable * sizeof(int));
-                    symtableaddresstype = realloc(symtableaddresstype, maxsymtable * sizeof(int));
-                    symtableaddressargs = realloc(symtableaddressargs, maxsymtable * sizeof(int));
-                }
+		//allocate memory if there is no more room for new symbol
+		if(numsyms>=maxsymtable-1){
+			maxsymtable += 1024;
+			symtable = realloc(symtable, maxsymtable * sizeof(char*));
+			symtableaddress = realloc(symtableaddress, maxsymtable * sizeof(int));
+			symtableaddresstype = realloc(symtableaddresstype, maxsymtable * sizeof(int));
+			symtableaddressargs = realloc(symtableaddressargs, maxsymtable * sizeof(int));
+		}
 
 		symtable[numsyms] = strdup(name);
 		symtableaddress[numsyms] = -1;
-                symtableaddresstype[numsyms] = -1;
-                symtableaddressargs[numsyms] = -1;
-                numsyms++;
+		symtableaddresstype[numsyms] = -1;
+		symtableaddressargs[numsyms] = -1;
+		numsyms++;
 		return numsyms - 1;
 	}
 
@@ -285,62 +285,67 @@
 
 	int getInternalSymbol(int id, int type) {
 		// an internal symbol used to jump an if
-                int i;
+		int i;
 		char name[32];
-                sprintf(name,"___%d_%d", id, type);
-                i = getSymbol(name);
-                symtableaddresstype[i]=ADDRESSTYPE_SYSTEMCALL;
-                return i;
+		sprintf(name,"___%d_%d", id, type);
+		i = getSymbol(name);
+		symtableaddresstype[i]=ADDRESSTYPE_SYSTEMCALL;
+		return i;
 	}
 
 	void freeBasicParse() {
 		// free all dynamically allocated stuff
-                while(numsyms>0) free(symtable[--numsyms]);
-                free(wordCode);
-                wordCode=NULL;
-                free(symtable);
-                symtable=NULL;
-                free(symtableaddress);
-                symtableaddress=NULL;
-                free(symtableaddresstype);
-                symtableaddresstype=NULL;
-                free(symtableaddressargs);
-                symtableaddressargs=NULL;
-                maxsymtable = 0;
-                maxwordoffset = 0;
+		while(numsyms>0) free(symtable[--numsyms]);
+		free(wordCode);
+		wordCode=NULL;
+		free(symtable);
+		symtable=NULL;
+		free(symtableaddress);
+		symtableaddress=NULL;
+		free(symtableaddresstype);
+		symtableaddresstype=NULL;
+		free(symtableaddressargs);
+		symtableaddressargs=NULL;
+		maxsymtable = 0;
+		maxwordoffset = 0;
 
-                while(include_filenames_counter>0){
-                    include_filenames_counter--;
-                    free(include_filenames[include_filenames_counter]);
-                }
+		while(include_filenames_counter>0){
+			include_filenames_counter--;
+			free(include_filenames[include_filenames_counter]);
+		}
 	}
 
-        int initializeBasicParse() {
-                int f;
-                maxsymtable = 2048;
-                symtable = malloc(maxsymtable * sizeof(char*));
-                if(symtable)
-                    for(f=0;f<maxsymtable;f++) symtable[f]=NULL;
-                symtableaddress = malloc(maxsymtable * sizeof(int));
-                symtableaddresstype = malloc(maxsymtable * sizeof(int));
-                symtableaddressargs = malloc(maxsymtable * sizeof(int));
+	int initializeBasicParse() {
+		int f;
+		maxsymtable = 2048;
+		symtable = malloc(maxsymtable * sizeof(char*));
+		if(symtable)
+			for(f=0;f<maxsymtable;f++) symtable[f]=NULL;
+		symtableaddress = malloc(maxsymtable * sizeof(int));
+		symtableaddresstype = malloc(maxsymtable * sizeof(int));
+		symtableaddressargs = malloc(maxsymtable * sizeof(int));
 
-                maxwordoffset = 2048;
-                wordCode = malloc(maxwordoffset * sizeof(int));
+		maxwordoffset = 2048;
+		wordCode = malloc(maxwordoffset * sizeof(int));
 
-                //no memory
-                if(!wordCode || !symtable || !symtableaddress || !symtableaddresstype || !symtableaddressargs){
-                    freeBasicParse();
-                    return -1;
-                }
+		//no memory
+		if(!wordCode || !symtable || !symtableaddress || !symtableaddresstype || !symtableaddressargs){
+			freeBasicParse();
+			return -1;
+		}
 
-                unsigned int t=maxwordoffset;
-                while(t>0) wordCode[--t] = 0;
-                wordOffset = 0;
-                linenumber = 1;
-                addIntOp(OP_CURRLINE, filenumber * 0x1000000 + linenumber);
-                return 0; 	// success in creating and filling
-        }
+		unsigned int t=maxwordoffset;
+		while(t>0) wordCode[--t] = 0;
+		wordOffset = 0;
+		linenumber = 1;
+
+		listlen = 0;
+		listlenmax = 0;
+		numberoflists = 0;
+
+		addIntOp(OP_CURRLINE, filenumber * 0x1000000 + linenumber);
+		return 0; 	// success in creating and filling
+	}
 
 
 	#ifdef __cplusplus
@@ -571,7 +576,10 @@
 %token B256FROMOCTAL
 %token B256FROMRADIX
 %token B256FUNCTION
+%token B256GETARRAYBASE
 %token B256GETBRUSHCOLOR
+%token B256GETCLIPBOARDIMAGE
+%token B256GETCLIPBOARDSTRING
 %token B256GETCOLOR
 %token B256GETPENWIDTH
 %token B256GETSETTING
@@ -582,6 +590,7 @@
 %token B256GRAPHHEIGHT
 %token B256GRAPHSIZE
 %token B256GRAPHVISIBLE
+%token B256GRAPHTOOLBARVISIBLE
 %token B256GRAPHWIDTH
 %token B256GREEN
 %token B256GREY
@@ -636,6 +645,7 @@
 %token B256LOWER
 %token B256LTE
 %token B256LTRIM
+%token B256MAINTOOLBARVISIBLE
 %token B256MAP
 %token B256MD5
 %token B256MID
@@ -667,6 +677,7 @@
 %token B256ONERROR
 %token B256OPEN
 %token B256OPENB
+%token B256OPENFILEDIALOG
 %token B256OPENSERIAL
 %token B256OR
 %token B256ORANGE
@@ -676,6 +687,7 @@
 %token B256OSTYPE_MACINTOSH
 %token B256OSTYPE_WINDOWS
 %token B256OUTPUTVISIBLE
+%token B256OUTPUTTOOLBARVISIBLE
 %token B256PAUSE
 %token B256PENWIDTH
 %token B256PI
@@ -707,6 +719,7 @@
 %token B256REM
 %token B256REPLACE
 %token B256REPLACEX
+%token B256SAVEFILEDIALOG
 %token B256RESET
 %token B256RETURN
 %token B256RGB
@@ -721,6 +734,8 @@
 %token B256SEMICOLON
 %token B256SEMICOLONEQUAL
 %token B256SERIALIZE
+%token B256SETCLIPBOARDIMAGE
+%token B256SETCLIPBOARDSTRING
 %token B256SETCOLOR
 %token B256SETGRAPH
 %token B256SETSETTING
@@ -857,6 +872,7 @@
 
 
 %right ','
+%left B256IN
 %left B256SEMICOLON
 %left B256XOR B256OR
 %left B256AND
@@ -1057,6 +1073,8 @@ listofmapitems:
 		addIntOp(OP_PUSHINT, listlen);
 		if (listlen>listlenmax) listlenmax=listlen;
 		listlen = 0;
+		numberoflists = 0;
+		listlenmax=0;
 	}
 	;
 
@@ -1715,6 +1733,9 @@ expr_numeric:
 	| expr '>' expr { addOp(OP_GT); }
 	| expr B256GTE expr { addOp(OP_GTE); }
 	| expr B256LTE expr { addOp(OP_LTE); }
+	| expr B256IN expr {
+		addOp(OP_IN);
+	}
 	
 	| array_element B256ADD1 {
 		// a[b,c]++ - pushing value before to stack
@@ -1852,7 +1873,13 @@ expr_numeric:
 		addOp(OP_KEYPRESSED);
 	}
 	| B256KEYPRESSED '(' expr ')' { addOp(OP_KEYPRESSED); }
-	| B256KEY args_none     { addOp(OP_KEY); }
+	| B256KEY args_none     {
+		addIntOp(OP_PUSHINT, 0x00);
+		addOp(OP_KEY);
+	}
+	| B256KEY '(' expr ')'     {
+		addOp(OP_KEY);
+	}
 	| B256MOUSEX args_none { addOp(OP_MOUSEX); }
 	| B256MOUSEY args_none { addOp(OP_MOUSEY); }
 	| B256MOUSEB args_none { addOp(OP_MOUSEB); }
@@ -2083,6 +2110,7 @@ expr_numeric:
 	| variable array_size_cols {
 		addIntOp(OP_ALENCOLS, varnumber[--nvarnumber]);
 	}
+	| B256GETARRAYBASE args_none { addOp(OP_GETARRAYBASE); }
 	;
 	
 /* ###########################################
@@ -2123,6 +2151,8 @@ expr_string:
 	| B256NETREAD '(' expr ')' { addOp(OP_NETREAD); }
 	| B256NETADDRESS args_none { addOp(OP_NETADDRESS); }
 	| B256MD5 '(' expr ')' { addOp(OP_MD5); }
+	| B256GETCLIPBOARDIMAGE args_none { addOp(OP_GETCLIPBOARDIMAGE); }
+	| B256GETCLIPBOARDSTRING args_none { addOp(OP_GETCLIPBOARDSTRING); }
 	| B256GETSETTING '(' expr ',' expr ')' { addOp(OP_GETSETTING); }
 	| B256DIR '(' expr ')' { addOp(OP_DIR); }
 	| B256DIR args_none { addStringOp(OP_PUSHSTRING, ""); addOp(OP_DIR); }
@@ -2233,6 +2263,12 @@ expr_string:
 		addStringOp(OP_PUSHSTRING, "0");
 		addOp(OP_RJUST);
 	}
+	| B256OPENFILEDIALOG '(' args_eee ')' {
+		addOp(OP_OPENFILEDIALOG);
+	}
+	| B256SAVEFILEDIALOG '(' args_eee ')' {
+		addOp(OP_SAVEFILEDIALOG);
+	}
 	;
 
 
@@ -2331,6 +2367,7 @@ statement:
 	| gotostmt
 	| graphsizestmt
 	| graphvisiblestmt
+	| graphtoolbarvisiblestmt
 	| ifstmt
 	| ifthenstmt
 	| ifthenelsestmt
@@ -2350,6 +2387,7 @@ statement:
 	| killstmt
 	| letstmt
 	| linestmt
+	| maintoolbarvisiblestmt
 	| mapstmt
 	| netclosestmt
 	| netconnectstmt
@@ -2360,6 +2398,7 @@ statement:
 	| onerrorstmt
 	| openstmt
 	| outputvisiblestmt
+	| outputtoolbarvisiblestmt
 	| pausestmt
 	| penwidthstmt
 	| piestmt
@@ -2381,6 +2420,8 @@ statement:
 	| saystmt
 	| seedstmt
 	| seekstmt
+	| setclipboardimagestmt
+	| setclipboardstringstmt
 	| setsettingstmt
 	| soundstmt
 	| soundpausestmt
@@ -4026,6 +4067,18 @@ killstmt: 	B256KILL expr {
 			}
 			;
 
+setclipboardimagestmt:
+			B256SETCLIPBOARDIMAGE expr {
+				addOp(OP_SETCLIPBOARDIMAGE);
+			}
+			;
+
+setclipboardstringstmt:
+			B256SETCLIPBOARDSTRING expr {
+				addOp(OP_SETCLIPBOARDSTRING);
+			}
+			;
+
 setsettingstmt:
 			B256SETSETTING args_eee {
 				addOp(OP_SETSETTING);
@@ -4066,6 +4119,24 @@ outputvisiblestmt:
 			}
 			;
 
+maintoolbarvisiblestmt:
+			B256MAINTOOLBARVISIBLE expr {
+				addOp(OP_MAINTOOLBARVISIBLE);
+			}
+			;
+
+graphtoolbarvisiblestmt:
+			B256GRAPHTOOLBARVISIBLE expr {
+				addOp(OP_GRAPHTOOLBARVISIBLE);
+			}
+			;
+
+outputtoolbarvisiblestmt:
+			B256OUTPUTTOOLBARVISIBLE expr {
+				addOp(OP_OUTPUTTOOLBARVISIBLE);
+			}
+			;
+			
 globalstmt:
 			B256GLOBAL functionvariables {
 				// create ops to make all of the variables listed globals

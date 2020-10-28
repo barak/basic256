@@ -28,7 +28,8 @@
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QInputDialog>
 #include <QtWidgets/QApplication>
-
+#include <QFileDialog>
+#include <QClipboard>
 
 
 #include "RunController.h"
@@ -99,6 +100,8 @@ RunController::RunController() {
 	QObject::connect(i, SIGNAL(dialogPrompt(QString, QString)), this, SLOT(dialogPrompt(QString, QString)));
 	QObject::connect(i, SIGNAL(dialogAllowPortInOut(QString)), this, SLOT(dialogAllowPortInOut(QString)));
 	QObject::connect(i, SIGNAL(dialogAllowSystem(QString)), this, SLOT(dialogAllowSystem(QString)));
+	QObject::connect(i, SIGNAL(dialogOpenFileDialog(QString,QString,QString)), this, SLOT(dialogOpenFileDialog(QString,QString,QString)));
+	QObject::connect(i, SIGNAL(dialogSaveFileDialog(QString,QString,QString)), this, SLOT(dialogSaveFileDialog(QString,QString,QString)));
 
 	//QObject::connect(i, SIGNAL(executeSystem(QString)), this, SLOT(executeSystem(QString)));
 	QObject::connect(i, SIGNAL(goutputReady()), this, SLOT(goutputReady()));
@@ -121,6 +124,10 @@ RunController::RunController() {
 	QObject::connect(i, SIGNAL(soundPlayerOff(int)), this, SLOT(soundPlayerOff(int)));
 	QObject::connect(i, SIGNAL(soundSystem(int)), this, SLOT(soundSystem(int)));
 
+	QObject::connect(i, SIGNAL(getClipboardImage()), this, SLOT(getClipboardImage()));
+	QObject::connect(i, SIGNAL(getClipboardString()), this, SLOT(getClipboardString()));
+	QObject::connect(i, SIGNAL(setClipboardImage(QImage)), this, SLOT(setClipboardImage(QImage)));
+	QObject::connect(i, SIGNAL(setClipboardString(QString)), this, SLOT(setClipboardString(QString)));
 
 	QObject::connect(i, SIGNAL(getInput()), outwin, SLOT(getInput()));
 
@@ -522,6 +529,19 @@ RunController::mainWindowsVisible(int w, bool v) {
 		mainwin->outwin_visible_act->setChecked(v);
 		mainwin->outwin_visible_act->triggered(v);
 	}
+	if (w==3) {
+		mainwin->main_toolbar_visible_act->setChecked(v);
+		mainwin->main_toolbar_visible_act->triggered(v);
+	}
+	if (w==4) {
+		mainwin->graphwin_toolbar_visible_act->setChecked(v);
+		mainwin->graphwin_toolbar_visible_act->triggered(v);
+	}
+	if (w==5) {
+		mainwin->outwin_toolbar_visible_act->setChecked(v);
+		mainwin->outwin_toolbar_visible_act->triggered(v);
+	}
+    
 }
 
 /*
@@ -574,6 +594,24 @@ RunController::dialogConfirm(QString prompt, int dflt) {
 	} else {
 		i->returnInt = 0;
 	}
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+void
+RunController::dialogOpenFileDialog(QString prompt, QString path, QString filter) {
+	mymutex->lock();
+	QString filename = QFileDialog::getOpenFileName(mainwin, prompt, path, filter);
+	i->returnString = filename;
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+void
+RunController::dialogSaveFileDialog(QString prompt, QString path, QString filter) {
+	mymutex->lock();
+	QString filename = QFileDialog::getSaveFileName(mainwin, prompt, path, filter);
+	i->returnString = filename;
 	waitCond->wakeAll();
 	mymutex->unlock();
 }
@@ -727,6 +765,38 @@ void RunController::dialogAllowSystem(QString msg) {
 	} else {
 		i->returnInt = SETTINGSALLOWNO;
 	}
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+void RunController::getClipboardImage(){
+	mymutex->lock();
+	QClipboard *clipboard = QGuiApplication::clipboard();
+	i->returnImage = clipboard->image();
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+void RunController::getClipboardString(){
+	mymutex->lock();
+	QClipboard *clipboard = QGuiApplication::clipboard();
+	i->returnString = clipboard->text();
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+void RunController::setClipboardImage(QImage img){
+	mymutex->lock();
+	QClipboard *clipboard = QGuiApplication::clipboard();
+	clipboard->setImage(img);
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+void RunController::setClipboardString(QString s){
+	mymutex->lock();
+	QClipboard *clipboard = QGuiApplication::clipboard();
+	clipboard->setText(s);
 	waitCond->wakeAll();
 	mymutex->unlock();
 }
