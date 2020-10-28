@@ -12,6 +12,10 @@ endif
 %:
 	dh $@ --buildsystem=qmake
 
+execute_before_dh_auto_build:
+	@echo "Build translation files, probably a noop as they are included in sources."
+	-lrelease BASIC256.pro
+
 override_dh_auto_clean:
 	dh_auto_clean -- QMAKE=$(QMAKE)
 
