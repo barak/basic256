@@ -72,6 +72,8 @@ class RunController : public QObject
   void dialogPrompt(QString, QString);
   void dialogAllowPortInOut(QString);
   void dialogAllowSystem(QString);
+  void dialogOpenFileDialog(QString, QString, QString);
+  void dialogSaveFileDialog(QString, QString, QString);
   void playSound(QString, bool);
   void playSound(std::vector<std::vector<double>>, bool);
   void loadSoundFromArray(QString, QByteArray*);
@@ -82,6 +84,11 @@ class RunController : public QObject
   //void soundExit();
   void soundPlayerOff(int);
   void soundSystem(int);
+  void getClipboardImage();
+  void getClipboardString();
+  void setClipboardImage(QImage);
+  void setClipboardString(QString);
+  
 
  private:
   Interpreter *i;

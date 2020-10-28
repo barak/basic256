@@ -65,6 +65,7 @@ typedef int socklen_t;
 #include <QCoreApplication>
 
 
+
 #include <QtWidgets/QMessageBox>
 
 
@@ -97,6 +98,7 @@ extern "C" {
 //extern int yydebug;
 	extern int basicParse(char *);
 	extern char* include_filenames[];   // filenames being LEXd
+	extern char* include_exec_path;		//path to executable
 	extern int linenumber;			  // linenumber being LEXd
 	extern int column;				  // column on line being LEXd
 	extern char* lexingfilename;		// current included file name being LEXd
@@ -272,6 +274,7 @@ QString Interpreter::opname(int op) {
 	case OP_FREEFILE : return QString("OP_FREEFILE");
 	case OP_FREENET : return QString("OP_FREENET");
 	case OP_FROMRADIX : return QString("OP_FROMRADIX");
+	case OP_GETARRAYBASE : return QString("OP_GETARRAYBASE");
 	case OP_GETBRUSHCOLOR : return QString("OP_GETBRUSHCOLOR");
 	case OP_GETCOLOR : return QString("OP_GETCOLOR");
 	case OP_GETPENWIDTH : return QString("OP_GETPENWIDTH");
@@ -283,6 +286,7 @@ QString Interpreter::opname(int op) {
 	case OP_GRAPHHEIGHT : return QString("OP_GRAPHHEIGHT");
 	case OP_GRAPHSIZE : return QString("OP_GRAPHSIZE");
 	case OP_GRAPHVISIBLE : return QString("OP_GRAPHVISIBLE");
+	case OP_GRAPHTOOLBARVISIBLE : return QString("OP_GRAPHTOOLBARVISIBLE");
 	case OP_GRAPHWIDTH : return QString("OP_GRAPHWIDTH");
 	case OP_GT : return QString("OP_GT");
 	case OP_GTE : return QString("OP_GTE");
@@ -306,6 +310,7 @@ QString Interpreter::opname(int op) {
 	case OP_IMGLOAD : return QString("OP_IMGLOAD");
 	case OP_IMGSAVE : return QString("OP_IMGSAVE");
 	case OP_IMPLODE : return QString("OP_IMPLODE");
+	case OP_IN : return QString("OP_IN");
 	case OP_INCREASERECURSE : return QString("OP_INCREASERECURSE");
 	case OP_INPUT : return QString("OP_INPUT");
 	case OP_INSTR : return QString("OP_INSTR");
@@ -331,6 +336,7 @@ QString Interpreter::opname(int op) {
 	case OP_LT : return QString("OP_LT");
 	case OP_LTE : return QString("OP_LTE");
 	case OP_LTRIM : return QString("OP_LTRIM");
+	case OP_MAINTOOLBARVISIBLE : return QString("OP_MAINTOOLBARVISIBLE");
 	case OP_MAP_DIM : return QString("OP_MAP_DIM");
 	case OP_MD5 : return QString("OP_MD5");
 	case OP_MID : return QString("OP_MID");
@@ -361,10 +367,12 @@ QString Interpreter::opname(int op) {
 	case OP_ONERRORCATCH : return QString("OP_ONERRORCATCH");
 	case OP_ONERRORGOSUB : return QString("OP_ONERRORGOSUB");
 	case OP_OPEN : return QString("OP_OPEN");
+	case OP_OPENFILEDIALOG : return QString("OP_OPENFILEDIALOG");
 	case OP_OPENSERIAL : return QString("OP_OPENSERIAL");
 	case OP_OR : return QString("OP_OR");
 	case OP_OSTYPE : return QString("OP_OSTYPE");
 	case OP_OUTPUTVISIBLE : return QString("OP_OUTPUTVISIBLE");
+	case OP_OUTPUTTOOLBARVISIBLE : return QString("OP_OUTPUTTOOLBARVISIBLE");
 	case OP_PAUSE : return QString("OP_PAUSE");
 	case OP_PENWIDTH : return QString("OP_PENWIDTH");
 	case OP_PIE : return QString("OP_PIE");
@@ -401,6 +409,7 @@ QString Interpreter::opname(int op) {
 	case OP_RIGHT : return QString("OP_RIGHT");
 	case OP_ROUNDEDRECT : return QString("OP_ROUNDEDRECT");
 	case OP_RTRIM : return QString("OP_RTRIM");
+	case OP_SAVEFILEDIALOG : return QString("OP_SAVEFILEDIALOG");
 	case OP_SAY : return QString("OP_SAY");
 	case OP_SECOND : return QString("OP_SECOND");
 	case OP_SEED : return QString("OP_SEED");
@@ -498,6 +507,10 @@ QString Interpreter::opname(int op) {
 	case OP_WRITELINE : return QString("OP_WRITELINE");
 	case OP_XOR : return QString("OP_XOR");
 	case OP_YEAR : return QString("OP_YEAR");
+	case OP_SETCLIPBOARDIMAGE : return QString("OP_SETCLIPBOARDIMAGE");
+	case OP_SETCLIPBOARDSTRING : return QString("OP_SETCLIPBOARDSTRING");
+	case OP_GETCLIPBOARDIMAGE : return QString("OP_GETCLIPBOARDIMAGE");
+	case OP_GETCLIPBOARDSTRING : return QString("OP_GETCLIPBOARDSTRING");
 
 	default: return QString("OP_UNKNOWN");
 	}
@@ -619,8 +632,8 @@ int Interpreter::compileProgram(char *code) {
 		emit(outputError(tr("COMPILE ERROR") + QStringLiteral(": ") + tr("Out of memory") + QStringLiteral(".\n")));
 		return -1;
 	}
-
-	int result = basicParse(code);
+	include_exec_path = QCoreApplication::applicationDirPath().toUtf8().data();
+		int result = basicParse(code);
 	//
 	// display warnings from compile and free the lexing file name string
 		bool gotowarning = (debugMode==0);
@@ -2236,6 +2249,30 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				}
 				break;
 
+				case OP_OPENFILEDIALOG: {
+					QString filter = stack->popQString();
+					QString path = stack->popQString();
+					QString prompt = stack->popQString();
+					mymutex->lock();
+					emit(dialogOpenFileDialog(prompt, path, filter));
+					waitCond->wait(mymutex);
+					mymutex->unlock();
+					stack->pushQString(returnString);
+				}
+				break;
+				
+				case OP_SAVEFILEDIALOG: {
+					QString filter = stack->popQString();
+					QString path = stack->popQString();
+					QString prompt = stack->popQString();
+					mymutex->lock();
+					emit(dialogSaveFileDialog(prompt, path, filter));
+					waitCond->wait(mymutex);
+					mymutex->unlock();
+					stack->pushQString(returnString);
+				}
+				break;
+				
 			   case OP_OPENSERIAL: {
 					int flow = stack->popInt();
 					int parity = stack->popInt();
@@ -2357,38 +2394,31 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 							int maxsize = 256;
 							char * strarray = (char *) malloc(maxsize);
 							memset(strarray, 0, maxsize);
+							int offset = 0;
+							bool readmore = true;
 							// get the first char - Remove leading whitespace
 							do {
 								filehandle[fn]->waitForReadyRead(FILEREADTIMEOUT);
-								if (!filehandle[fn]->getChar(&c)) {
-									stack->pushQString(QString::fromUtf8(strarray));
-									free(strarray);
-									return 0;
-								}
-							} while (c == ' ' || c == '\t' || c == '\n');
+								readmore = filehandle[fn]->getChar(&c);
+							} while (c == ' ' || c == '\t' || c == '\n' || !readmore);
 							// read token - we already have the first char
-							int offset = 0;
 							// get next letter until we crap-out or get white space
-							do {
-								strarray[offset] = c;
-								offset++;
-								// grow the buffer if we need to
-								if (offset+2 >= maxsize) {
-									maxsize *= 2;
-									strarray = (char *) realloc(strarray, maxsize);
-									memset(strarray + offset, 0, maxsize - offset);
-								}
-								// get next char
-								filehandle[fn]->waitForReadyRead(FILEREADTIMEOUT);
-								if (!filehandle[fn]->getChar(&c)) {
-									// no more to get - finish the string and push to stack
-									strarray[offset] = 0;
-									stack->pushQString(QString::fromUtf8(strarray));
-									free(strarray);
-									return 0;  //nextop
-								}
-							} while (c != ' ' && c != '\t' && c != '\n');
-							// found a delimiter - finish the string and push to stack
+							if (readmore) {
+								do {
+									strarray[offset] = c;
+									offset++;
+									// grow the buffer if we need to
+									if (offset+2 >= maxsize) {
+										maxsize *= 2;
+										strarray = (char *) realloc(strarray, maxsize);
+										memset(strarray + offset, 0, maxsize - offset);
+									}
+									// get next char
+									filehandle[fn]->waitForReadyRead(FILEREADTIMEOUT);
+									readmore = filehandle[fn]->getChar(&c);
+								} while (c != ' ' && c != '\t' && c != '\n' && readmore);
+							}
+							// finish the string, decode and push to stack
 							strarray[offset] = 0;
 							stack->pushQString(QString::fromUtf8(strarray));
 							free(strarray);
@@ -2412,7 +2442,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						} else {
 							//read entire line
 							filehandle[fn]->waitForReadyRead(FILEREADTIMEOUT);
-							stack->pushQString(filehandle[fn]->readLine());
+							stack->pushQString(QString::fromUtf8(filehandle[fn]->readLine()));
 						}
 					}
 				}
@@ -3352,6 +3382,14 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					stack->pushBool(ans!=-1);
 					delete one;
 					delete two;
+				}
+				break;
+
+				case OP_IN:{
+					DataElement *map = stack->popDE();
+					QString key = stack->popQString();
+					stack->pushBool(map->mapKey(key));
+					delete map;
 				}
 				break;
 
@@ -4586,12 +4624,13 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_KEY: {
+					int getUNICODE = stack->popInt();
 #ifdef ANDROID
 					error->q(ERROR_NOTIMPLEMENTED);
 					stack->pushInt(0);
 #else
 					mymutex->lock();
-					stack->pushInt(basicKeyboard->getLastKey());
+					stack->pushInt(basicKeyboard->getLastKey(getUNICODE));
 					mymutex->unlock();
 #endif
 				}
@@ -4879,14 +4918,17 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					int nr = stack->popInt(); // number of arguments (3-6)
 					switch(nr){
 						case 6  :
-						   o = stack->popDouble();
+							o = stack->popDouble();
+							[[fallthrough]];
 						case 5  :
-						   r = stack->popDouble();
+							r = stack->popDouble();
+							[[fallthrough]];
 						case 4  :
-						   s = stack->popDouble();
+							s = stack->popDouble();
+							[[fallthrough]];
 						default :
-						   y = stack->popDouble();
-						   x = stack->popDouble();
+							y = stack->popDouble();
+							x = stack->popDouble();
 					}
 					int n = stack->popInt();
 
@@ -5899,12 +5941,44 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_EDITVISIBLE:
-				case OP_GRAPHVISIBLE:
-				case OP_OUTPUTVISIBLE: {
+				{
 					int show = stack->popInt();
-					if (opcode==OP_EDITVISIBLE) emit(mainWindowsVisible(0,show!=0));
-					if (opcode==OP_GRAPHVISIBLE) emit(mainWindowsVisible(1,show!=0));
-					if (opcode==OP_OUTPUTVISIBLE) emit(mainWindowsVisible(2,show!=0));
+					emit(mainWindowsVisible(0,show!=0));
+				}
+				break;
+
+				case OP_GRAPHVISIBLE:
+				{
+					int show = stack->popInt();
+					emit(mainWindowsVisible(1,show!=0));
+				}
+				break;
+
+				case OP_OUTPUTVISIBLE:
+				{
+					int show = stack->popInt();
+					emit(mainWindowsVisible(2,show!=0));
+				}
+				break;
+
+				case OP_MAINTOOLBARVISIBLE:
+				{
+					int show = stack->popInt();
+					emit(mainWindowsVisible(3,show!=0));
+				}
+				break;
+
+				case OP_GRAPHTOOLBARVISIBLE:
+				{
+					int show = stack->popInt();
+					emit(mainWindowsVisible(4,show!=0));
+				}
+				break;
+
+				case OP_OUTPUTTOOLBARVISIBLE:
+				{
+					int show = stack->popInt();
+					emit(mainWindowsVisible(5,show!=0));
 				}
 				break;
 
@@ -7229,7 +7303,12 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						error->q(ERROR_ZEROORONE);
 					}
 				}
-				break;				
+				break;
+
+				case OP_GETARRAYBASE: {
+					stack->pushInt(arraybase);
+				}
+				break;
 
 				case OP_NEXT: {
 					forframe *temp = forstack;
@@ -7340,6 +7419,54 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 							break;
 						}
 					}
+				}
+				break;
+
+
+
+
+				case OP_GETCLIPBOARDIMAGE: {
+					mymutex->lock();
+					emit(getClipboardImage());
+					waitCond->wait(mymutex);
+					mymutex->unlock();
+					//
+					lastImageId++;
+					QString id = QString("image:") + QString::number(lastImageId) + QStringLiteral(":clipboard");
+					images[id] = new QImage(returnImage.convertToFormat(QImage::Format_ARGB32));
+					stack->pushQString(id);
+				}
+				break;
+
+				case OP_GETCLIPBOARDSTRING: {
+					mymutex->lock();
+					emit(getClipboardString());
+					waitCond->wait(mymutex);
+					mymutex->unlock();
+					stack->pushQString(returnString);
+				}
+				break;
+
+				case OP_SETCLIPBOARDIMAGE: {
+					QString id = stack->popQString();
+					if (images.contains(id)){
+						mymutex->lock();
+						emit(setClipboardImage(*images[id]));
+						waitCond->wait(mymutex);
+						mymutex->unlock();
+					} else {
+						error->q(ERROR_IMAGERESOURCE);
+					}
+				}
+				break;
+
+
+				case OP_SETCLIPBOARDSTRING: {
+					QString s = stack->popQString();
+					mymutex->lock();
+					emit(setClipboardString(s));
+					waitCond->wait(mymutex);
+					mymutex->unlock();
 				}
 				break;
 
