@@ -1,0 +1,6 @@
+*.log
+/*.substvars
+/.debhelper/
+/basic256/
+/debhelper-build-stamp
+/files
