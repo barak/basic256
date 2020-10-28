@@ -1,16 +1,24 @@
-Description: use dh_installexamples to install examples, not the Makefiles.
-Author: Ryan Kavanagh <ryanakca@kubuntu.org>
+From: Ryan Kavanagh <ryanakca@kubuntu.org>
+Date: Wed, 28 Oct 2020 20:33:53 +0000
+Subject: use dh_installexamples to install examples, not the Makefiles.
+
 Origin: vendor
 Forwarded: not-needed
 Last-Update: 2016-11-27
+---
+ BASIC256.pro | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/BASIC256.pro b/BASIC256.pro
+index 68e2879..9cc014c 100644
 --- a/BASIC256.pro
 +++ b/BASIC256.pro
-@@ -111,7 +111,7 @@
+@@ -112,7 +112,7 @@ unix:!macx {
  	########
- 	exampleFiles.files		=	./Examples
- 	exampleFiles.path		=	/usr/share/basic256
--	INSTALLS				+=	exampleFiles
-+	# INSTALLS				+=	exampleFiles
+ 	exampleFiles.files			=	./Examples
+ 	exampleFiles.path			=	/usr/share/basic256
+-	INSTALLS					+=	exampleFiles
++	# INSTALLS					+=	exampleFiles
  
- 	helpHTMLFiles.files		=	./wikihelp/help
- 	helpHTMLFiles.path		=	/usr/share/basic256
+ 	helpHTMLFiles.files			=	./wikihelp/help
+ 	helpHTMLFiles.path			=	/usr/share/basic256
