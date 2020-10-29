@@ -1,0 +1,25 @@
+This system is sometimes referred to as kbasic or kidbasic instead of basic256.
+
+Upstream development uses svn. This can be checked out directly with
+
+   svn checkout https://svn.code.sf.net/p/kidbasic/code/trunk basic256-svn
+
+or using git with
+
+   git svn clone https://svn.code.sf.net/p/kidbasic/code basic256-svn --stdlayout
+
+or yanked into an existing git repository
+
+   git config --local svn-remote.svn.url 'https://svn.code.sf.net/p/kidbasic/code'
+   git config --local svn-remote.svn.fetch 'trunk:refs/remotes/sf/trunk'
+   git config --local svn-remote.svn.branches 'branches/*:refs/remotes/sf/*'
+   git config --local svn-remote.svn.tags 'tags/*:refs/remotes/sf/tags/*'
+
+   git svn fetch
+
+These are the upstream discussion forums; the first of these seems abandoned.
+
+   https://sourceforge.net/p/kidbasic/mailman/kidbasic-devel/
+   https://sourceforge.net/p/kidbasic/discussion/
+
+ -- Barak A. Pearlmutter <bap@debian.org>, Thu, 29 Oct 2020 10:19:51 +0000
