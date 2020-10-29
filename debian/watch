@@ -1,3 +1,2 @@
-version=3
-opts=dversionmangle=s/\+dfsg// \
-https://sf.net/kidbasic/basic256_(.+)\.orig@ARCHIVE_EXT@
+version=4
+https://sf.net/kidbasic/@PACKAGE@_?@ANY_VERSION@\.orig@ARCHIVE_EXT@
