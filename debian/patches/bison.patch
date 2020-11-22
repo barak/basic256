@@ -1,12 +1,12 @@
 From: gregor herrmann <gregoa@debian.org>
-Date: Wed, 28 Oct 2020 20:33:53 +0000
-Subject: remove generated bison and flex parser files during clean
+Date: Sun, 27 Nov 2016 00:00:00 +0000
+Subject: bison
 
-Origin: vendor
+Remove generated bison and flex parser files during clean.
+
 Bug-Debian: https://bugs.debian.org/652244
 Bug-Debian: https://bugs.debian.org/746100
 Forwarded: no
-Last-Update: 2016-11-27
 ---
  BASIC256.pro | 5 +++++
  1 file changed, 5 insertions(+)

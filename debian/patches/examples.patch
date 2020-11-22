@@ -1,10 +1,10 @@
 From: Ryan Kavanagh <ryanakca@kubuntu.org>
-Date: Wed, 28 Oct 2020 20:33:53 +0000
-Subject: use dh_installexamples to install examples, not the Makefiles.
+Date: Sun, 27 Nov 2016 00:00:00 +0000
+Subject: examples
 
-Origin: vendor
+Use dh_installexamples to install examples, not the Makefiles.
+
 Forwarded: not-needed
-Last-Update: 2016-11-27
 ---
  BASIC256.pro | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
