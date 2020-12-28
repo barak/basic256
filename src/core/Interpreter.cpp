@@ -551,8 +551,8 @@ bool Interpreter::isStopped() {
 
 bool Interpreter::isStopping() {
 	// interpreter is stopped or is about to stop
-	// to avoid RunController::stopRun() to be triggered while status == R_STOPING too
-	return (status == R_STOPPED || status == R_STOPING);
+	// to avoid RunController::stopRun() to be triggered while status == R_STOPPING too
+	return (status == R_STOPPED || status == R_STOPPING);
 }
 
 void Interpreter::setStatus(run_status s) {
@@ -1096,8 +1096,8 @@ Interpreter::run() {
 
 void Interpreter::runLoop() {
 	int rv = 0;
-	while (status != R_STOPING && rv==0) {rv = execByteCode();} //continue
-	if (status == R_STOPING && onstopaddr && rv >=0 ) {
+	while (status != R_STOPPING && rv==0) {rv = execByteCode();} //continue
+	if (status == R_STOPPING && onstopaddr && rv >=0 ) {
 		// is there an onstop handler for user event stop
 		// and we are not at a programatic "end"
 		//qDebug() << "onstop" << op;

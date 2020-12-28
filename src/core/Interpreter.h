@@ -81,7 +81,7 @@ class QTcpServer;
     #include <QSerialPort>
 #endif
 
-enum run_status {R_STOPPED, R_RUNNING, R_STOPING, R_PRESTOPING};
+enum run_status {R_STOPPED, R_RUNNING, R_STOPPING, R_PRESTOPPING};
 
 #define NUMFILES 8
 #define NUMSOCKETS 8
