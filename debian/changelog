@@ -5,9 +5,9 @@ basic256 (2.0.0.11-2) unstable; urgency=medium
   * reformat patches
   * bump policy
   * spelling patch: stoping -> stopping
-  * use SDL1.2 compatibility shim instead of SDL1.2 (closes: #1038044)
+  * not actually using SDL at all (closes: #1038044)
 
- -- Barak A. Pearlmutter <bap@debian.org>  Fri, 16 Jun 2023 17:48:23 +0100
+ -- Barak A. Pearlmutter <bap@debian.org>  Fri, 16 Jun 2023 18:15:17 +0100
 
 basic256 (2.0.0.11-1) unstable; urgency=low
 
