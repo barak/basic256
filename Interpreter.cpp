@@ -63,6 +63,7 @@ typedef int socklen_t;
 #include <QMutex>
 #include <QWaitCondition>
 #include <QCoreApplication>
+#include <QDir>
 
 
 
@@ -83,10 +84,10 @@ typedef int socklen_t;
 
 
 extern SoundSystem *sound;
-extern QMutex *mymutex;
-extern QMutex *mydebugmutex;
-extern QWaitCondition *waitCond;
-extern QWaitCondition *waitDebugCond;
+extern QMutex* mymutex;
+extern QMutex* mydebugmutex;
+extern QWaitCondition* waitCond;
+extern QWaitCondition* waitDebugCond;
 
 extern BasicGraph * graphwin;
 extern BasicEdit * editwin;
@@ -342,6 +343,7 @@ QString Interpreter::opname(int op) {
 	case OP_MID : return QString("OP_MID");
 	case OP_MIDX : return QString("OP_MIDX");
 	case OP_MINUTE : return QString("OP_MINUTE");
+	case OP_MKDIR : return QString("OP_MKDIR");
 	case OP_MOD : return QString("OP_MOD");
 	case OP_MONTH : return QString("OP_MONTH");
 	case OP_MOUSEB : return QString("OP_MOUSEB");
@@ -366,6 +368,7 @@ QString Interpreter::opname(int op) {
 	case OP_ONERRORCALL : return QString("OP_ONERRORCALL");
 	case OP_ONERRORCATCH : return QString("OP_ONERRORCATCH");
 	case OP_ONERRORGOSUB : return QString("OP_ONERRORGOSUB");
+	case OP_ONSTOPCALL : return QString("OP_ONSTOPCALL");
 	case OP_OPEN : return QString("OP_OPEN");
 	case OP_OPENFILEDIALOG : return QString("OP_OPENFILEDIALOG");
 	case OP_OPENSERIAL : return QString("OP_OPENSERIAL");
@@ -382,6 +385,7 @@ QString Interpreter::opname(int op) {
 	case OP_PORTIN : return QString("OP_PORTIN");
 	case OP_PORTOUT : return QString("OP_PORTOUT");
 	case OP_PRINT : return QString("OP_PRINT");
+	case OP_PRINTAT : return QString("OP_PRINTAT");
 	case OP_PRINTERCANCEL : return QString("OP_PRINTERCANCEL");
 	case OP_PRINTEROFF : return QString("OP_PRINTEROFF");
 	case OP_PRINTERON : return QString("OP_PRINTERON");
@@ -407,6 +411,7 @@ QString Interpreter::opname(int op) {
 	case OP_RETURN : return QString("OP_RETURN");
 	case OP_RGB : return QString("OP_RGB");
 	case OP_RIGHT : return QString("OP_RIGHT");
+	case OP_RMDIR : return QString("OP_RMDIR");
 	case OP_ROUNDEDRECT : return QString("OP_ROUNDEDRECT");
 	case OP_RTRIM : return QString("OP_RTRIM");
 	case OP_SAVEFILEDIALOG : return QString("OP_SAVEFILEDIALOG");
@@ -457,6 +462,7 @@ QString Interpreter::opname(int op) {
 	case OP_SPRITES : return QString("OP_SPRITES");
 	case OP_SPRITESHOW : return QString("OP_SPRITESHOW");
 	case OP_SPRITESLICE : return QString("OP_SPRITESLICE");
+	case OP_SPRITETEXT : return QString("OP_SPRITETEXT");
 	case OP_SPRITEV : return QString("OP_SPRITEV");
 	case OP_SPRITEW : return QString("OP_SPRITEW");
 	case OP_SPRITEX : return QString("OP_SPRITEX");
@@ -557,10 +563,6 @@ void Interpreter::netSockCloseAll() {
 	}
 }
 
-bool Interpreter::isAwaitingInput() {
-	return (status == R_INPUT);
-}
-
 void Interpreter::setInputString(QString s) {
 	inputString = s;
 }
@@ -593,6 +595,12 @@ void Interpreter::watchvariable(bool doit, int i, int x, int y) {
 	// send an event to the variable watch window to display aan array element's value
 	if (doit) {
 		emit(varWinAssign(&variables, i, variables->getrecurse(), x ,y));
+	}
+}
+void Interpreter::watchvariable(bool doit, int i, QString k) {
+	// send an event to the variable watch window to display a map element's value
+	if (doit) {
+		emit(varWinAssign(&variables, i, variables->getrecurse(), k));
 	}
 }
 
@@ -833,6 +841,7 @@ Interpreter::initialize() {
 	op = wordCode;
 	callstack = new addrStack();
 	onerrorstack = new addrStack();
+	onstopaddr = NULL;
 	trycatchstack = NULL;
 	forstack = NULL;
 	forstacklevelsize = 0;
@@ -871,8 +880,8 @@ Interpreter::initialize() {
 	convert = new Convert(locale);
 
 	// now build the new stack object
-	stack = new Stack(convert, locale);
-	savestack = new Stack(convert, locale);		// secondary stack to hold stuff (OP_STACKSAVE, OP_STACKUNSAVE)
+	stack = new Stack(convert);
+	savestack = new Stack(convert);		// secondary stack to hold stuff (OP_STACKSAVE, OP_STACKUNSAVE)
 	
 	// now create the variable storage and set arraybase
 	variables = new Variables(numsyms);
@@ -896,6 +905,9 @@ Interpreter::initialize() {
 		filehandle[t] = NULL;
 		filehandletype[t] = 0;
 	}
+	
+	// save IDE path so that it can be restored after program terminates
+	originalPath = QDir::currentPath();
 }
 
 
@@ -906,9 +918,25 @@ Interpreter::cleanup() {
 	//
 	// Clean up run time objects
 
+	if(sys) sys->kill();
+
+	// stop timers
+	sleeper->wake();
+
+	// stop downloading
+	if(downloader!=NULL) downloader->stop();
 	delete (downloader);
 	downloader = NULL;
+	
+	// stop playing any sound
+	if(sound!=NULL) sound->exit();
+
+	// close network connections
+	netSockCloseAll();
+
+	// delete the stack
 	delete(stack);
+	delete(savestack);
 
 	//delete stack used by nested for statements
 	int level = variables->getrecurse();
@@ -923,12 +951,13 @@ Interpreter::cleanup() {
 		if(level>0) forstack=forstacklevel[level];
 	}
 
-	variables->deleteLater();
 	delete(convert);
 	// Clean up sprites
 	clearsprites();
+	
 	// Clean up, for frames, etc.
 	freeBasicParse();
+	
 	// close open files (set to NULL if closed)
 	for (int t=0; t<NUMFILES; t++) {
 		if (filehandle[t]) {
@@ -989,7 +1018,13 @@ Interpreter::cleanup() {
 		++it;
 	}
 	images.clear();
+	
+	// clear variables, maps, and arrays
+	//fprintf(stderr,"interperter b4 delete variables\n");
+	delete variables;
 
+	// restore IDE path
+	QDir::setCurrent(originalPath);
 }
 
 void Interpreter::closeDatabase(int t) {
@@ -1014,20 +1049,6 @@ void
 Interpreter::runHalted() {
 	// event fires from runcoltroller to tell program to signal user stop
 	// force the interperter ops that block to go ahead and quit
-
-	if(sys) sys->kill();
-
-	// stop timers
-	sleeper->wake();
-
-	// stop downloading
-	if(downloader!=NULL) downloader->stop();
-
-	// stop playing any sound
-	if(sound!=NULL) sound->exit();
-
-	// close network connections
-	netSockCloseAll();
 }
 
 
@@ -1057,10 +1078,25 @@ Interpreter::run() {
 	sound->error = &error;
 	srand(time(NULL)+QTime::currentTime().msec()*911L); rand(); rand(); 	// initialize the random number generator for this thread
 	runtimer.start(); // used by MSEC function
-	while (status != R_STOPING && execByteCode() >= 0) {} //continue
+	runLoop();			// run the opcodes
 	debugMode = 0;
+	//qDebug() << "run - before cleanup()";
 	cleanup(); // cleanup the variables, databases, files, stack and everything
 	emit(stopRunFinalized(!isError));
+}
+
+void Interpreter::runLoop() {
+	int rv = 0;
+	while (status != R_STOPING && rv==0) {rv = execByteCode();} //continue
+	if (status == R_STOPING && onstopaddr && rv >=0 ) {
+		// is there an onstop handler for user event stop
+		// and we are not at a programatic "end"
+		//qDebug() << "onstop" << op;
+		callstack->push(op);
+		op = onstopaddr;
+		status = R_RUNNING;
+		runLoop();
+	}
 }
 
 void Interpreter::clearsprites() {
@@ -1327,11 +1363,11 @@ Interpreter::execByteCode() {
 		//still need this for functions like implode
 		if(error->pending_e==ERROR_VARNOTASSIGNED && error->pending_var>=0){
 			DataElement *e = variables->getData(error->pending_var);
-			if(e->type==T_ARRAY) error->pending_e=ERROR_ARRAYELEMENT;
+			if(DataElement::getType(e)==T_ARRAY) error->pending_e=ERROR_ARRAYELEMENT;
 		}
 		if(error->pending_e==WARNING_VARNOTASSIGNED && error->pending_var>=0){
 			DataElement *e = variables->getData(error->pending_var);
-			if(e->type==T_ARRAY) error->pending_e=WARNING_ARRAYELEMENT;
+			if(DataElement::getType(e)==T_ARRAY) error->pending_e=WARNING_ARRAYELEMENT;
 		}
 
 		error->process(currentLine);
@@ -1423,7 +1459,7 @@ Interpreter::execByteCode() {
 
 				case OP_FOREACH: {
 					int *nextAddr = wordCode + stack->popInt();
-					DataElement *d = stack->popDE();
+					DataElement *d = stack->popDE();			// RELEASE - released when loop terminates next/ exitfor
 					
 					// two variables
 					// - i is the variable for the value in an array and the key for a map
@@ -1453,63 +1489,73 @@ Interpreter::execByteCode() {
 						temp = new forframe;
 					}
 
-					if (d->type == T_ARRAY) {
-						if(d->arrayCols()>=1) {
-							// create forframe
-							temp->for_varnum = i;
-							temp->for_val_varnum = i2;
-							temp->type = FORFRAMETYPE_FOREACH_ARRAY;
-							temp->iter_d = d;
-							temp->arrayIter = d->arr->data.begin();
-							temp->arrayIterEnd = d->arr->data.end();
-							// set variable to first element
-							variables->setData(temp->for_varnum, (DataElement*) &(*temp->arrayIter));
-							watchvariable(debugMode, temp->for_varnum);
-							// add new forframe to the forframe stack
-							temp->next = forstack;
-							temp->forAddr = op;		// first op after FOR statement to loop back to
-							temp->nextAddr = nextAddr;
-							forstack = temp;
-						} else {
-							// no data in array - jump to next
-							delete d;
-							delete temp;
-							op = nextAddr;
+					switch(DataElement::getType(d)) {
+						case T_ARRAY:
+						{
+							if(d->arrayCols()>=1) {
+								// create forframe
+								temp->forVarnum = i;
+								temp->forVarnumValue = i2;
+								temp->forFrameType = FORFRAMETYPE_FOREACH_ARRAY;
+								temp->foreach_de = d;
+								temp->arrayIter = d->arr->data.begin();
+								temp->arrayIterEnd = d->arr->data.end();
+								// set variable to first element
+								variables->setData(temp->forVarnum, *temp->arrayIter);
+								watchvariable(debugMode, temp->forVarnum);
+								// add new forframe to the forframe stack
+								temp->next = forstack;
+								temp->forAddr = op;		// first op after FOR statement to loop back to
+								temp->nextAddr = nextAddr;
+								forstack = temp;
+							} else {
+								// no data in array - jump to next
+								delete d;
+								delete temp;
+								op = nextAddr;
+							}
 						}
-					} else if (d->type == T_MAP) {
+						break;
+						case T_MAP:
+						{
 #ifdef DEBUG
 fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 #endif
-						if(d->map->data.size()>=1) {
-							// create forframe
-							temp->for_varnum = i;
-							temp->for_val_varnum = i2;
-							temp->type = FORFRAMETYPE_FOREACH_MAP;
-							temp->iter_d = d;
-							temp->mapIter = d->map->data.begin();
-							temp->mapIterEnd = d->map->data.end();
-							// set variable1 to first key
-							variables->setData(temp->for_varnum, temp->mapIter->first);
-							watchvariable(debugMode, temp->for_varnum);
-							// set variable2 to first value
-							if (temp->for_val_varnum !=-1) {
-								variables->setData(temp->for_val_varnum, (DataElement*) &(temp->mapIter->second));
-								watchvariable(debugMode, temp->for_val_varnum);
+							if(d->map->data.size()>=1) {
+								// create forframe
+								temp->forVarnum = i;
+								temp->forVarnumValue = i2;
+								temp->forFrameType = FORFRAMETYPE_FOREACH_MAP;
+								temp->foreach_de = d;
+								temp->mapIter = d->map->data.begin();
+								temp->mapIterEnd = d->map->data.end();
+								// set variable1 to first key
+								variables->setData(temp->forVarnum, QString::fromStdString((std::string) (temp->mapIter->first)));
+								watchvariable(debugMode, temp->forVarnum);
+								// set variable2 to first value
+								if (temp->forVarnumValue !=-1) {
+									variables->setData(temp->forVarnumValue, temp->mapIter->second);
+									watchvariable(debugMode, temp->forVarnumValue);
+								}
+								// add new forframe to the forframe stack
+								temp->next = forstack;
+								temp->forAddr = op;		// first op after FOR statement to loop back to
+								temp->nextAddr = nextAddr;
+								forstack = temp;
+							} else {
+								// no data in array - jump to next
+								delete d;
+								delete temp;
+								op = nextAddr;
 							}
-							// add new forframe to the forframe stack
-							temp->next = forstack;
-							temp->forAddr = op;		// first op after FOR statement to loop back to
-							temp->nextAddr = nextAddr;
-							forstack = temp;
-						} else {
-							// no data in array - jump to next
+						}
+						break;
+						default:
+						{
+							error->q(ERROR_ARRAYORMAPEXPR);
 							delete d;
 							delete temp;
-							op = nextAddr;
 						}
-					} else {
-						error->q(ERROR_ARRAYORMAPEXPR);
-
 					}
 				}
 				break;
@@ -1532,9 +1578,9 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_FOR: {
 					int *nextAddr = wordCode + stack->popInt();
-					DataElement *stepE = stack->popDE();
-					DataElement *endE = stack->popDE();
-					DataElement *startE = stack->popDE();
+					DataElement *stepE = stack->popDE();			// RELEASE
+					DataElement *endE = stack->popDE();			// RELEASE
+					DataElement *startE = stack->popDE();			// RELEASE
 
 					// search for previous FOR in stack
 					// this is done because of anti-spaghetti code
@@ -1564,11 +1610,11 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					variables->setData(i, startE);	// set variable to initial value
 					watchvariable(debugMode, i);
 
-					if (startE->type==T_INT && stepE->type==T_INT) {
+					if (DataElement::getType(startE)==T_INT && DataElement::getType(stepE)==T_INT) {
 						// an integer start and step (do an integer loop)
-						temp->type = FORFRAMETYPE_INT;
-						temp->for_varnum = i;
-						temp->for_val_varnum = -1;
+						temp->forFrameType = FORFRAMETYPE_INT;
+						temp->forVarnum = i;
+						temp->forVarnumValue = -1;
 						temp->intStart = startE->intval;
 						temp->intEnd = convert->getLong(endE);	// could b float but cant ever be
 						temp->intStep = stepE->intval;
@@ -1577,9 +1623,9 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 							(temp->intStep==0);
 					} else {
 						// start or step not integer - it is a float loop
-						temp->type = FORFRAMETYPE_FLOAT;
-						temp->for_varnum = i;
-						temp->for_val_varnum = -1;
+						temp->forFrameType = FORFRAMETYPE_FLOAT;
+						temp->forVarnum = i;
+						temp->forVarnumValue = -1;
 						temp->floatStart = convert->getFloat(startE);
 						temp->floatEnd = convert->getFloat(endE);
 						temp->floatStep = convert->getFloat(stepE);
@@ -1628,18 +1674,25 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_ALEN: {
 					long l = 0;
-					DataElement *e = variables->getData(i);
+					DataElement *e = variables->getData(i);			// DONT RELEASE
 					if (DataElement::getError()) {error->q(DataElement::getError(true),i);}
-					if (e->type==T_ARRAY) {
-						if (e->arrayRows()==1) {
-							l = e->arrayCols();
-						} else {
-							error->q(ERROR_ARRAYLENGTH2D);
+					switch (DataElement::getType(e)) {
+						case T_ARRAY:
+						{
+							if (e->arrayRows()==1) {
+								l = e->arrayCols();
+							} else {
+								error->q(ERROR_ARRAYLENGTH2D);
+							}
 						}
-					} else if (e->type==T_MAP) {
-						l = e->mapLength();
-					} else {
-						error->q(ERROR_ARRAYORMAPEXPR);
+						break;
+						case T_MAP:
+						{
+							l = e->mapLength();
+						}
+						break;
+						default:
+							error->q(ERROR_ARRAYORMAPEXPR);
 					}
 					stack->pushInt(l);
 				}
@@ -1647,7 +1700,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_ALENROWS: {
 					long l = 0;
-					DataElement *e = variables->getData(i);
+					DataElement *e = variables->getData(i);			// DONT RELEASE
 					if (DataElement::getError()) {error->q(DataElement::getError(true),i);}
 					l = e->arrayRows();
 					stack->pushInt(l);
@@ -1656,7 +1709,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_ALENCOLS: {
 					long l = 0;
-					DataElement *e = variables->getData(i);
+					DataElement *e = variables->getData(i);			// DONT RELEASE
 					if (DataElement::getError()) {error->q(DataElement::getError(true),i);}
 					l = e->arrayCols();
 					stack->pushInt(l);
@@ -1672,25 +1725,32 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				case OP_ARR_SET: {
 					// assign a value to an array element
 					// assumes that arrays are always two dimensional (if 1d then one row [0,i]) )
-					DataElement *e = stack->popDE();
-					DataElement *col = stack->popDE();
-					DataElement *row = stack->popDE();
-					DataElement *vdata = variables->getData(i);
-					if (vdata->type==T_ARRAY) {
-						int c = convert->getInt(col) - arraybase;
-						int r = convert->getInt(row) - arraybase;
-						if (c<0) c=0;
-						if (r<0) r=0;
-						vdata->arraySetData(r, c, e);
-						if (DataElement::getError()) {error->q(DataElement::getError(true),i,r+arraybase,c+arraybase);}
-						watchvariable(debugMode, i, r, c);
-					} else if (vdata->type==T_MAP) {
-						QString key = convert->getString(col);
-						vdata->mapSetData(key, e);
-						if (DataElement::getError()) {error->q(DataElement::getError(true),i);}
-						watchvariable(debugMode, i);
-					} else {
-						error->q(ERROR_ARRAYORMAPEXPR);
+					DataElement *e = stack->popDE();			// RELEASE
+					DataElement *col = stack->popDE();			// RELEASE
+					DataElement *row = stack->popDE();			// RELEASE
+					DataElement *vdata = variables->getData(i);			// DONT RELEASE
+					switch (DataElement::getType(vdata)) {
+						case T_ARRAY:
+						{
+							int c = convert->getInt(col) - arraybase;
+							int r = convert->getInt(row) - arraybase;
+							if (c<0) c=0;
+							if (r<0) r=0;
+							vdata->arraySetData(r, c, e);
+							if (DataElement::getError()) {error->q(DataElement::getError(true),i,r+arraybase,c+arraybase);}
+							watchvariable(debugMode, i, r, c);
+						}
+						break;
+						case T_MAP:
+						{
+							QString key = convert->getString(col);
+							vdata->mapSetData(key, e);
+							if (DataElement::getError()) {error->q(DataElement::getError(true),i);}
+							watchvariable(debugMode, i, key);
+						}
+						break;
+						default:
+							error->q(ERROR_ARRAYORMAPEXPR);
 					}
 					delete e;
 					delete col;
@@ -1701,37 +1761,48 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_ARR_GET: {
 					// get a value from an array and push it to the stack
-					DataElement *e;
-					DataElement *col = stack->popDE();
-					DataElement *row = stack->popDE();
-					DataElement *vdata = variables->getData(i);
-					if (vdata->type==T_ARRAY) {
-						int c = convert->getInt(col) - arraybase;
-						int r = convert->getInt(row) - arraybase;
-						if (c<0) c=0;
-						if (r<0) r=0;
-						e = vdata->arrayGetData(r, c);
-						if (DataElement::getError()) {error->q(DataElement::getError(true),i,r+arraybase,c+arraybase);}
-					} else if (vdata->type==T_MAP) {
-						QString key = convert->getString(col);
-						e = vdata->mapGetData(key);
-						if (DataElement::getError()) {error->q(DataElement::getError(true),i);}
-					} else {
-						error->q(ERROR_ARRAYORMAPEXPR);
-						e = new DataElement();
+					DataElement *col = stack->popDE();			// RELEASE
+					DataElement *row = stack->popDE();			// RELEASE
+					DataElement *vdata = variables->getData(i);			// DONT RELEASE
+					switch (DataElement::getType(vdata)) {
+						case T_ARRAY:
+						{
+							int c = convert->getInt(col) - arraybase;
+							int r = convert->getInt(row) - arraybase;
+							if (c<0) c=0;
+							if (r<0) r=0;
+							DataElement *e;
+							e = vdata->arrayGetData(r, c);		// DONT RELEASE
+							if (DataElement::getError()) {error->q(DataElement::getError(true),i,r+arraybase,c+arraybase);}
+							stack->pushDE(e);
+						}
+						break;
+						case T_MAP:
+						{
+							QString key = convert->getString(col);
+							DataElement *e;
+							e = vdata->mapGetData(key);			// DONT RELEASE
+							if (DataElement::getError()) {error->q(DataElement::getError(true),i);}
+							stack->pushDE(e);
+						}
+						break;
+						default:
+							error->q(ERROR_ARRAYORMAPEXPR);
+							stack->pushBool(false);
 					}
-					stack->pushDE(e);
 					delete col;
 					delete row;
 				}
 				break;
 
 				case OP_VAR_GET: {
-					DataElement *e = variables->getData(i);
-					if (e->type==T_UNASSIGNED) {
+					DataElement *e = variables->getData(i);			// DONT RELEASE
+					if (DataElement::getType(e)==T_UNASSIGNED) {
 						error->q(ERROR_VARNOTASSIGNED,i);
+						stack->pushUnassigned();
+					} else {
+						stack->pushDE(e);
 					}
-					stack->pushDE(e);
 				}
 				break;
 
@@ -1742,7 +1813,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_VAR_SET: {
 					// assign a value to a variable
-					DataElement *e = stack->popDE();
+					DataElement *e = stack->popDE();			// RELEASE
 					variables->setData(i,e);
 					if (DataElement::getError()) {error->q(DataElement::getError(true),i);}
 					watchvariable(debugMode, i);
@@ -1754,18 +1825,20 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					// Push all of the elements of an array to the stack and then push the length to the stack
 					// expects one integer - variable number
 					// all arrays are 2 dimensional - push each column, column size, then number of rows
-					DataElement *e = variables->getData(i);
+					DataElement *e = variables->getData(i);			// DONT RELEASE
 					int columns = e->arrayCols();
 					int rows = e->arrayRows();
 					if (DataElement::getError()) {error->q(DataElement::getError(true),i);}
 					if(!error->pending()){
 						for(int row = 0; row<rows; row++) {
 							for (int col = 0; col<columns; col++) {
-								DataElement *d = e->arrayGetData(row, col);
-								if (d->type==T_UNASSIGNED) {
+								DataElement *d = e->arrayGetData(row, col);			// DONT RELEASE
+								if (DataElement::getType(d)==T_UNASSIGNED) {
 									error->q(ERROR_VARNOTASSIGNED, i, row, col);
+									stack->pushUnassigned();
+								} else {
+									stack->pushDE(d);
 								}
-								stack->pushDE(d);
 							}
 							stack->pushInt(columns);
 						}
@@ -1781,20 +1854,21 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				case OP_ARRAYFILL: {
 					// fill an array with a single value
 					int mode = stack->popInt();		// 1-fill everything, 0-fill unassigned
-					DataElement *e = stack->popDE();	// fill value
-					if (e->type==T_UNASSIGNED) {
+					DataElement *e = stack->popDE();	// fill value			// RELEASE
+					if (DataElement::getType(e)==T_UNASSIGNED) {
 						error->q(ERROR_VARNOTASSIGNED);
-					} else if (e->type==T_ARRAY) {
+					} else if (DataElement::getType(e)==T_ARRAY) {
 						error->q(ERROR_ARRAYINDEXMISSING);
 					} else {
-						DataElement *edest = variables->getData(i);
-						if (edest->type==T_ARRAY) {
+						DataElement *edest = variables->getData(i);			// DONT RELEASE
+						if (DataElement::getType(edest)==T_ARRAY) {
 							int columns = edest->arrayCols();
 							int rows = edest->arrayRows();
-							if (!error->pending() && edest->type==T_ARRAY) {
+							if (!error->pending() && DataElement::getType(edest)==T_ARRAY) {
 								for(int row = 0; row<rows; row++) {
 									for (int col = 0; col<columns; col++) {
-										if (mode||edest->arrayGetData(row, col)->type==T_UNASSIGNED) {
+										DataElement *temp = edest->arrayGetData(row, col);			// DONT RELEASE
+										if (mode||DataElement::getType(temp)==T_UNASSIGNED) {
 											edest->arraySetData(row, col, e);
 										}
 									}
@@ -1816,10 +1890,10 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					const int rows = stack->popInt();
 					const int columns = stack->popInt(); //pop the first row length - the following rows must have the same length
 					int columns2 = columns;
-					DataElement *edest = variables->getData(i);
+					DataElement *edest = variables->getData(i);			// DONT RELEASE
 					
 					// create array if we need to (wrong dimensions or not array)
-					if (edest->type != T_ARRAY || edest->arrayCols()!=columns || edest->arrayRows()!=rows) {
+					if (DataElement::getType(edest) != T_ARRAY || edest->arrayCols()!=columns || edest->arrayRows()!=rows) {
 						edest->arrayDim(rows, columns, false);
 					}
 
@@ -1836,7 +1910,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 							}
 						}
 						for(int col= columns-1; col >= 0; col--) {
-							DataElement *e = stack->popDE(); //continue to pull from stack even if error occured
+							//continue to pull from stack even if error occurred
+							DataElement *e = stack->popDE();			// RELEASE
 							edest->arraySetData(row, col, e);
 							delete e;
 						}
@@ -1846,31 +1921,40 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_VAR_ASSIGNED: {
-					DataElement *e = variables->getData(i);
-					stack->pushBool(e->type!=T_UNASSIGNED);
+					DataElement *e = variables->getData(i);			// DONT RELEASE
+					stack->pushBool(DataElement::getType(e)!=T_UNASSIGNED);
 				}
 				break;
 
 				case OP_ARR_ASSIGNED: {
 					// clear a variable and release resources
-					DataElement *col = stack->popDE();
-					DataElement *row = stack->popDE();
-					DataElement *vdata = variables->getData(i);
+					DataElement *col = stack->popDE();			// RELEASE
+					DataElement *row = stack->popDE();			// RELEASE
+					DataElement *vdata = variables->getData(i);			// DONT RELEASE
 					DataElement *e;
-					if (vdata->type==T_ARRAY) {
-						int c = convert->getInt(col) - arraybase;
-						int r = convert->getInt(row) - arraybase;
-						e = vdata->arrayGetData(r, c);
-						stack->pushBool(e->type!=T_UNASSIGNED);
-						if (DataElement::getError()) {error->q(DataElement::getError(true),i,r+arraybase,c+arraybase);}
-					} else if (vdata->type==T_MAP) {
-						QString key = convert->getString(col);
-						e = vdata->mapGetData(key);
-						stack->pushBool(e->type!=T_UNASSIGNED);
-						if (DataElement::getError()) {error->q(DataElement::getError(true),i);}
-					} else {
-						error->q(ERROR_ARRAYORMAPEXPR);
-						e = new DataElement();
+					switch (DataElement::getType(vdata)) {
+						case T_ARRAY:
+						{
+							int c = convert->getInt(col) - arraybase;
+							int r = convert->getInt(row) - arraybase;
+							e = vdata->arrayGetData(r, c);			// DONT RELEASE
+							stack->pushBool(DataElement::getType(e)!=T_UNASSIGNED);
+							if (DataElement::getError()) {error->q(DataElement::getError(true),i,r+arraybase,c+arraybase);}
+						}
+						break;
+						case T_MAP:
+						{
+							QString key = convert->getString(col);
+							e = vdata->mapGetData(key);			// DONT RELEASE
+							stack->pushBool(DataElement::getType(e)!=T_UNASSIGNED);
+							if (DataElement::getError()) {error->q(DataElement::getError(true),i);}
+						}
+						break;
+						default:
+						{
+							error->q(ERROR_ARRAYORMAPEXPR);
+							stack->pushBool(false);
+						}
 					}
 					delete col;
 					delete row;
@@ -1885,19 +1969,29 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_ARR_UN: {
 					// clear a variable and release resources
-					DataElement *col = stack->popDE();
-					DataElement *row = stack->popDE();
-					DataElement *vdata = variables->getData(i);
-					if (vdata->type==T_ARRAY) {
-						int c = convert->getInt(col) - arraybase;
-						int r = convert->getInt(row) - arraybase;
-						vdata->arrayUnassign(r, c);
-						watchvariable(debugMode, i, r, c);
-					} else if (vdata->type==T_MAP) {
-						QString key = convert->getString(col);
-						vdata->mapUnassign(key);
-					} else {
-						error->q(ERROR_ARRAYORMAPEXPR);
+					DataElement *col = stack->popDE();			// RELEASE
+					DataElement *row = stack->popDE();			// RELEASE
+					DataElement *vdata = variables->getData(i);			// DONT RELEASE
+					switch (DataElement::getType(vdata)) {
+						case T_ARRAY:
+						{
+							int c = convert->getInt(col) - arraybase;
+							int r = convert->getInt(row) - arraybase;
+							vdata->arrayUnassign(r, c);
+							watchvariable(debugMode, i, r, c);
+						}
+						break;
+						case T_MAP:
+						{
+							QString key = convert->getString(col);
+							vdata->mapUnassign(key);
+							watchvariable(debugMode, i, key);
+						}
+						break;
+						default:
+						{
+							error->q(ERROR_ARRAYORMAPEXPR);
+						}
 					}
 					delete col;
 					delete row;
@@ -2167,10 +2261,25 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						error->q(ERROR_NEXTNOFOR);
 					} else {
 						forstack = temp->next;
+						if (temp->forFrameType==FORFRAMETYPE_FOREACH_ARRAY || temp->forFrameType==FORFRAMETYPE_FOREACH_MAP) {
+							delete temp->foreach_de;
+						}
 						delete temp;
 						op = wordCode + i;
 					}
 
+				}
+				break;
+				
+				
+				case OP_ONSTOPCALL: {
+					if(symtableaddresstype[l]!=ADDRESSTYPE_SUBROUTINE){
+						error->q(ERROR_NOSUCHSUBROUTINE, l);
+					}else if(symtableaddressargs[l]!=0){
+						error->q(ERROR_ONERRORSUB, l);
+					}else{
+						onstopaddr = (wordCode + i);
+					}
 				}
 				break;
 
@@ -2257,7 +2366,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					emit(dialogOpenFileDialog(prompt, path, filter));
 					waitCond->wait(mymutex);
 					mymutex->unlock();
-					stack->pushQString(returnString);
+					stack->pushQString(inputString);
 				}
 				break;
 				
@@ -2269,7 +2378,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					emit(dialogSaveFileDialog(prompt, path, filter));
 					waitCond->wait(mymutex);
 					mymutex->unlock();
-					stack->pushQString(returnString);
+					stack->pushQString(inputString);
 				}
 				break;
 				
@@ -2634,7 +2743,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					// push a 1 if file exists else zero
 
 					QString filename = stack->popQString();
-					if (QFile::exists(filename)) {
+					QDir dir = QDir::current();
+					if (dir.exists(filename)) {
 						stack->pushInt(1);
 					} else {
 						stack->pushInt(0);
@@ -2715,14 +2825,23 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_LENGTH: {
 					// array, map, or string
-					DataElement *d = stack->popDE();
-					if (d->type==T_ARRAY) {
-						// returns total number of elements - not dimensions
-						stack->pushInt(d->arrayRows()*d->arrayCols());
-					} else if (d->type==T_MAP) {
-						stack->pushInt(d->mapLength());
-					} else {
-						stack->pushInt(convert->getString(d).length());
+					DataElement *d = stack->popDE();			// RELEASE
+					switch (DataElement::getType(d)) {
+						case T_ARRAY:
+						{
+							// returns total number of elements - not dimensions
+							stack->pushInt(d->arrayRows()*d->arrayCols());
+						}
+						break;
+						case T_MAP:
+						{
+							stack->pushInt(d->mapLength());
+						}
+						break;
+						default:
+						{
+							stack->pushInt(convert->getString(d).length());
+						}
 					}
 					delete(d);
 				}
@@ -3091,12 +3210,12 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_ADD: {
 						// integer and float safe ADD operation
-						DataElement *one = stack->popDE();
-						DataElement *two = stack->popDE();
+						DataElement *one = stack->popDE();			// RELEASE
+						DataElement *two = stack->popDE();			// RELEASE
 						// add - if both integer then add as integers (if no ovverflow)
 						// else if both are numbers then convert and add as floats
 						// otherwise concatenate (string & number or strings)
-						if (one->type==T_INT && two->type==T_INT) {
+						if (DataElement::getType(one)==T_INT && DataElement::getType(two)==T_INT) {
 							long a = two->intval + one->intval;
 							if((two->intval<=0||one->intval<=0||a>=0)&&(two->intval>=0||one->intval>=0||a<=0)) {
 								// integer add - without overflow
@@ -3105,21 +3224,21 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 								//overflow
 								stack->pushDouble((double)(two->intval) + (double)(one->intval));
 							}
-						} else if(one->type==T_INT && two->type==T_FLOAT){
+						} else if(DataElement::getType(one)==T_INT && DataElement::getType(two)==T_FLOAT){
 							double ans = two->floatval + (double) one->intval;
 							if (std::isinf(ans)) {
 								error->q(ERROR_INFINITY);
 								ans = 0.0;
 							}
 							stack->pushDouble(ans);
-						} else if(one->type==T_FLOAT && two->type==T_INT){
+						} else if(DataElement::getType(one)==T_FLOAT && DataElement::getType(two)==T_INT){
 							double ans = (double) two->intval + one->floatval;
 							if (std::isinf(ans)) {
 								error->q(ERROR_INFINITY);
 								ans = 0.0;
 							}
 							stack->pushDouble(ans);
-						} else if(one->type==T_FLOAT && two->type==T_FLOAT){
+						} else if(DataElement::getType(one)==T_FLOAT && DataElement::getType(two)==T_FLOAT){
 							double ans = two->floatval + one->floatval;
 							if (std::isinf(ans)) {
 								error->q(ERROR_INFINITY);
@@ -3144,9 +3263,9 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_SUB: {
 						// integer and float safe SUB operation
-						DataElement *one = stack->popDE();
-						DataElement *two = stack->popDE();
-						if (one->type==T_INT && two->type==T_INT) {
+						DataElement *one = stack->popDE();			// RELEASE
+						DataElement *two = stack->popDE();			// RELEASE
+						if (DataElement::getType(one)==T_INT &&DataElement::getType(two)==T_INT) {
 							long a = two->intval - one->intval;
 							if((two->intval<=0||one->intval>0||a>=0)&&(two->intval>=0||one->intval<0||a<=0)) {
 								// integer subtract - without overflow
@@ -3173,9 +3292,9 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_MUL: {
 						// integer and float safe MUL operation
-						DataElement *one = stack->popDE();
-						DataElement *two = stack->popDE();
-						if (one->type==T_INT && two->type==T_INT) {
+						DataElement *one = stack->popDE();			// RELEASE
+						DataElement *two = stack->popDE();			// RELEASE
+						if (DataElement::getType(one)==T_INT && DataElement::getType(two)==T_INT) {
 							if(two->intval==0||one->intval==0) {
 								stack->pushLong(0);
 								delete one;
@@ -3191,7 +3310,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 									break;
 								}
 							}
-						} else if (one->type==T_INT && two->type==T_STRING) {
+						} else if (DataElement::getType(one)==T_INT && DataElement::getType(two)==T_STRING) {
 							// string repeat like python
 							stack->pushQString(two->stringval.repeated(one->intval));
 							delete one;
@@ -3215,8 +3334,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_ABS:
 				{
-					DataElement *one = stack->popDE();
-					if (one->type==T_INT) {
+					DataElement *one = stack->popDE();			// RELEASE
+					if (DataElement::getType(one)==T_INT) {
 						stack->pushLong(labs(one->intval));
 					} else {
 						stack->pushDouble(fabs(convert->getFloat(one)));
@@ -3311,8 +3430,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_NEGATE: {
 					// integer safe negate
-					DataElement *e = stack->popDE();
-					if (e->type==T_INT) {
+					DataElement *e = stack->popDE();			// RELEASE
+					if (DataElement::getType(e)==T_INT) {
 						if(e->intval<=LONG_MIN){
 							stack->pushDouble( (double)e->intval * -1.0);
 						}else{
@@ -3326,8 +3445,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_EQUAL:{
-					DataElement *two = stack->popDE();
-					DataElement *one = stack->popDE();
+					DataElement *two = stack->popDE();			// RELEASE
+					DataElement *one = stack->popDE();			// RELEASE
 					int ans = convert->compare(one,two);
 					stack->pushBool(ans==0);
 					delete one;
@@ -3336,8 +3455,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_NEQUAL:{
-					DataElement *two = stack->popDE();
-					DataElement *one = stack->popDE();
+					DataElement *two = stack->popDE();			// RELEASE
+					DataElement *one = stack->popDE();			// RELEASE
 					int ans = convert->compare(one,two);
 					stack->pushBool(ans!=0);
 					delete one;
@@ -3346,8 +3465,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_GT:{
-					DataElement *two = stack->popDE();
-					DataElement *one = stack->popDE();
+					DataElement *two = stack->popDE();			// RELEASE
+					DataElement *one = stack->popDE();			// RELEASE
 					int ans = convert->compare(one,two);
 					stack->pushBool(ans==1);
 					delete one;
@@ -3356,8 +3475,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_LTE:{
-					DataElement *two = stack->popDE();
-					DataElement *one = stack->popDE();
+					DataElement *two = stack->popDE();			// RELEASE
+					DataElement *one = stack->popDE();			// RELEASE
 					int ans = convert->compare(one,two);
 					stack->pushBool(ans!=1);
 					delete one;
@@ -3366,8 +3485,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_LT:{
-					DataElement *two = stack->popDE();
-					DataElement *one = stack->popDE();
+					DataElement *two = stack->popDE();			// RELEASE
+					DataElement *one = stack->popDE();			// RELEASE
 					int ans = convert->compare(one,two);
 					stack->pushBool(ans==-1);
 					delete one;
@@ -3376,8 +3495,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_GTE:{
-					DataElement *two = stack->popDE();
-					DataElement *one = stack->popDE();
+					DataElement *two = stack->popDE();			// RELEASE
+					DataElement *one = stack->popDE();			// RELEASE
 					int ans = convert->compare(one,two);
 					stack->pushBool(ans!=-1);
 					delete one;
@@ -3386,7 +3505,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_IN:{
-					DataElement *map = stack->popDE();
+					DataElement *map = stack->popDE();			// RELEASE
 					QString key = stack->popQString();
 					stack->pushBool(map->mapKey(key));
 					delete map;
@@ -3422,9 +3541,9 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					// loadresource = soundload( localfile )
 					// loadresource = soundload( url )
 					
-					DataElement *e = stack->popDE();
+					DataElement *e = stack->popDE();			// RELEASE
 					
-					if (e->type == T_STRING) {
+					if (DataElement::getType(e) == T_STRING) {
 						// a single string
 						if(opcode==OP_SOUND || opcode==OP_SOUNDPLAY){
 							mymutex->lock();
@@ -3470,7 +3589,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 							}
 						}
 						break;
-					 } else if(e->type == T_INT){
+					 } else if(DataElement::getType(e) == T_INT){
 						// a single int
 						if(opcode==OP_SOUND||opcode==OP_SOUNDPLAY){
 							mymutex->lock();
@@ -3483,7 +3602,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						} else {
 							error->q(ERROR_EXPECTEDSOUND);
 						}
-					} else if (e->type==T_ARRAY) {
+					} else if (DataElement::getType(e)==T_ARRAY) {
 						// an array
 						int columns = e->arrayCols();
 						if(columns%2!=0){
@@ -3500,7 +3619,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						for(int row = 0; row < rows; row++) {
 							std::vector < double > v;	// vector containing duration
 						   for (int col = 0; col < columns; col++) {
-								DataElement *av = e->arrayGetData(row, col);
+								DataElement *av = e->arrayGetData(row, col);			// DONT RELEASE
 								if(col%2==0)
 									i = convert->getMusicalNote(av);
 								else
@@ -3543,12 +3662,12 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_SOUNDLOADRAW: {
 					std::vector<double> sounddata;
-					DataElement *d = stack->popDE();
-					if (d->type==T_ARRAY) {
+					DataElement *d = stack->popDE();			// RELEASE
+					if (DataElement::getType(d)==T_ARRAY) {
 						if(d->arrayRows()==1){
 							sounddata.resize(d->arrayCols());
 							for(int col = 0; col < d->arrayCols(); col++) {
-								sounddata[col]=convert->getFloat(d->arrayGetData(0,col));
+								sounddata[col]=convert->getFloat(d->arrayGetData(0,col));			// DONT RELEASE
 							}
 							stack->pushQString(sound->loadRaw(sounddata));
 						} else {
@@ -3611,18 +3730,18 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 				
 				case OP_SOUNDHARMONICS: {
-					DataElement *de = stack->popDE();
-					if (de->type == T_ARRAY) {
+					DataElement *de = stack->popDE();			// RELEASE
+					if (DataElement::getType(de) == T_ARRAY) {
 						if ((de->arrayRows()==1&&de->arrayCols()%2==0) || (de->arrayCols()==2)) {
 							if (de->arrayRows()==1) {
 								// data in a single row
 								for(int col = 0; col < de->arrayCols(); col+=2) {
-									sound->harmonics(convert->getInt(de->arrayGetData(0,col)), convert->getFloat(de->arrayGetData(0,col+1)));
+									sound->harmonics(convert->getInt(de->arrayGetData(0,col)), convert->getFloat(de->arrayGetData(0,col+1)));			// DONT RELEASE
 								}
 							} else {
 								// data in mutiple columns
 								for(int row = 0; row < de->arrayRows(); row+=2) {
-									sound->harmonics(convert->getInt(de->arrayGetData(row,0)), convert->getFloat(de->arrayGetData(row,1)));
+									sound->harmonics(convert->getInt(de->arrayGetData(row,0)), convert->getFloat(de->arrayGetData(row,1)));			// DONT RELEASE
 								}
 							}
 						} else {
@@ -3647,14 +3766,14 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_SOUNDENVELOPE: {
 					std::vector<double> envelope;
-					DataElement *de = stack->popDE();
-					if (de->type == T_ARRAY) {
+					DataElement *de = stack->popDE();			// RELEASE
+					if (DataElement::getType(de) == T_ARRAY) {
 						// get array of envelope data
 						if(de->arrayRows()==1) {
 							if(de->arrayCols()%2==1 && de->arrayCols()>4){
 								envelope.resize(de->arrayCols());
 								for(int col =0; col < de->arrayCols(); col++) {
-									envelope[col]=convert->getFloat(de->arrayGetData(0,col));
+									envelope[col]=convert->getFloat(de->arrayGetData(0,col));			// DONT RELEASE
 								}
 							} else {
 								error->q(ERROR_ENVELOPEODD);
@@ -3684,8 +3803,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_SOUNDWAVEFORM: {
 					bool logic = stack->popBool(); //if data is logical, not raw
-					DataElement *e = stack->popDE();
-					if (e->type==T_ARRAY){
+					DataElement *e = stack->popDE();			// RELEASE
+					if (DataElement::getType(e)==T_ARRAY){
 						int columns = e->arrayCols();
 						int rows = e->arrayRows();
 						std::vector<double> wave;
@@ -3722,8 +3841,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_SOUNDVOLUME: {
 					double v = stack->popDouble();
-					DataElement *e = stack->popDE();
-					if (e->type == T_STRING) {
+					DataElement *e = stack->popDE();			// RELEASE
+					if (DataElement::getType(e) == T_STRING) {
 						//because it do not stop any timer, it is safe to do it from current thread
 						sound->volume(e->stringval, v);
 					}else{
@@ -3739,7 +3858,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				case OP_SOUNDLOOP: {
 					int l = stack->popInt();
 					DataElement *e = stack->popDE();
-					if (e->type == T_STRING) {
+					if (DataElement::getType(e) == T_STRING) {
 						sound->loop(e->stringval, l);
 					}else{
 						sound->loop(convert->getInt(e), l);
@@ -3763,8 +3882,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					double delay = stack->popDouble();
 					double ms = stack->popDouble();
 					double v = stack->popDouble();
-					DataElement *e = stack->popDE();
-					if (e->type == T_STRING) {
+					DataElement *e = stack->popDE();			// RELEASE
+					if (DataElement::getType(e) == T_STRING) {
 						//because it do not stop any timer, it is safe to do it from current thread
 						sound->fade(e->stringval, v, int(ms*1000), int(delay*1000));
 					}else{
@@ -3797,8 +3916,9 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_SAY: {
+					QString text = stack->popQString();
 					mymutex->lock();
-					emit(speakWords(stack->popQString()));
+					emit(speakWords(text));
 					waitCond->wait(mymutex);
 					mymutex->unlock();
 				}
@@ -3866,32 +3986,29 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_SETCOLOR: {
-					int brushval = stack->popInt();
-					int penval = stack->popInt();
-
-					if(penval!=painter_pen_color){
-						drawingpen.setColor(QColor::fromRgba((QRgb) penval));
+					QColor brushcolor = stack->popQColor();
+					QColor pencolor = stack->popQColor();
+					if(pencolor!=painter_pen_color) {
+						drawingpen.setColor(pencolor);
 						painter_pen_need_update=true;
-						painter_pen_color=penval;
-
+						painter_pen_color=pencolor;
 						//set PenColorIsClear and CompositionModeClear flags here for speed
-						if (penval == COLOR_CLEAR){
+						if (pencolor == Qt::transparent){
 							PenColorIsClear = true;
-							if (brushval == COLOR_CLEAR){
+							if (brushcolor == Qt::transparent){
 								CompositionModeClear = true;
-							}else{
+							} else {
 								CompositionModeClear = false;
 							}
-						}else{
+						} else {
 							PenColorIsClear = false;
 							CompositionModeClear = false;
 						}
 					}
-
-					if(brushval!=painter_brush_color){
-						drawingbrush.setColor(QColor::fromRgba((QRgb) brushval));
+					if(brushcolor!=painter_brush_color) {
+						drawingbrush.setColor(brushcolor);
 						painter_brush_need_update=true;
-						painter_brush_color=brushval;
+						painter_brush_color=brushcolor;
 					}
 				}
 				break;
@@ -3937,7 +4054,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					int y = stack->popInt();
 					int x = stack->popInt();
 					QImage *layerimage;
-					DataElement *d = new DataElement();
+					DataElement *d = new DataElement();			// RELEASE
 					switch(layer) {
 						case SLICE_PAINT:
 							if(drawingOnScreen || drawto.isEmpty()){
@@ -3964,23 +4081,26 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						int tw, th;
 						for(th=0; th<h; th++) {
 							for(tw=0; tw<w; tw++) {
-								d->arraySetData(tw,th,new DataElement((int) r[counter]));
+								DataElement* temp = new DataElement((int) r[counter]);
+								d->arraySetData(tw,th,temp);
+								delete temp;
 								counter++;
 							}
 						}
 					}
 					stack->pushDE(d);
+					delete d;
 				}
 				break;
 
 				case OP_PUTSLICE: {
 					// get image from array
 					int tw,th;
-					DataElement *d = stack->popDE();
+					DataElement *d = stack->popDE();			// RELEASE
 					int y = stack->popInt();
 					int x = stack->popInt();
 					
-					if (d->type==T_ARRAY) {
+					if (DataElement::getType(d)==T_ARRAY) {
 						int w = d->arrayRows();
 						int h = d->arrayCols();
 
@@ -3991,7 +4111,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						int counter = 0;
 						for (th=0;th<h;th++) {
 							for (tw=0; tw<w; tw++) {
-							r[counter++] = (QRgb) convert->getInt(d->arrayGetData(tw,th));
+							r[counter++] = (QRgb) convert->getInt(d->arrayGetData(tw,th));			// DONT RELEASE
 							}
 						}
 						//update painter only if needed (faster)
@@ -4142,7 +4262,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				case OP_POLY: {
 					// doing a polygon from an array's data
 					// either as an even numbered 1d array or as rows of points
-					DataElement *e = stack->popDE();
+					DataElement *e = stack->popDE();			// RELEASE
 					QPolygonF *poly = convert->getPolygonF(e);
 					if (poly) {
 						//update painter's attributes only if needed (pen and brush)
@@ -4166,8 +4286,9 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						painter->drawPolygon(*poly);
 
 						if (!fastgraphics && drawingOnScreen) waitForGraphics();
-						delete e;
+
 					}
+					delete e;
 				}
 				break;
 
@@ -4177,7 +4298,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					double tx, ty, savetx;		// used in scaling and rotating
 					QPointF point;
 					
-					DataElement *e = stack->popDE();
+					DataElement *e = stack->popDE();			// RELEASE
 					QPolygonF *poly = convert->getPolygonF(e);
 					double rotate = stack->popDouble();
 					double scale = stack->popDouble();
@@ -4220,8 +4341,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 						painter->drawPolygon(*poly);
 						if (!fastgraphics && drawingOnScreen) waitForGraphics();
-						delete e;
 					}
+					delete e;
 				}
 				break;
 
@@ -4598,28 +4719,68 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					mymutex->unlock();
 					//
 					mymutex->lock();
-					emit(outputReady(returnString+"\n"));
+					emit(outputReady(inputString+"\n"));
 					waitCond->wait(mymutex);
 					mymutex->unlock();
 					waitForGraphics();
-					//
-					stack->pushVariant(returnString, intType);
 #else
-					// use the input status of interperter and get
-					// input from BasicOutput
-					// input is pushed by the emit back to the interperter
-					status = R_INPUT;
+					// 1) Signal the outwin to start input
+					// 2) when return is pressed  outwin signals runcontroller with the string
+					// 3) runcontroller puts it in the variable inputString and releases the wait condition
 					mymutex->lock();
 					emit(getInput());
 					waitCond->wait(mymutex);
 					mymutex->unlock();
-					//we got input from user or program is going to stop
-					if (status==R_INPUT) {//program is not stopped by user in the mean time
-						status = R_RUNNING;
-						stack->pushVariant(inputString, inputType);
-					}
 
 #endif
+					// now push value to stack
+					switch (inputType) {
+						case T_INT:
+							{
+								bool ok;
+								long i=0;
+								i = inputString.toLong(&ok);
+								if (!ok) {
+									error->q(ERROR_NUMBERCONV);
+								}
+								stack->pushLong(i);
+							}
+							break;
+						case T_FLOAT:
+							{
+								bool ok;
+								double d=0.0;
+								d = locale->toDouble(inputString,&ok);
+								if (!ok) {
+									error->q(ERROR_NUMBERCONV);
+								}
+								stack->pushDouble(d);
+							}
+							break;
+						case T_STRING:
+							{
+								stack->pushQString(inputString);
+							}
+							break;
+						default:
+							{
+								// standard input should try to convert string to a number if it can.
+								bool ok;
+								long i;
+								i = inputString.toLong(&ok);
+								if (ok) {
+									stack->pushLong(i);
+								} else {
+									double d;
+									d = locale->toDouble(inputString,&ok);
+									if (ok) {
+										stack->pushDouble(d);
+									} else {
+										stack->pushQString(inputString);
+									}
+								}
+							}
+					}
 				}
 				break;
 
@@ -4678,6 +4839,18 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					}
 					mymutex->lock();
 					emit(outputReady(p));
+					waitCond->wait(mymutex);
+					mymutex->unlock();
+				}
+				break;
+
+
+				case OP_PRINTAT: {
+					QString s = stack->popQString();
+					int y = stack->popInt();
+					int x = stack->popInt();
+					mymutex->lock();
+					emit(outputTextAt(x, y, s));
 					waitCond->wait(mymutex);
 					mymutex->unlock();
 				}
@@ -4782,7 +4955,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				case OP_SPRITEPOLY: {
 					// create a sprite from a polygon
 					
-					DataElement *e = stack->popDE();
+					DataElement *e = stack->popDE();			// RELEASE
 					QPolygonF *poly = convert->getPolygonF(e);
 					if (poly) {
 						// now move points to the top left (if they are not there)
@@ -4820,6 +4993,45 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						}
 					}
 					delete e;
+				}
+				break;
+				
+				case OP_SPRITETEXT: {
+					int background = stack->popInt();
+					QString txt = stack->popQString();
+					int n = stack->popInt(); // sprite number
+					if(n >= 0 && n < nsprites) {
+						// calculate size
+						int h, w;
+						if(painter_font_need_update){
+							painter->setFont(font);
+							painter_font_need_update=false;
+						}
+						h = QFontMetrics(painter->font()).height();
+#if QT_VERSION >= 0x051100
+						w = (int) (QFontMetrics(painter->font()).horizontalAdvance(txt));
+#else
+						w = (int) (QFontMetrics(painter->font()).width(txt));
+#endif
+						//build sprite
+						sprite_prepare_for_new_content(n);
+						sprites[n].image = new QImage(w,h,QImage::Format_ARGB32_Premultiplied);
+						if (background) 
+							sprites[n].image->fill(background);
+						else
+							sprites[n].image->fill(Qt::transparent);
+						if(!sprites[n].image->isNull()){
+							QPainter *p = new QPainter(sprites[n].image);
+							p->setFont(font);
+							p->setPen(drawingpen);
+							p->drawText(0, QFontMetrics(p->font()).ascent(), txt);
+							p->end();
+							delete p;
+							sprites[n].position.setRect(-(w/2),-(h/2),w,h);
+						}
+					} else {
+						error->q(ERROR_SPRITENUMBER);
+					}
 				}
 				break;
 
@@ -5786,11 +5998,11 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_BINARYAND: {
-					DataElement *one = stack->popDE();
-					DataElement *two = stack->popDE();
+					DataElement *one = stack->popDE();			// RELEASE
+					DataElement *two = stack->popDE();			// RELEASE
 					// if both are numbers then convert to long and bitwise and
 					// otherwise concatenate (string & number or strings)
-					if ((one->type==T_INT || one->type==T_FLOAT) && (two->type==T_INT || two->type==T_FLOAT)) {
+					if ((DataElement::getType(one)==T_INT || DataElement::getType(one)==T_FLOAT) && (DataElement::getType(two)==T_INT || DataElement::getType(two)==T_FLOAT)) {
 						unsigned long a = convert->getLong(one);
 						unsigned long b = convert->getLong(two);
 						a = a&b;
@@ -6213,7 +6425,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					emit(dialogPrompt(msg,dflt));
 					waitCond->wait(mymutex);
 					mymutex->unlock();
-					stack->pushQString(returnString);
+					stack->pushQString(inputString);
 				}
 				break;
 
@@ -6498,15 +6710,15 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				 case OP_TYPEOF: {
 					// return type of expression (top of the stack)
-					DataElement *e = stack->popDE();
-					stack->pushInt(e->type);
+					DataElement *e = stack->popDE();			// RELEASE
+					stack->pushInt(DataElement::getType(e));
 					delete e;
 				}
 				break;
 
 				case OP_ISNUMERIC: {
 					// return if data element is numeric
-					DataElement *e = stack->popDE();
+					DataElement *e = stack->popDE();			// RELEASE
 					stack->pushInt(convert->isNumeric(e));
 					delete e;
 				}
@@ -6544,14 +6756,14 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					QString coldelim = stack->popQString();
 					QString rowdelim = stack->popQString();
 					QString stuff = "";
-					DataElement *d = stack->popDE();
+					DataElement *d = stack->popDE();			// RELEASE
 					int rows = d->arrayRows();
 					int cols = d->arrayCols();
 					for (int row=0; row<rows; row++) {
 						if (row!=0) stuff.append(rowdelim);
 						for (int col=0; col<cols; col++) {
 								if (col!=0) stuff.append(coldelim);
-								stuff.append(convert->getString(d->arrayGetData(row,col)));
+								stuff.append(convert->getString(d->arrayGetData(row,col)));			// DONT RELEASE
 						}
 					}
 					stack->pushQString(stuff);
@@ -6561,61 +6773,73 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_SERIALIZE: {
 					// rows,columns,typedata
-					DataElement *e = stack->popDE();
+					DataElement *e = stack->popDE();			// RELEASE
 					DataElement *temp;
-					if (e->type==T_ARRAY) {
-						QString stuff = "";
-						int rows = e->arrayRows();
-						int cols = e->arrayCols();
-						for (int row=0; row<rows; row++) {
-							if (row!=0) stuff.append(SERALIZE_DELIMITER);
-							for (int col=0; col<cols; col++) {
-									if (col!=0) stuff.append(SERALIZE_DELIMITER);
-									temp = e->arrayGetData(row,col);
-									switch (temp->type) {
+					switch (DataElement::getType(e)) {
+						case T_ARRAY:
+						{
+							QString stuff = "";
+							int rows = e->arrayRows();
+							int cols = e->arrayCols();
+							for (int row=0; row<rows; row++) {
+								if (row!=0) stuff.append(SERALIZE_DELIMITER);
+								for (int col=0; col<cols; col++) {
+										if (col!=0) stuff.append(SERALIZE_DELIMITER);
+										temp = e->arrayGetData(row,col);			// DONT RELEASE
+										switch (DataElement::getType(temp)) {
+											case T_STRING:
+												stuff.append(SERALIZE_STRING + QString::fromUtf8(temp->stringval.toUtf8().toHex()) );
+												break;
+											case T_FLOAT:
+												stuff.append(SERALIZE_FLOAT + QString::number(temp->floatval));
+												break;
+											case T_INT:
+												stuff.append(SERALIZE_INT + QString::number(temp->intval));
+												break;
+											default:
+												stuff.append(SERALIZE_UNASSIGNED);
+												break;
+										}
+								}
+							}
+							stack->pushQString(QString::number(rows) + SERALIZE_DELIMITER + QString::number(cols) + SERALIZE_DELIMITER + stuff);
+						}
+						break;
+						case T_MAP:
+						{
+							QString stuff = "M";
+							stuff.append(SERALIZE_DELIMITER);
+							stuff.append(QString::number(e->mapLength()));
+							{
+								std::map<std::string, DataElement*>::iterator it;
+								for (it = e->map->data.begin(); it != e->map->data.end(); it++ )
+								{
+									stuff.append(SERALIZE_DELIMITER);
+									stuff.append(SERALIZE_STRING + QString::fromStdString(it->first).toUtf8().toHex() );
+									stuff.append(SERALIZE_DELIMITER);
+									switch (DataElement::getType(it->second)) {
 										case T_STRING:
-											stuff.append(SERALIZE_STRING + QString::fromUtf8(temp->stringval.toUtf8().toHex()) );
+											stuff.append(SERALIZE_STRING + QString::fromUtf8(it->second->stringval.toUtf8().toHex()) );
 											break;
 										case T_FLOAT:
-											stuff.append(SERALIZE_FLOAT + QString::number(temp->floatval));
+											stuff.append(SERALIZE_FLOAT + QString::number(it->second->floatval));
 											break;
 										case T_INT:
-											stuff.append(SERALIZE_INT + QString::number(temp->intval));
+											stuff.append(SERALIZE_INT + QString::number(it->second->intval));
 											break;
 										default:
 											stuff.append(SERALIZE_UNASSIGNED);
 											break;
-									}
+									};
+								}
 							}
-						}
-						stack->pushQString(QString::number(rows) + SERALIZE_DELIMITER + QString::number(cols) + SERALIZE_DELIMITER + stuff);
-					} else if (e->type==T_MAP) {
-						QString stuff = "M";
-						stuff.append(SERALIZE_DELIMITER);
-						stuff.append(QString::number(e->mapLength()));
-						for (std::map<QString, DataElement>::iterator it = e->map->data.begin(); it != e->map->data.end(); it++ )
-						{
-							stuff.append(SERALIZE_DELIMITER);
-							stuff.append(SERALIZE_STRING + QString::fromUtf8(it->first.toUtf8().toHex()) );
-							stuff.append(SERALIZE_DELIMITER);
-							switch (it->second.type) {
-								case T_STRING:
-									stuff.append(SERALIZE_STRING + QString::fromUtf8(it->second.stringval.toUtf8().toHex()) );
-									break;
-								case T_FLOAT:
-									stuff.append(SERALIZE_FLOAT + QString::number(it->second.floatval));
-									break;
-								case T_INT:
-									stuff.append(SERALIZE_INT + QString::number(it->second.intval));
-									break;
-								default:
-									stuff.append(SERALIZE_UNASSIGNED);
-									break;
-							};
-						}
 						stack->pushQString(stuff);
-					} else {
-						error->q(ERROR_ARRAYORMAPEXPR);
+						}
+						break;
+						default:
+						{
+							error->q(ERROR_ARRAYORMAPEXPR);
+						}
 					}
 					delete e;
 				}
@@ -6626,7 +6850,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				case OP_EXPLODEX: {
 					// unicode safe explode a string to an array
 					// pushed on the stack for use in assign and other places
-					DataElement *d = new DataElement();
+					DataElement *d = new DataElement();			// RELEASE
 					
 					Qt::CaseSensitivity casesens = Qt::CaseSensitive;
 
@@ -6657,25 +6881,28 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					d->arrayDim(1, list.size(), false);
 					for(int y=0; y<list.size(); y++) {
 						// fill the string array
-						d->arraySetData(0,y,new DataElement(list.at(y)));
+						DataElement *temp = new DataElement(list.at(y));
+						d->arraySetData(0,y,temp);
+						delete temp;
 					}
 					stack->pushDE(d);
+					delete d;
 				}
 				break;
 
 				case OP_UNSERIALIZE: {
 					bool good;
-					DataElement *d = new DataElement();
-					DataElement *dat;
 
 					QString data = stack->popQString();
 					QStringList list = data.split(SERALIZE_DELIMITER);
 					
 					if (list.count()>=3) {
 						if(list[0].at(0).toLatin1()=='M') {
+							DataElement *d = new DataElement();			// RELEASE
 							d->mapDim();
 							int pairs = list[1].toInt(&good);
 							for (int i=0; i<pairs; i++) {
+								DataElement *dat;			// RELEASE
 								QString key = QString::fromUtf8(QByteArray::fromHex(list[i*2+2].mid(1).toUtf8()).data());
 								switch (list[i*2+3].at(0).toLatin1()) {
 									case SERALIZE_STRING:
@@ -6695,16 +6922,20 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 										error->q(ERROR_UNSERIALIZEFORMAT);
 								}
 								d->mapSetData(key,dat);
+								delete dat;
 							}
 							stack->pushDE(d);
+							delete d;
 						} else {
 							// array
+							DataElement *d = new DataElement();			// RELEASE
 							int rows = list[0].toInt(&good);
 							int cols = list[1].toInt(&good);
 							d->arrayDim(rows, cols, false);
 							if (list.count()==rows*cols+2) {
 								for (int row=0; row<rows; row++) {
 									for (int col=0; col<cols; col++) {
+										DataElement *dat;			// RELEASE
 										int i = row * cols + col + 2;
 										switch (list[i].at(0).toLatin1()) {
 											case SERALIZE_STRING:
@@ -6724,10 +6955,12 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 												error->q(ERROR_UNSERIALIZEFORMAT);
 										}
 										d->arraySetData(row,col,dat);
+										delete dat;
 									}
 								}
 							}
 							stack->pushDE(d);
+							delete d;
 						}
 					} else {
 						error->q(ERROR_UNSERIALIZEFORMAT);
@@ -7222,18 +7455,19 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					const int ydim = stack->popInt();
 					const int xdim = stack->popInt();
 					
-					DataElement *edest = new DataElement();
+					DataElement *edest = new DataElement();			// RELEASE
 					edest->arrayDim(xdim, ydim, false);
 
 					for(int row = xdim-1; row>=0; row--) {
 						int thisy=stack->popInt();
 						for(int col= thisy-1; col >= 0; col--) {
-							DataElement *e = stack->popDE();
+							DataElement *e = stack->popDE();			// RELEASE
 							edest->arraySetData(row,col, e);
 							delete e;
 						}
 					}
 					stack->pushDE(edest);
+					delete edest;
 				}
 				break;
 
@@ -7244,22 +7478,23 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					// remember this is not associated with variable
 					const int n = stack->popInt();
 					
-					DataElement *edest = new DataElement();
+					DataElement *edest = new DataElement();			// RELEASE
 					edest->mapDim();
 
 					for(int i = 0; i<n; i++) {
-						DataElement *e = stack->popDE();
+						DataElement *e = stack->popDE();			// RELEASE
 						QString key = stack->popQString();
 						edest->mapSetData(key, e);
 						delete e;
 					}
 					stack->pushDE(edest);
+					delete edest;
 				}
 				break;
 				
 				case OP_STACKSAVE: {
 					// pop an element from the current stack and push to the "savestack"
-					DataElement *de = stack->popDE();
+					DataElement *de = stack->popDE();			// RELEASE
 					savestack->pushDE(de);
 					delete de;
 				}
@@ -7267,7 +7502,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				
 				case OP_STACKUNSAVE: {
 					// pop an element from the "savestack" and push to the program's main stack
-					DataElement *de = savestack->popDE();
+					DataElement *de = savestack->popDE();			// RELEASE
 					stack->pushDE(de);
 					delete de;
 				}
@@ -7324,12 +7559,12 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					if (!temp) {
 						error->q(ERROR_NEXTNOFOR);
 					} else {
-						switch (temp->type) {
+						switch (temp->forFrameType) {
 							case FORFRAMETYPE_INT:
 							{
-								const long val = convert->getLong(variables->getData(temp->for_varnum))+temp->intStep;
-								variables->setData(temp->for_varnum, val);
-								watchvariable(debugMode, temp->for_varnum);
+								const long val = convert->getLong(variables->getData(temp->forVarnum))+temp->intStep;
+								variables->setData(temp->forVarnum, val);
+								watchvariable(debugMode, temp->forVarnum);
 								if ((temp->intStep > 0 && val <= temp->intEnd) ||
 									(temp->intStep < 0 && val >= temp->intEnd) ||
 									(temp->intStep==0 && temp->intStart < temp->intEnd && val <= temp->intEnd) ||
@@ -7350,9 +7585,9 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 							case FORFRAMETYPE_FLOAT:
 							{
 						
-								const double val = convert->getFloat(variables->getData(temp->for_varnum))+temp->floatStep;
-								variables->setData(temp->for_varnum, val);
-								watchvariable(debugMode, temp->for_varnum);
+								const double val = convert->getFloat(variables->getData(temp->forVarnum))+temp->floatStep;
+								variables->setData(temp->forVarnum, val);
+								watchvariable(debugMode, temp->forVarnum);
 								if ((temp->floatStep > 0.0 && convert->compareFloats(val, temp->floatEnd)!=1) || 
 									(temp->floatStep < 0.0 && convert->compareFloats(val, temp->floatEnd)!=-1) ||
 									(temp->floatStep==0 && temp->floatStart < temp->floatEnd && val <= temp->floatEnd) ||
@@ -7375,8 +7610,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 								temp->arrayIter++;
 								if (temp->arrayIter != temp->arrayIterEnd) {
 									// set variable to this element
-									variables->setData(temp->for_varnum, (DataElement*) &(*temp->arrayIter));
-									watchvariable(debugMode, temp->for_varnum);
+									variables->setData(temp->forVarnum, *temp->arrayIter);
+									watchvariable(debugMode, temp->forVarnum);
 									// loop again
 									op = temp->forAddr;
 								} else {
@@ -7386,7 +7621,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 									}else{
 										forstack = temp->next;
 									}
-									delete temp->iter_d;
+									delete temp->foreach_de;
 									delete temp;
 								}
 							}
@@ -7396,12 +7631,12 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 								temp->mapIter++;
 								if (temp->mapIter != temp->mapIterEnd) {
 									// set variable1 to the next key
-									variables->setData(temp->for_varnum, temp->mapIter->first);
-									watchvariable(debugMode, temp->for_varnum);
+									variables->setData(temp->forVarnum, QString::fromStdString((std::string) (temp->mapIter->first)));
+									watchvariable(debugMode, temp->forVarnum);
 									// set variable2 to value
-									if (temp->for_val_varnum !=-1) {
-										variables->setData(temp->for_val_varnum, (DataElement*) &(temp->mapIter->second));
-										watchvariable(debugMode, temp->for_val_varnum);
+									if (temp->forVarnumValue !=-1) {
+										variables->setData(temp->forVarnumValue, temp->mapIter->second);
+										watchvariable(debugMode, temp->forVarnumValue);
 									}
 									// loop again
 									op = temp->forAddr;
@@ -7412,7 +7647,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 									}else{
 										forstack = temp->next;
 									}
-									delete temp->iter_d;
+									delete temp->foreach_de;
 									delete temp;
 								}
 							}
@@ -7443,7 +7678,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					emit(getClipboardString());
 					waitCond->wait(mymutex);
 					mymutex->unlock();
-					stack->pushQString(returnString);
+					stack->pushQString(inputString);
 				}
 				break;
 
@@ -7470,6 +7705,28 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				}
 				break;
 
+				case OP_MKDIR: {
+					QString name = stack->popQString();
+					//fprintf(stderr,"mkdir %s\n",name.toUtf8().data());
+					QDir dir = QDir::current();
+					if (!dir.exists(name)) {
+						if(!dir.mkdir(name)) {
+							error->q(ERROR_MKDIR);
+						}
+					}
+				}
+				break;
+
+				case OP_RMDIR: {
+					QString name = stack->popQString();
+					QDir dir = QDir::current();
+					if (dir.exists(name)) {
+						if(!dir.rmdir(name)) {
+							error->q(ERROR_RMDIR);
+						}
+					}
+				}
+				break;
 
 
 				// insert additional OPTYPE_NONE operations here

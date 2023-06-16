@@ -30,6 +30,7 @@
 #include <QtWidgets/QApplication>
 #include <QFileDialog>
 #include <QClipboard>
+#include <QTimer>
 
 
 #include "RunController.h"
@@ -59,14 +60,6 @@
 #include <sys/soundcard.h>
 #endif
 
-#ifdef ESPEAK
-#include <speak_lib.h>
-#endif
-
-#ifdef ANDROID
-#include "android/AndroidTTS.h"
-AndroidTTS *androidtts;
-#endif
 
 extern QMutex* mymutex;
 extern QMutex* mydebugmutex;
@@ -88,13 +81,8 @@ RunController::RunController() {
 
 	replacewin = NULL;
 
-#ifdef ANDROID
-	androidtts = new AndroidTTS();
-#endif
-
 	//signals for the Interperter (i)
 	QObject::connect(i, SIGNAL(debugNextStep()), this, SLOT(debugNextStep()));
-	QObject::connect(i, SIGNAL(outputClear()), this, SLOT(outputClear()));
 	QObject::connect(i, SIGNAL(dialogAlert(QString)), this, SLOT(dialogAlert(QString)));
 	QObject::connect(i, SIGNAL(dialogConfirm(QString, int)), this, SLOT(dialogConfirm(QString, int)));
 	QObject::connect(i, SIGNAL(dialogPrompt(QString, QString)), this, SLOT(dialogPrompt(QString, QString)));
@@ -112,6 +100,7 @@ RunController::RunController() {
 	//QObject::connect(i, SIGNAL(stopRun()), this, SLOT(stopRun()));
 	QObject::connect(i, SIGNAL(stopRunFinalized(bool)), this, SLOT(stopRunFinalized(bool)));
 	QObject::connect(i, SIGNAL(speakWords(QString)), this, SLOT(speakWords(QString)));
+	QObject::connect(i, SIGNAL(outputTextAt(int, int, QString)), this, SLOT(outputTextAt(int, int, QString)));
 
 	QObject::connect(i, SIGNAL(playSound(QString, bool)), this, SLOT(playSound(QString, bool)));
 	QObject::connect(i, SIGNAL(playSound(std::vector<std::vector<double>>, bool)), this, SLOT(playSound(std::vector<std::vector<double>>, bool)));
@@ -129,6 +118,7 @@ RunController::RunController() {
 	QObject::connect(i, SIGNAL(setClipboardImage(QImage)), this, SLOT(setClipboardImage(QImage)));
 	QObject::connect(i, SIGNAL(setClipboardString(QString)), this, SLOT(setClipboardString(QString)));
 
+	QObject::connect(i, SIGNAL(outputClear()), this, SLOT(outputClear()));
 	QObject::connect(i, SIGNAL(getInput()), outwin, SLOT(getInput()));
 
 	// for debugging and controlling the variable watch window
@@ -156,80 +146,71 @@ RunController::~RunController() {
 
 void
 RunController::speakWords(QString text) {
-#ifdef ESPEAK
-	SETTINGS;
-	espeak_ERROR err;
+	// USE QtTestToSpeech API for ALL PLATFORMS
+	
+	// List the available engines.
+	//QStringList engines = QTextToSpeech::availableEngines();
+	//qDebug() << "Available engines:";
+	//for (auto engine : engines) {
+	//	qDebug() << "  " << engine;
+	//}
 
-	mymutex->lock();
-
-	// espeak-nt tts library
-	int synth_flags = espeakCHARS_UTF8 | espeakPHONEMES | espeakENDPAUSE;
-#ifdef WIN32
-	// use program install folder
-	int samplerate = espeak_Initialize(AUDIO_OUTPUT_SYNCH_PLAYBACK,0,(char *) QFileInfo(QCoreApplication::applicationFilePath()).absolutePath().toUtf8().data(),0);
-#else
-	// use default path for espeak-nt-data
-	int samplerate = espeak_Initialize(AUDIO_OUTPUT_SYNCH_PLAYBACK,0,NULL,0);
-#endif
-	if (samplerate!=-1) {
-		QString voicename = settings.value(SETTINGSESPEAKVOICE,SETTINGSESPEAKVOICEDEFAULT).toString();
-		if (voicename == SETTINGSESPEAKVOICEDEFAULT) {
-			voicename = QString("english-us");
-		}
-		err = espeak_SetVoiceByName(voicename.toUtf8().data());
-		if(err==EE_OK) {
-			int size=text.length()+1;	// buffer length
-			err = espeak_Synth(text.toUtf8().data(),size,0,POS_CHARACTER,0,synth_flags,NULL,NULL);
-			if (err==EE_OK) {
-				espeak_Synchronize();		// wait to finish
-				espeak_Terminate();		// clean up
-			} else {
-				printf("espeak synth error %i\n", err);
+	// List the available locales.
+	//qDebug() << "Available locales:";
+	//for (auto locale : speech->availableLocales()) {
+	//	qDebug() << "  " << locale;
+	//}
+	// Set locale.
+	//speech->setLocale(speech->availableLocales()[0]);
+	// List the available voices.
+	//qDebug() << "Available voices:";
+	//for (auto voice : speech->availableVoices()) {
+	//qDebug() << "  " << voice.name();
+	//}
+	// Display properties.
+	//qDebug() << "Locale:" << speech->locale();
+	//qDebug() << "Pitch:" << speech->pitch();
+	//qDebug() << "Rate:" << speech->rate();
+	//qDebug() << "Voice:" << speech->voice().name();
+	//qDebug() << "Volume:" << speech->volume();
+	
+	if (text.length() != 0) {
+		// Say something.
+		speech->say(text);
+		
+		// wait for speech to start or error
+		if(i && !i->isStopping() && !i->isStopped() && speech && speech->state()==QTextToSpeech::Ready){
+			while (speech->state()==QTextToSpeech::Ready) {
+				QEventLoop *loop = new QEventLoop();
+				QObject::connect(speech, SIGNAL(stateChanged(QTextToSpeech::State)), loop, SLOT(quit()));
+				while(i && !i->isStopping() && !i->isStopped() && speech && speech->state() == QTextToSpeech::Ready){
+					loop->processEvents(QEventLoop::AllEvents, 500);
+				}
+				delete (loop);
 			}
-		} else {
-			printf("espeak set voice error %i\n", err);
 		}
-	} else {
-		printf("Unable to initialize espeak\n");
+		// wait for started speech to finish
+		if(i && !i->isStopping() && !i->isStopped() && speech && speech->state()==QTextToSpeech::Speaking){
+			QEventLoop *loop = new QEventLoop();
+			QObject::connect(speech, SIGNAL(stateChanged(QTextToSpeech::State)), loop, SLOT(quit()));
+			while(i && !i->isStopping() && !i->isStopped() && speech && speech->state() == QTextToSpeech::Speaking){
+				loop->processEvents(QEventLoop::AllEvents, 500);
+			}
+			delete (loop);
+		}
 	}
-	waitCond->wakeAll();
-	mymutex->unlock();
-
-#endif
-#ifdef ESPEAK_EXECUTE
-	// easy espeak implementation when all else fails
-	// mutex handled by executeSystem
-	SETTINGS;
-	QString statement = settings.value(SETTINGSESPEAKSTATEMENT,SETTINGSESPEAKSTATEMENTDEFAULT).toString();
-	text.replace("\""," quote ");
-	statement.replace("WORDS", text);
-	executeSystem(statement);
-#endif
-#ifdef MACX_SAY
-	// easy macosX implementation - call the command line say statement
-	// mutex handled by executeSystem
-	text.replace("\""," quote ");
-	text.prepend("say \"");
-	text.append("\"");
-	//fprintf(stderr,"MACX_SAY %s\n", text.toStdString().c_str());
-	executeSystem(text);
-#endif
-#ifdef ANDROID
+	//tell the interpreter we are finally done
 	mymutex->lock();
-	androidtts->say(text);
 	waitCond->wakeAll();
-	mymutex->unlock();
-#endif
-
+	mymutex->unlock();	
 }
-
+ 
 void
 RunController::executeSystem(QString text) {
 	// need to implement system as a function to return process output
 	// and to handle input
 
 	QProcess sy;
-	mymutex->lock();
 
 	sy.start(text);
 	if (sy.waitForStarted()) {
@@ -238,6 +219,7 @@ RunController::executeSystem(QString text) {
 		}
 	}
 
+	mymutex->lock();
 	waitCond->wakeAll();
 	mymutex->unlock();
 }
@@ -267,10 +249,10 @@ RunController::startDebug() {
 			return;
 		}
 		sound = new SoundSystem();
+		speech = new QTextToSpeech();
 		i->initialize();
 		currentEditor->updateBreakPointsList();
 		i->debugBreakPoints = currentEditor->breakPoints;
-		mainwin->statusBar()->showMessage(tr("Running"));
 		//set focus to graphiscs window
 		graphwin->setFocus();
 		//if graphiscs window is floating
@@ -316,13 +298,12 @@ RunController::startRun() {
 		SETTINGS;
 		if(settings.value(SETTINGSIDESAVEONRUN, SETTINGSIDESAVEONRUNDEFAULT).toBool()) {
 			currentEditor->saveFile(true);
-			mainwin->statusBar()->showMessage(tr("Saved"));
 		}
 		//
 		// now setup and start the run
 		sound = new SoundSystem();
+		speech = new QTextToSpeech();
 		i->initialize();
-		mainwin->statusBar()->showMessage(tr("Running"));
 		//set focus to graphiscs window
 		graphwin->setFocus();
 		//if graphiscs window is floating
@@ -356,21 +337,17 @@ RunController::outputClear() {
 void RunController::outputReady(QString text) {
 	mymutex->lock();
 	mainWindowsVisible(2,true);
-	QTextCursor t(outwin->textCursor());
-	if(!t.atEnd() || t.hasSelection()){
-		t.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
-		outwin->setTextCursor(t);
-	}
-	outwin->insertPlainText(text);
-	outwin->ensureCursorVisible();
+	outwin->outputText(text);
 	waitCond->wakeAll();
 	mymutex->unlock();
 }
 
 void RunController::outputError(QString text) {
-	outwin->setTextColor(Qt::red); //color red
-	outputReady(text);
-	outwin->setTextColor(Qt::black); //back to black color
+	mymutex->lock();
+	mainWindowsVisible(2,true);
+	outwin->outputText(text, Qt::red);
+	waitCond->wakeAll();
+	mymutex->unlock();
 }
 
 void
@@ -400,35 +377,39 @@ RunController::stepBreakPoint() {
 	mydebugmutex->unlock();
 }
 
-void RunController::stopRun() {
+void RunController::stopRun() {	
+	//qDebug() << "in RunController::stopRun()";
 	if(!i->isStopping()){
-	// event when the user clicks on the stop button
-	mainwin->statusBar()->showMessage(tr("Stopping."));
-	mainwin->setRunState(RUNSTATESTOPING);
-	bool stopinput = i->isAwaitingInput();
+		// event when the user clicks on the stop button
+		//mainwin->setRunState(RUNSTATESTOPING);
 
-	i->setStatus(R_STOPING);//no more ops
+		i->setStatus(R_STOPING);//no more ops
+		
+		// wait for speech to stop
+		if(speech && speech->state()==QTextToSpeech::Speaking) {
+			speech->stop();
+		}
 
-	mymutex->lock();
-	// stop input only when input is waitted
-	// otherwise waitCond->wakeAll(); will generate errors in different situations
-	if(stopinput){
+		// Stop being in input
 		outwin->stopInput(); //make output window readonly
-		waitCond->wakeAll(); //continue OP_INPUT from interpreter
+			
+		// wake up interpreter that may be in a wait
+		mymutex->lock();
+		waitCond->wakeAll();
+		mymutex->unlock();
+
+		mydebugmutex->lock();
+		i->debugMode = 0;
+		waitDebugCond->wakeAll();
+		mydebugmutex->unlock();
+
+		//emit(runHalted());
 	}
-	mymutex->unlock();
-
-	mydebugmutex->lock();
-	i->debugMode = 0;
-	waitDebugCond->wakeAll();
-	mydebugmutex->unlock();
-
-	emit(runHalted());
-}
 }
 
 void RunController::stopRunFinalized(bool ok) {
 	// event when the interperter actually finishes the run
+	//qDebug() << "in RunController::stopRunFinalized(" << ok << ")";
 	if(sound){
 		delete sound;
 		sound = NULL;
@@ -436,7 +417,6 @@ void RunController::stopRunFinalized(bool ok) {
 	QObject::disconnect(i, SIGNAL(goToLine(int)), 0, 0);
 	QObject::disconnect(i, SIGNAL(seekLine(int)), 0, 0);
 
-	mainwin->statusBar()->showMessage(tr("Ready."));
 	mainwin->setRunState(RUNSTATESTOP);
 	mainwin->ifGuiStateClose(ok);
 	i->setStatus(R_STOPPED);
@@ -461,7 +441,7 @@ RunController::showPreferences() {
 	if (prefpass.length()!=0) {
 		char * digest;
 		QString text = QInputDialog::getText(mainwin, tr("BASIC-256 Advanced Preferences and Settings"),
-											 tr("Password:"), QLineEdit::Password, QString());
+			 tr("Password:"), QLineEdit::Password, QString());
 		digest = MD5(text.toUtf8().data()).hexdigest();
 		advanced = (QString::compare(digest, prefpass)==0);
 		free(digest);
@@ -602,7 +582,7 @@ void
 RunController::dialogOpenFileDialog(QString prompt, QString path, QString filter) {
 	mymutex->lock();
 	QString filename = QFileDialog::getOpenFileName(mainwin, prompt, path, filter);
-	i->returnString = filename;
+	i->setInputString(filename);
 	waitCond->wakeAll();
 	mymutex->unlock();
 }
@@ -611,7 +591,7 @@ void
 RunController::dialogSaveFileDialog(QString prompt, QString path, QString filter) {
 	mymutex->lock();
 	QString filename = QFileDialog::getSaveFileName(mainwin, prompt, path, filter);
-	i->returnString = filename;
+	i->setInputString(filename);
 	waitCond->wakeAll();
 	mymutex->unlock();
 }
@@ -624,9 +604,9 @@ RunController::dialogPrompt(QString prompt, QString dflt) {
 	// actualy show prompt (take exclusive control)
 	mymutex->lock();
 	if (in.exec()==QDialog::Accepted) {
-		i->returnString = in.textValue();
+		i->setInputString(in.textValue());
 	} else {
-		i->returnString = dflt;
+		i->setInputString(dflt);
 	}
 	waitCond->wakeAll();
 	mymutex->unlock();
@@ -714,7 +694,7 @@ void RunController::dialogAllowPortInOut(QString msg) {
 //  message.setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Ignore);
 	message.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
 	message.setDefaultButton(QMessageBox::No);
-	QCheckBox *check=new QCheckBox ("Do not ask me again");
+	QCheckBox *check=new QCheckBox (tr("Do not ask me again"));
 	message.setCheckBox(check);
 	int ret = message.exec();
 	if (ret==QMessageBox::Yes) {
@@ -750,7 +730,7 @@ void RunController::dialogAllowSystem(QString msg) {
 //  message.setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Ignore);
 	message.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
 	message.setDefaultButton(QMessageBox::No);
-	QCheckBox *check=new QCheckBox ("Do not ask me again");
+	QCheckBox *check=new QCheckBox (tr("Do not ask me again"));
 	message.setCheckBox(check);
 	int ret = message.exec();
 	if (ret==QMessageBox::Yes) {
@@ -780,7 +760,7 @@ void RunController::getClipboardImage(){
 void RunController::getClipboardString(){
 	mymutex->lock();
 	QClipboard *clipboard = QGuiApplication::clipboard();
-	i->returnString = clipboard->text();
+	i->setInputString(clipboard->text());
 	waitCond->wakeAll();
 	mymutex->unlock();
 }
@@ -800,3 +780,11 @@ void RunController::setClipboardString(QString s){
 	waitCond->wakeAll();
 	mymutex->unlock();
 }
+
+void RunController::outputTextAt(int c, int r, QString s){
+	mymutex->lock();
+	outwin->outputTextAt(c, r, s);
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+

@@ -384,6 +384,7 @@ md5 [Mm][Dd][5]
 mid [Mm][Ii][Dd]
 midx [Mm][Ii][Dd][Xx]
 minute [Mm][Ii][Nn][Uu][Tt][Ee]
+mkdir [Mm][Kk][Dd][Ii][Rr]
 mod ([Mm][Oo][Dd])
 month [Mm][Oo][Nn][Tt][Hh]
 mouseb [Mm][Oo][Uu][Ss][Ee][Bb]
@@ -406,6 +407,7 @@ next [Nn][Ee][Xx][Tt]
 not [Nn][Oo][Tt]
 offerror [Oo][Ff][Ff][Ee][Rr][Rr][Oo][Rr]
 onerror [Oo][Nn][Ee][Rr][Rr][Oo][Rr]
+onstop [Oo][Nn][Ss][Tt][Oo][Pp]
 open [Oo][Pp][Ee][Nn]
 openb [Oo][Pp][Ee][Nn][Bb]
 openserial [Oo][Pp][Ee][Nn][Ss][Ee][Rr][Ii][Aa][Ll]
@@ -429,6 +431,7 @@ poly [Pp][Oo][Ll][Yy]
 portin [Pp][Oo][Rr][Tt][Ii][Nn]
 portout [Pp][Oo][Rr][Tt][Oo][Uu][Tt]
 print ([Pp][Rr][Ii][Nn][Tt])
+printat ([Pp][Rr][Ii][Nn][Tt][Aa][Tt])
 printercancel [Pp][Rr][Ii][Nn][Tt][Ee][Rr][ \t]*[Cc][Aa][Nn][Cc][Ee][Ll]
 printeroff [Pp][Rr][Ii][Nn][Tt][Ee][Rr][ \t]*[Oo][Ff][Ff]
 printeron [Pp][Rr][Ii][Nn][Tt][Ee][Rr][ \t]*[Oo][Nn]
@@ -456,6 +459,7 @@ return [Rr][Ee][Tt][Uu][Rr][Nn]
 rgb [Rr][Gg][Bb]
 right [Rr][Ii][Gg][Hh][Tt]
 rjust [Rr][Jj][Uu][Ss][Tt]
+rmdir [Rr][Mm][Dd][Ii][Rr]
 round [Rr][Oo][Uu][Nn][Dd]
 rtrim [Rr][Tt][Rr][Ii][Mm]
 savefiledialog [Ss][Aa][Vv][Ee][Ff][Ii][Ll][Ee][Dd][Ii][Aa][Ll][Oo][Gg]
@@ -508,6 +512,7 @@ spriter [Ss][Pp][Rr][Ii][Tt][Ee][Rr]
 sprites [Ss][Pp][Rr][Ii][Tt][Ee][Ss]
 spriteshow [Ss][Pp][Rr][Ii][Tt][Ee][Ss][Hh][Oo][Ww]
 spriteslice [Ss][Pp][Rr][Ii][Tt][Ee][Ss][Ll][Ii][Cc][Ee]
+spritetext [Ss][Pp][Rr][Ii][Tt][Ee][Tt][Ee][Xx][Tt]
 spritev [Ss][Pp][Rr][Ii][Tt][Ee][Vv]
 spritew [Ss][Pp][Rr][Ii][Tt][Ee][Ww]
 spritex [Ss][Pp][Rr][Ii][Tt][Ee][Xx]
@@ -1059,6 +1064,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {line}						{ count(); return B256LINE; }
 {maintoolbarvisible}		{ count(); return B256MAINTOOLBARVISIBLE; }
 {map}						{ count(); return B256MAP; }
+{mkdir}						{ count(); return B256MKDIR; }
 {netclose}					{ count(); return B256NETCLOSE; }
 {netclose}":"				{ count(); unputcolon(); return B256NETCLOSE; }
 {netconnect}				{ count(); return B256NETCONNECT; }
@@ -1068,6 +1074,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {offerror}					{ count(); return B256OFFERROR; }
 {offerror}":"				{ count(); unputcolon(); return B256OFFERROR; }
 {onerror}					{ count(); return B256ONERROR; }
+{onstop}					{ count(); return B256ONSTOP; }
 {openb}						{ count(); return B256OPENB; }
 {openserial}				{ count(); return B256OPENSERIAL; }
 {open}						{ count(); return B256OPEN; }
@@ -1089,6 +1096,8 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {printerpage}":"			{ count(); unputcolon(); return B256PRINTERPAGE; }
 {print}						{ count(); return B256PRINT; }
 {print}":"					{ count(); unputcolon(); return B256PRINT; }
+{printat}					{ count(); return B256PRINTAT; }
+{printat}":"				{ count(); unputcolon(); return B256PRINTAT; }
 {prompt}					{ count(); return B256PROMPT; }
 {putslice}					{ count(); return B256PUTSLICE; }
 {rect}						{ count(); return B256RECT; }
@@ -1102,6 +1111,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {reset}":"					{ count(); unputcolon(); return B256RESET; }
 {return}					{ count(); return B256RETURN; }
 {return}":"					{ count(); unputcolon(); return B256RETURN; }
+{rmdir}						{ count(); return B256RMDIR; }
 {say}						{ count(); return B256SAY; }
 {seed}						{ count(); return B256SEED; }
 {seek}						{ count(); return B256SEEK; }
@@ -1137,6 +1147,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {spritepoly}				{ count(); return B256SPRITEPOLY; }
 {spriteshow}				{ count(); return B256SPRITESHOW; }
 {spriteslice}				{ count(); return B256SPRITESLICE; }
+{spritetext}				{ count(); return B256SPRITETEXT; }
 {stamp}						{ count(); return B256STAMP; }
 {step}						{ count(); return B256STEP; }
 {subroutine}				{ count(); return B256SUBROUTINE; }

@@ -652,6 +652,7 @@
 %token B256MIDX
 %token B256MINUTE
 %token B256MOD
+%token B256MKDIR
 %token B256MONTH
 %token B256MOUSEB
 %token B256MOUSEBUTTON_CENTER
@@ -675,6 +676,7 @@
 %token B256NOT
 %token B256OFFERROR
 %token B256ONERROR
+%token B256ONSTOP
 %token B256OPEN
 %token B256OPENB
 %token B256OPENFILEDIALOG
@@ -698,6 +700,7 @@
 %token B256PORTIN
 %token B256PORTOUT
 %token B256PRINT
+%token B256PRINTAT
 %token B256PRINTERCANCEL
 %token B256PRINTEROFF
 %token B256PRINTERON
@@ -725,6 +728,7 @@
 %token B256RGB
 %token B256RIGHT
 %token B256RJUST
+%token B256RMDIR
 %token B256ROUND
 %token B256RTRIM
 %token B256SAY
@@ -779,6 +783,7 @@
 %token B256SPRITES
 %token B256SPRITESHOW
 %token B256SPRITESLICE
+%token B256SPRITETEXT
 %token B256SPRITEV
 %token B256SPRITEW
 %token B256SPRITEX
@@ -2389,12 +2394,16 @@ statement:
 	| linestmt
 	| maintoolbarvisiblestmt
 	| mapstmt
+	| B256MKDIR expr {
+		addOp(OP_MKDIR);
+	}
 	| netclosestmt
 	| netconnectstmt
 	| netlistenstmt
 	| netwritestmt
 	| nextstmt
 	| offerrorstmt
+	| onstopstmt
 	| onerrorstmt
 	| openstmt
 	| outputvisiblestmt
@@ -2410,6 +2419,7 @@ statement:
 	| printeronstmt
 	| printerpagestmt
 	| printstmt
+	| printatstmt
 	| putslicestmt
 	| rectstmt
 	| redimstmt
@@ -2417,6 +2427,9 @@ statement:
 	| regexminimalstmt
 	| resetstmt
 	| returnstmt
+	| B256RMDIR expr {
+		addOp(OP_RMDIR);
+	}
 	| saystmt
 	| seedstmt
 	| seekstmt
@@ -2445,6 +2458,7 @@ statement:
 	| spritepolystmt
 	| spriteshowstmt
 	| spriteslicestmt
+	| spritetextstmt
 	| stampstmt
 	| subroutinestmt
 	| systemstmt
@@ -3216,6 +3230,12 @@ onerrorstmt:
 			}
 			;
 
+onstopstmt:
+			B256ONSTOP variable '(' ')' {
+				addIntOp(OP_ONSTOPCALL, varnumber[--nvarnumber]);
+			}
+			;
+
 returnstmt:	B256RETURN args_none {
 				if (functionDefSymbol!=-1) {
 					// if we are defining a function return pushes a variable value
@@ -3803,6 +3823,17 @@ printstmt:
 				addOp(OP_PRINT);
 			}			;
 
+printatstmt:
+			B256PRINTAT args_ee {
+				addStringOp(OP_PUSHSTRING, "");
+				addOp(OP_PRINTAT);
+			}
+			| B256PRINTAT args_eee {
+				addOp(OP_PRINTAT);
+			}
+			;
+
+
 wavpausestmt:
 			B256WAVPAUSE args_none {
 				addOp(OP_WAVPAUSE);
@@ -3884,6 +3915,16 @@ spriteslicestmt:
 spritepolystmt:
 			B256SPRITEPOLY args_ee {
 				addOp(OP_SPRITEPOLY);
+			}
+			;
+			
+spritetextstmt:
+			B256SPRITETEXT args_ee {
+				addIntOp(OP_PUSHINT, 0x00);	// clear
+				addOp(OP_SPRITETEXT);
+			}
+			| B256SPRITETEXT args_eee {
+				addOp(OP_SPRITETEXT);
 			}
 			;
 
