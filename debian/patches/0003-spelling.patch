@@ -2,16 +2,27 @@ From: "Barak A. Pearlmutter" <barak+git@pearlmutter.net>
 Date: Mon, 28 Dec 2020 22:05:18 +0000
 Subject: spelling
 
+We want the past tense of "stop", i.e., "stopped", while "stoped"
+would be the English past tense of the German loan-word "stope",
+meaning a single excavation in a mine.
 ---
- Constants.h       | 2 +-
- Interpreter.cpp   | 6 +++---
- Interpreter.h     | 2 +-
- MainWindow.cpp    | 2 +-
- RunController.cpp | 4 ++--
- 5 files changed, 8 insertions(+), 8 deletions(-)
+ Constants.h                 | 2 +-
+ Interpreter.cpp             | 8 ++++----
+ Interpreter.h               | 2 +-
+ MainWindow.cpp              | 4 ++--
+ RunController.cpp           | 4 ++--
+ Translations/basic256_de.ts | 2 +-
+ Translations/basic256_en.ts | 2 +-
+ Translations/basic256_es.ts | 2 +-
+ Translations/basic256_fr.ts | 2 +-
+ Translations/basic256_it.ts | 2 +-
+ Translations/basic256_nl.ts | 2 +-
+ Translations/basic256_pt.ts | 2 +-
+ Translations/basic256_ru.ts | 2 +-
+ 13 files changed, 18 insertions(+), 18 deletions(-)
 
 diff --git a/Constants.h b/Constants.h
-index 314e100..980f512 100644
+index a964772..a53be54 100644
 --- a/Constants.h
 +++ b/Constants.h
 @@ -50,7 +50,7 @@
@@ -24,10 +35,10 @@ index 314e100..980f512 100644
  
  	// imagesave valid image types
 diff --git a/Interpreter.cpp b/Interpreter.cpp
-index ece5f25..602f590 100644
+index 82050d3..e47b1b6 100644
 --- a/Interpreter.cpp
 +++ b/Interpreter.cpp
-@@ -575,8 +575,8 @@ bool Interpreter::isStopped() {
+@@ -577,8 +577,8 @@ bool Interpreter::isStopped() {
  
  bool Interpreter::isStopping() {
  	// interpreter is stopped or is about to stop
@@ -38,33 +49,35 @@ index ece5f25..602f590 100644
  }
  
  void Interpreter::setStatus(run_status s) {
-@@ -1057,7 +1057,7 @@ Interpreter::run() {
- 	sound->error = &error;
- 	srand(time(NULL)+QTime::currentTime().msec()*911L); rand(); rand(); 	// initialize the random number generator for this thread
- 	runtimer.start(); // used by MSEC function
--	while (status != R_STOPING && execByteCode() >= 0) {} //continue
-+	while (status != R_STOPPING && execByteCode() >= 0) {} //continue
- 	debugMode = 0;
- 	cleanup(); // cleanup the variables, databases, files, stack and everything
- 	emit(stopRunFinalized(!isError));
+@@ -1087,8 +1087,8 @@ Interpreter::run() {
+ 
+ void Interpreter::runLoop() {
+ 	int rv = 0;
+-	while (status != R_STOPING && rv==0) {rv = execByteCode();} //continue
+-	if (status == R_STOPING && onstopaddr && rv >=0 ) {
++	while (status != R_STOPPING && rv==0) {rv = execByteCode();} //continue
++	if (status == R_STOPPING && onstopaddr && rv >=0 ) {
+ 		// is there an onstop handler for user event stop
+ 		// and we are not at a programatic "end"
+ 		//qDebug() << "onstop" << op;
 diff --git a/Interpreter.h b/Interpreter.h
-index dbba1d2..2ab238d 100644
+index 4e58850..9cd5449 100644
 --- a/Interpreter.h
 +++ b/Interpreter.h
 @@ -56,7 +56,7 @@
      #include <QSerialPort>
  #endif
  
--enum run_status {R_STOPPED, R_RUNNING, R_INPUT, R_STOPING};
-+enum run_status {R_STOPPED, R_RUNNING, R_INPUT, R_STOPPING};
+-enum run_status {R_STOPPED, R_RUNNING, R_STOPING, R_PRESTOPING};
++enum run_status {R_STOPPED, R_RUNNING, R_STOPPING, R_PRESTOPPING};
  
  #define NUMFILES 8
  #define NUMSOCKETS 8
 diff --git a/MainWindow.cpp b/MainWindow.cpp
-index 306c3a8..bf49447 100644
+index 53376a6..42a8b07 100644
 --- a/MainWindow.cpp
 +++ b/MainWindow.cpp
-@@ -776,7 +776,7 @@ void MainWindow::setRunState(int state) {
+@@ -791,7 +791,7 @@ void MainWindow::setRunState(int state) {
      debugact->setEnabled(userCanInteractWithGUI && isEditorWindowActive);
      stepact->setEnabled(state==RUNSTATEDEBUG || state==RUNSTATERUNDEBUG);
      bpact->setEnabled(state==RUNSTATEDEBUG);
@@ -73,20 +86,132 @@ index 306c3a8..bf49447 100644
      clearbreakpointsact->setEnabled(state!=RUNSTATERUN && isEditorWindowActive);
  
      // Clear command for toolbars
+@@ -802,7 +802,7 @@ void MainWindow::setRunState(int state) {
+ 	if (runState==RUNSTATESTOP) statusBar()->showMessage(tr("Ready"));
+ 	if (runState==RUNSTATERUN) statusBar()->showMessage(tr("Running"));
+ 	if (runState==RUNSTATEDEBUG) statusBar()->showMessage(tr("Debug"));
+-	if (runState==RUNSTATESTOPING) statusBar()->showMessage(tr("Stoping"));
++	if (runState==RUNSTATESTOPPING) statusBar()->showMessage(tr("Stopping"));
+ 	if (runState==RUNSTATERUNDEBUG) statusBar()->showMessage(tr("Running in Debug"));
+ 	
+ 
 diff --git a/RunController.cpp b/RunController.cpp
-index e3f4812..9522bd0 100644
+index 8aa0cbf..af96cfe 100644
 --- a/RunController.cpp
 +++ b/RunController.cpp
-@@ -404,10 +404,10 @@ void RunController::stopRun() {
+@@ -381,9 +381,9 @@ void RunController::stopRun() {
+ 	//qDebug() << "in RunController::stopRun()";
  	if(!i->isStopping()){
- 	// event when the user clicks on the stop button
- 	mainwin->statusBar()->showMessage(tr("Stopping."));
--	mainwin->setRunState(RUNSTATESTOPING);
-+	mainwin->setRunState(RUNSTATESTOPPING);
- 	bool stopinput = i->isAwaitingInput();
+ 		// event when the user clicks on the stop button
+-		//mainwin->setRunState(RUNSTATESTOPING);
++		//mainwin->setRunState(RUNSTATESTOPPING);
  
--	i->setStatus(R_STOPING);//no more ops
-+	i->setStatus(R_STOPPING);//no more ops
- 
- 	mymutex->lock();
- 	// stop input only when input is waitted
+-		i->setStatus(R_STOPING);//no more ops
++		i->setStatus(R_STOPPING);//no more ops
+ 		
+ 		// wait for speech to stop
+ 		if(speech && speech->state()==QTextToSpeech::Speaking) {
+diff --git a/Translations/basic256_de.ts b/Translations/basic256_de.ts
+index 8da3340..068dae4 100644
+--- a/Translations/basic256_de.ts
++++ b/Translations/basic256_de.ts
+@@ -1415,7 +1415,7 @@ Bitte die Drucker-Einstellungen überprüfen.</translation>
+     </message>
+     <message>
+         <location filename="../MainWindow.cpp" line="798"/>
+-        <source>Stoping</source>
++        <source>Stopping</source>
+         <translation type="unfinished"></translation>
+     </message>
+     <message>
+diff --git a/Translations/basic256_en.ts b/Translations/basic256_en.ts
+index 84a455d..477db00 100644
+--- a/Translations/basic256_en.ts
++++ b/Translations/basic256_en.ts
+@@ -894,7 +894,7 @@ Please check your printer settings.</source>
+         <translation type="unfinished"></translation>
+     </message>
+     <message>
+-        <source>Stoping</source>
++        <source>Stopping</source>
+         <translation type="unfinished"></translation>
+     </message>
+     <message>
+diff --git a/Translations/basic256_es.ts b/Translations/basic256_es.ts
+index 3e1a771..634dcae 100644
+--- a/Translations/basic256_es.ts
++++ b/Translations/basic256_es.ts
+@@ -1200,7 +1200,7 @@ Por favor, comprueba la configuración de la impresora.</translation>
+     </message>
+     <message>
+         <location filename="../MainWindow.cpp" line="798"/>
+-        <source>Stoping</source>
++        <source>Stopping</source>
+         <translation type="unfinished"></translation>
+     </message>
+     <message>
+diff --git a/Translations/basic256_fr.ts b/Translations/basic256_fr.ts
+index 63e40b1..403a4f1 100644
+--- a/Translations/basic256_fr.ts
++++ b/Translations/basic256_fr.ts
+@@ -1210,7 +1210,7 @@ Please check your printer settings.</source>
+     </message>
+     <message>
+         <location filename="../MainWindow.cpp" line="798"/>
+-        <source>Stoping</source>
++        <source>Stopping</source>
+         <translation type="unfinished"></translation>
+     </message>
+     <message>
+diff --git a/Translations/basic256_it.ts b/Translations/basic256_it.ts
+index bb85ece..b0227a6 100644
+--- a/Translations/basic256_it.ts
++++ b/Translations/basic256_it.ts
+@@ -1597,7 +1597,7 @@ Controllare le impostazione della stampante.</translation>
+     </message>
+     <message>
+         <location filename="../MainWindow.cpp" line="798"/>
+-        <source>Stoping</source>
++        <source>Stopping</source>
+         <translation type="unfinished"></translation>
+     </message>
+     <message>
+diff --git a/Translations/basic256_nl.ts b/Translations/basic256_nl.ts
+index bfe9a3b..b8f116b 100644
+--- a/Translations/basic256_nl.ts
++++ b/Translations/basic256_nl.ts
+@@ -1185,7 +1185,7 @@ Check uw printer instelling.</translation>
+         <translation type="unfinished">Debuggen</translation>
+     </message>
+     <message>
+-        <source>Stoping</source>
++        <source>Stopping</source>
+         <translation type="unfinished"></translation>
+     </message>
+     <message>
+diff --git a/Translations/basic256_pt.ts b/Translations/basic256_pt.ts
+index 469ac6a..d2b7659 100644
+--- a/Translations/basic256_pt.ts
++++ b/Translations/basic256_pt.ts
+@@ -1200,7 +1200,7 @@ Por favor, veja a configuração da impressora.</translation>
+     </message>
+     <message>
+         <location filename="../MainWindow.cpp" line="798"/>
+-        <source>Stoping</source>
++        <source>Stopping</source>
+         <translation type="unfinished"></translation>
+     </message>
+     <message>
+diff --git a/Translations/basic256_ru.ts b/Translations/basic256_ru.ts
+index 8449852..0a359f4 100644
+--- a/Translations/basic256_ru.ts
++++ b/Translations/basic256_ru.ts
+@@ -1245,7 +1245,7 @@ Please check your printer settings.</source>
+         <translation type="unfinished">Отладка</translation>
+     </message>
+     <message>
+-        <source>Stoping</source>
++        <source>Stopping</source>
+         <translation type="unfinished"></translation>
+     </message>
+     <message>

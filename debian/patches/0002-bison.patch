@@ -12,10 +12,10 @@ Forwarded: no
  1 file changed, 5 insertions(+)
 
 diff --git a/BASIC256.pro b/BASIC256.pro
-index 9cc014c..e254776 100644
+index 4183a35..c9fe913 100644
 --- a/BASIC256.pro
 +++ b/BASIC256.pro
-@@ -161,3 +161,8 @@ HEADERS 						+=	*.h
+@@ -152,3 +152,8 @@ HEADERS 						+=	*.h
  SOURCES 						+=	LEX/lex.yy.c
  SOURCES 						+=	LEX/basicParse.tab.c
  SOURCES 						+=	*.cpp

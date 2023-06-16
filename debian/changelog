@@ -1,8 +1,9 @@
-basic256 (2.0.99.7-1) UNRELEASED; urgency=medium
+basic256 (2.0.99.7-1) unstable; urgency=medium
 
   * merge upstream svn repo trunk
+  * adjust packaging to upstream changes
 
- -- Barak A. Pearlmutter <bap@debian.org>  Fri, 16 Jun 2023 20:53:58 +0100
+ -- Barak A. Pearlmutter <bap@debian.org>  Sat, 17 Jun 2023 11:31:54 +0100
 
 basic256 (2.0.0.11-2) unstable; urgency=medium
 
