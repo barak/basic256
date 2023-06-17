@@ -1,0 +1,12 @@
+/.qmake.stash
+/LEX/basicParse.output
+/LEX/basicParse.tab.c
+/LEX/basicParse.tab.h
+/LEX/lex.yy.c
+/Makefile
+/Makefile.Debug
+/Makefile.Release
+/Translations/*.qm
+/basic256
+/release/
+/tmp/
