@@ -1,9 +1,10 @@
-basic256 (2.0.99.7-2) UNRELEASED; urgency=medium
+basic256 (2.0.99.7-2) unstable; urgency=medium
 
   * Update standards version to 4.6.2, no changes needed.
   * Update debian/copyright
+  * Recommend libqt5multimedia5-plugins as it is necessary for some sounds
 
- -- Barak A. Pearlmutter <bap@debian.org>  Sat, 17 Jun 2023 15:55:06 +0100
+ -- Barak A. Pearlmutter <bap@debian.org>  Sun, 10 Sep 2023 09:14:11 +0100
 
 basic256 (2.0.99.7-1) unstable; urgency=medium
 

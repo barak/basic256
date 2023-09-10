@@ -24,6 +24,7 @@ Vcs-Git: https://salsa.debian.org/debian/basic256.git
 Package: basic256
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: libqt5multimedia5-plugins
 Description: educational BASIC programming environment for children
  BASIC-256 is an easy to use version of BASIC designed to teach young
  children the basics of computer programming. It uses traditional
