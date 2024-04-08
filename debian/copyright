@@ -22,7 +22,7 @@ License: RSA-data-security
 Files: debian/*
 Copyright: 2008-2012 Ryan Kavanagh <rak@debian.org>
            2016 Graham Inggs <ginggs@debian.org>
-	   2020-2023 Barak A. Pearlmutter <bap@debian.org>
+           2020-2023 Barak A. Pearlmutter <bap@debian.org>
 License: GPL-2.0+
 
 License: GPL-2.0+

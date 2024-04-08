@@ -35,7 +35,7 @@ index a964772..a53be54 100644
  
  	// imagesave valid image types
 diff --git a/Interpreter.cpp b/Interpreter.cpp
-index 82050d3..e47b1b6 100644
+index fa58799..1234ab7 100644
 --- a/Interpreter.cpp
 +++ b/Interpreter.cpp
 @@ -577,8 +577,8 @@ bool Interpreter::isStopped() {
@@ -49,7 +49,7 @@ index 82050d3..e47b1b6 100644
  }
  
  void Interpreter::setStatus(run_status s) {
-@@ -1087,8 +1087,8 @@ Interpreter::run() {
+@@ -1114,8 +1114,8 @@ Interpreter::run() {
  
  void Interpreter::runLoop() {
  	int rv = 0;
