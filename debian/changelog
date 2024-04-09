@@ -5,6 +5,7 @@ basic256 (2.0.99.10-1) unstable; urgency=low
   * bump policy
   * update quilt patch contexts
   * clean *.qm, for source build after successful build (closes: #1044115)
+  * exclude prebuilt MS Windows binary from sources (thanks, lintian!)
 
  -- Barak A. Pearlmutter <bap@debian.org>  Tue, 09 Apr 2024 11:01:40 +0100
 
