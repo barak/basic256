@@ -1,3 +1,10 @@
+basic256 (2.0.99.10-2) unstable; urgency=medium
+
+  * remove unnecessary build dependency (closes: #1093804)
+  * merge upstream svn repo trunk
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Thu, 23 Jan 2025 14:06:54 +0000
+
 basic256 (2.0.99.10-1) unstable; urgency=low
 
   * new upstream release; merge upstream svn repo trunk
