@@ -394,6 +394,7 @@ QString Interpreter::opname(int op) {
 	case OP_PUSHFLOAT : return QString("OP_PUSHFLOAT");
 	case OP_PUSHINT : return QString("OP_PUSHINT");
 	case OP_PUSHLABEL : return QString("OP_PUSHLABEL");
+	case OP_PUSHLONG : return QString("OP_PUSHLONG");
 	case OP_PUSHSTRING : return QString("OP_PUSHSTRING");
 	case OP_PUTSLICE : return QString("OP_PUTSLICE");
 	case OP_RADIANS : return QString("OP_RADIANS");
@@ -676,7 +677,7 @@ int Interpreter::compileProgram(char *code) {
 		// because in debugMode it already call goToLine(1) at start
 		for(int i=0; i<numparsewarnings; i++) {
 		QString msg = tr("COMPILE WARNING");
-		if (parsewarningtablelexingfilenumber!=0) {
+		if (parsewarningtablelexingfilenumber[i]!=0) {
 			msg += tr(" in included file '") + QString(include_filenames[parsewarningtablelexingfilenumber[i]]) + QStringLiteral("'");
 		} else if(gotowarning){
 			emit(goToLine(parsewarningtablelinenumber[i]));
@@ -837,10 +838,13 @@ int Interpreter::compileProgram(char *code) {
 			case COMPERR_ONERRORCALL:
 				msg += tr("Cannot pass arguments to a SUBROUTINE used by ONERROR statement");
 				break;
-			case COMPERR_NUMBERTOOLARGE:
-				msg += tr("Number too large");
+			case COMPERR_INTEGERTOOLARGE:
+				msg += tr("Integer number too large");
 				break;
-
+			case COMPERR_FLOATTOOLARGE:
+				msg += tr("Floating point number too large");
+				break;
+				
 			default:
 				if(column==0) {
 					msg += tr("Syntax error around beginning line");
@@ -1441,15 +1445,16 @@ Interpreter::execByteCode() {
 	fprintf(stderr,"%08x %s ",(unsigned int) (op-wordCode), opname(*op).toUtf8().data());
 	if(optype(*op)==OPTYPE_INT) {
 		if ((*op)==OP_CURRLINE) {
-			int includeFileNumber = (long) *(op+1) >> 24;
-			int currentLine = (long) *(op+1) & 0xffffff;
-			fprintf(stderr, "%d %d", includeFileNumber, currentLine);
+			int includeFileNumber = (unsigned int) *(op+1) >> 24;
+			int currentLine = (unsigned int) *(op+1) & 0xffffff;
+			fprintf(stderr, "%u u", includeFileNumber, currentLine);
 		} else {
-			fprintf(stderr, "%ld", (long) *(op+1));
+			fprintf(stderr, "%d", (int) *(op+1));
 		}
 	}
 	if(optype(*op)==OPTYPE_FLOAT) fprintf(stderr, "%f", (float) *(op+1));
 	if(optype(*op)==OPTYPE_STRING) fprintf(stderr, "'%s'", (char *) (op+1));
+	if(optype(*op)==OPTYPE_LONG) fprintf(stderr, "'%ld'", (long) *(op+1));
 	if(optype(*op)==OPTYPE_LABEL){
 		int v = *(op+1);
 		fprintf(stderr, "lbl %s", ((v>=0&&v<numsyms)?symtable[v]:"__unknown__") );
@@ -2107,6 +2112,24 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 		}
 		break;
 
+		case OPTYPE_LONG: {
+			//
+			// OPCODES with an long integer following in the wordCcode go in this switch
+			// double d is the number extracted from the wordCode
+			//
+			long *l = (long *) op;
+			op += bytesToFullWords(sizeof(long));
+			switch(opcode) {
+
+				case OP_PUSHLONG: {
+					stack->pushLong(*l);
+				}
+				break;
+
+			}
+		}
+		break;
+		
 		case OPTYPE_STRING: {
 			//
 			// OPCODES with a string in the wordCcode go in this switch
@@ -2917,35 +2940,36 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_MIDX: {
 				// regex section string (MID regeX)
-				//		 midx (expr, qtemp, start)
-				// start - start position. String indices begin at 1. If negative start is given,
+				//		 midx (expr, tempqstr, start)
+				// start - start position. String indices begin at 1. If negative start is given
 				//		 then position is starting from the end of the string,
 				//		 where -1 is the last character position, -2 the second character from the end... and so on
 
 					int start = stack->popInt();
-					QRegExp expr = QRegExp(stack->popQString());
-					expr.setMinimal(regexMinimal);
-					QString qtemp = stack->popQString();
+					QRegularExpression expr = QRegularExpression(stack->popQString(),
+                        regexMinimal?QRegularExpression::InvertedGreedinessOption:QRegularExpression::NoPatternOption);
+					QString tempqstr = stack->popQString();
 
 					if(start == 0) {
 						error->q(ERROR_STRSTART);
 						stack->pushQString(QString(""));
 					} else {
-						int pos;
-						if (start==1) {
-							pos = expr.indexIn(qtemp);
-						} else if (start>1){
-							pos = expr.indexIn(qtemp.mid(start-1));
-						}else{
-							pos = expr.indexIn(qtemp.mid(qtemp.length()+start));
+						// recalculate start to be zero based
+						if(start == 0) {
+							error->q(ERROR_STRSTART);
+                        } else if (start>0){
+							start = start - 1;
+						} else {
+							start = tempqstr.length()+start;
+                            if (start<0) start = 0;
 						}
-
-						if (pos==-1) {
+                        //
+                        QRegularExpressionMatch match = expr.match(tempqstr, start);
+                        if (match.hasMatch()) {
+                            stack->pushQString(match.captured(1));
+                        } else {                
 							// did not find it - return ""
 							stack->pushQString(QString(""));
-						} else {
-							QStringList stuff = expr.capturedTexts();
-							stack->pushQString(stuff[0]);
 						}
 					}
 				}
@@ -3067,22 +3091,29 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						//		 then position is starting from the end of the string,
 						//		 where -1 is the last character position, -2 the second character from the end... and so on
 						int start = stack->popInt();
-						QRegExp expr = QRegExp(stack->popQString());
-						expr.setMinimal(regexMinimal);
-						QString qtemp = stack->popQString();
+						QRegularExpression expr = QRegularExpression(stack->popQString(),
+                            regexMinimal?QRegularExpression::InvertedGreedinessOption:QRegularExpression::NoPatternOption);
+						QString tempqstr = stack->popQString();
 
-						int pos=0;
+						// recalculate start to be zero based
 						if(start == 0) {
 							error->q(ERROR_STRSTART);
-						} else if (start>0){
-							pos = expr.indexIn(qtemp,start-1)+1;
-						}else{
-							int p = qtemp.length()+start;
-							if(p<0)
-								p=0;
-							pos = expr.indexIn(qtemp, p)+1;
+                        } else if (start>0){
+							start = start - 1;
+						} else {
+							start = tempqstr.length()+start;
+                            if (start<0) start = 0;
 						}
-						stack->pushInt(pos);
+                        //
+
+						int pos=0; // not found
+
+                        QRegularExpressionMatch match = expr.match(tempqstr, start);
+                        if (match.hasMatch()) {
+                            pos = match.capturedStart() + 1;
+						}
+                        
+                        stack->pushInt(pos);
 					}
 					break;
 
@@ -4050,7 +4081,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						error->q(ERROR_RGB);
 						stack->pushLong(0);
 					} else {
-						stack->pushInt( (int) QColor(rval,gval,bval,aval).rgba());
+						stack->pushUInt( (unsigned int) QColor(rval,gval,bval,aval).rgba());
 					}
 				}
 				break;
@@ -4060,16 +4091,16 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					int x = stack->popInt();
 					if(drawingOnScreen || drawto.isEmpty()){
 						QRgb rgb = graphwin->image->pixel(x,y);
-						stack->pushInt((int) rgb);
+						stack->pushUInt((unsigned int) rgb);
 					}else{
 						QRgb rgb = images[drawto]->pixel(x,y);
-						stack->pushInt((int) rgb);
+						stack->pushUInt((unsigned int) rgb);
 					}
 				}
 				break;
 
 				case OP_GETCOLOR: {
-					stack->pushInt((int) drawingpen.color().rgba());
+					stack->pushUInt((unsigned int) drawingpen.color().rgba());
 				}
 				break;
 
@@ -4108,7 +4139,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						int tw, th;
 						for(th=0; th<h; th++) {
 							for(tw=0; tw<w; tw++) {
-								DataElement* temp = new DataElement((int) r[counter]);
+								DataElement* temp = new DataElement((unsigned int) r[counter]);
 								d->arraySetData(tw,th,temp);
 								delete temp;
 								counter++;
@@ -4138,7 +4169,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						int counter = 0;
 						for (th=0;th<h;th++) {
 							for (tw=0; tw<w; tw++) {
-							r[counter++] = (QRgb) convert->getInt(d->arrayGetData(tw,th));			// DONT RELEASE
+							r[counter++] = (QRgb) convert->getUInt(d->arrayGetData(tw,th));			// DONT RELEASE
 							}
 						}
 						//update painter only if needed (faster)
@@ -4604,25 +4635,24 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_CLG: {
-					int clearcolor = stack->popInt();
-					QColor c = QColor::fromRgba((QRgb) clearcolor);
-
+					QColor c = stack->popQColor();
+					
 					if (drawingOnScreen){
 						graphwin->image->fill(c);
 						if (!fastgraphics) waitForGraphics();
 					}else if(printing){
-						if(printdocument->pageRect()==printdocument->paperRect()){
+						if(printdocument->pageRect(QPrinter::DevicePixel)==printdocument->paperRect(QPrinter::DevicePixel)){
 							//printer is in full page mode already
-							painter->fillRect(printdocument->paperRect(),c);
+							painter->fillRect(printdocument->paperRect(QPrinter::DevicePixel),c);
 						}else{
 							//a good solution is to end painter and begin after setFullPage(true)
 							//this will reset origins for painter to top-left of the page
 							//but swiching back setFullPage(false) and starting again painter (begin) to page
 							//clear the page entirely.
-							QRect r = printdocument->pageRect();
+							QRectF r = printdocument->pageRect(QPrinter::DevicePixel);
 							printdocument->setFullPage(true);
 							painter->translate(-r.left(),-r.top());
-							painter->fillRect(printdocument->paperRect(),c);
+							painter->fillRect(printdocument->paperRect(QPrinter::DevicePixel),c);
 							printdocument->setFullPage(false);
 							painter->translate(r.topLeft());
 						}
@@ -5933,6 +5963,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					}
 # else
 						error->q(ERROR_NOTIMPLEMENTED);
+                        (void) data;
+                        (void) port;
 #endif
 				}
 				break;
@@ -5961,6 +5993,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					}
 #else
 						error->q(ERROR_NOTIMPLEMENTED);
+                        (void) port;
 #endif
 					stack->pushInt(data);
 				}
@@ -6122,8 +6155,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					// regex replace function
 
 					QString qto = stack->popQString();
-					QRegExp expr = QRegExp(stack->popQString());
-					expr.setMinimal(regexMinimal);
+					QRegularExpression expr = QRegularExpression(stack->popQString(),
+                        regexMinimal?QRegularExpression::InvertedGreedinessOption:QRegularExpression::NoPatternOption);
 					QString qhaystack = stack->popQString();
 
 					stack->pushQString(qhaystack.replace(expr, qto));
@@ -6146,8 +6179,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				case OP_COUNTX: {
 					// regex count function
 
-					QRegExp expr = QRegExp(stack->popQString());
-					expr.setMinimal(regexMinimal);
+					QRegularExpression expr = QRegularExpression(stack->popQString(),
+                        regexMinimal?QRegularExpression::InvertedGreedinessOption:QRegularExpression::NoPatternOption);
 					QString qhaystack = stack->popQString();
 
 					stack->pushInt((int) (qhaystack.count(expr)));
@@ -6421,7 +6454,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_GETBRUSHCOLOR: {
-					stack->pushInt((int) drawingbrush.color().rgba());
+					stack->pushUInt((unsigned int) drawingbrush.color().rgba());
 				}
 				break;
 
@@ -6522,8 +6555,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 							if(printdocument->isValid()){
 								printdocument->setCreator(QString(SETTINGSAPP));
 								printdocument->setDocName(editwin->title);
-								printdocument->setPaperSize((QPrinter::PaperSize) settingsPrinterPaper);
-								printdocument->setOrientation((QPrinter::Orientation) settingsPrinterOrient);
+								printdocument->setPageSize(QPageSize((QPageSize::PageSizeId ) settingsPrinterPaper));
+								printdocument->setPageOrientation((QPageLayout::Orientation) settingsPrinterOrient);
 								if (!setPainterTo(printdocument)) {
 									error->q(ERROR_PRINTEROPEN);
 									setGraph(drawto); //if drawing on printer fails, then fall back to graph area
@@ -6628,6 +6661,10 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 										emit(outputReady(QString("%1 %2 \"%3\"\n").arg(offset,8,16,QChar('0')).arg(opname(currentop),-20).arg((char*) o)));
 										int len = bytesToFullWords(strlen((char*) o) + 1);
 										o += len;
+									} else if (optype(currentop) == OPTYPE_LONG) {
+										// op has a single long integer arg
+										emit(outputReady(QString("%1 %2 %3\n").arg(offset,8,16,QChar('0')).arg(opname(currentop),-20).arg((long) *o)));
+										o += bytesToFullWords(sizeof(long));
 									}
 									waitCond->wait(mymutex);
 									mymutex->unlock();
@@ -6890,17 +6927,17 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 					QStringList list;
 					if(opcode==OP_EXPLODE) {
-						list = qhaystack.split(qneedle, QString::KeepEmptyParts , casesens);
+						list = qhaystack.split(qneedle, Qt::KeepEmptyParts , casesens);
 					} else {
-						QRegExp expr = QRegExp(qneedle);
-						expr.setMinimal(regexMinimal);
-						if (expr.captureCount()>0) {
+						QRegularExpression expr = QRegularExpression(qneedle,
+                            regexMinimal?QRegularExpression::InvertedGreedinessOption:QRegularExpression::NoPatternOption);
+ 						if (expr.captureCount()>0) {
 							// if we have captures in our regex then return them
-							expr.indexIn(qhaystack);
-							list = expr.capturedTexts();
+                            QRegularExpressionMatch match = expr.match(qhaystack);
+							list = match.capturedTexts();
 						} else {
 							// if it is a simple regex without captures then split
-							list = qhaystack.split(expr, QString::KeepEmptyParts);
+							list = qhaystack.split(expr, Qt::KeepEmptyParts);
 						}
 					}
 					
@@ -7016,13 +7053,13 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 
 				case OP_IMAGENEW: {
-					int c = stack->popInt();
+					QColor c = stack->popQColor();
 					int h = stack->popInt();
 					int w = stack->popInt();
 					lastImageId++;
 					QString id = QString("image:") + QString::number(lastImageId);
 					images[id] = new QImage(w, h, QImage::Format_ARGB32);
-					images[id]->fill(QColor::fromRgba((QRgb) c));
+					images[id]->fill(c);
 					stack->pushQString(id);
 				}
 				break;

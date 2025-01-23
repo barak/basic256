@@ -21,15 +21,14 @@
 
 #include <QClipboard>
 #include <QMutex>
-#include <QtPrintSupport/QPrintDialog>
-#include <QtPrintSupport/QPrinter>
-#include <QtWidgets/QAction>
-#include <QtWidgets/QApplication>
-#include <QtWidgets/QMessageBox>
-#include <QtWidgets/QScrollArea>
-#include <QtWidgets/QToolBar>
+#include <QPrintDialog>
+#include <QPrinter>
+#include <QAction>
+#include <QApplication>
+#include <QMessageBox>
+#include <QScrollArea>
+#include <QToolBar>
 #include <QDockWidget>
-#include <QDesktopWidget>
 
 #include "BasicWidget.h"
 #include "BasicGraph.h"
@@ -185,7 +184,7 @@ void BasicGraph::resizeWindowToFitContent() {
                 dock->setMaximumSize(QWIDGETSIZE_MAX ,QWIDGETSIZE_MAX );
 
                 // make graph window visible in screen range (ignoring taskbar area)
-                QRect screen (QApplication::desktop()->availableGeometry(this));
+                QRect screen (this->geometry());
                 QPoint win_position = dock->pos();
                 QSize win_size = dock->size();
                 int w = win_size.width()+win_position.x();
@@ -285,7 +284,7 @@ void BasicGraph::mouseReleaseEvent(QMouseEvent *e) {
 }
 
 void BasicGraph::mousePressEvent(QMouseEvent *e) {
-    if (e->x() >= 0 && e->x() < gwidth && e->y() >= 0 && e->y() < gheight) {
+    if (e->localPos().x() >= 0 && e->localPos().x() < gwidth && e->localPos().y() >= 0 && e->localPos().y() < gheight) {
         QPoint p = gtransforminverted.map(e->pos());
         clickX = mouseX = p.x();
         clickY = mouseY = p.y();
@@ -402,9 +401,9 @@ void BasicGraph::updateScreenImage(){
 }
 
 void BasicGraph::mouseDoubleClickEvent(QMouseEvent * e){
-    if (e->x() >= 0 && e->x() < gwidth && e->y() >= 0 && e->y() < gheight) {
-        clickX = mouseX = e->x();
-        clickY = mouseY = e->y();
+    if (e->localPos().x() >= 0 && e->localPos().x() < gwidth && e->localPos().y() >= 0 && e->localPos().y() < gheight) {
+        clickX = mouseX = e->localPos().x();
+        clickY = mouseY = e->localPos().y();
         clickB = e->button() | MOUSEBUTTON_DOUBLECLICK; //set doubleclick flag
         mouseB = e->buttons();
     }

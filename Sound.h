@@ -25,6 +25,7 @@
 #include <QTimer>
 #include <QMediaPlayer>
 #include <QAudioOutput>
+#include <QAudioFormat>
 #include <QBuffer>
 #include <QEventLoop>
 #include <QFileInfo>

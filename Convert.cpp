@@ -16,8 +16,9 @@ Convert::Convert(QLocale *applocale) {
 
 	// build international safe regular expression for numbers
 	locale = applocale;
-	replaceDecimalPoint = replaceDecimalPoint && locale->decimalPoint()!='.'; //use locale decimal point only if !="."
-	decimalPoint = (replaceDecimalPoint?locale->decimalPoint():'.');
+	replaceDecimalPoint = replaceDecimalPoint && locale->decimalPoint()!="."; //use locale decimal point only if !="."
+	decimalPoint = locale->decimalPoint();
+    if (!replaceDecimalPoint) decimalPoint = ".";
 	isnumericexpression = QString("^[-+]?[0-9]*") + decimalPoint + QString("?[0-9]+([eE][-+]?[0-9]+)?$");
 	musicalnote.setPattern("^(do|re|mi|fa|sol|la|si|c|d|e|f|g|a|b|h|ni|pa|vu|ga|di|ke|zo)([-]?[0-9]+)?(#{1,2}|b{1,2})?$");
 	musicalnote.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
@@ -78,6 +79,15 @@ int Convert::getInt(DataElement *d) {
 		l = 0;
 	}
 	return (int) l;
+}
+
+unsigned int Convert::getUInt(DataElement *d) {
+	long l=getLong(d);
+	if (l<0||l>UINT_MAX) {
+		e = ERROR_UNSIGNEDINTEGERRANGE;
+		l = 0;
+	}
+	return (unsigned int) l;
 }
 
 long Convert::getLong(DataElement *d) {
@@ -211,7 +221,7 @@ QString Convert::getString(DataElement *d, int ddigits) {
 				//check if adding of ".0" will exceed the number of digits to print numbers
 				if(((int)xp)==ddigits-1 && floattail){
 					s.setNum(d->floatval,'e',ddigits - 1);
-					s.replace(QRegExp(QStringLiteral("0+e")), QStringLiteral("e"));
+					s.replace(QRegularExpression(QStringLiteral("0+e")), QStringLiteral("e"));
 					s.replace(QStringLiteral(".e"), QStringLiteral(".0e"));
 					if(replaceDecimalPoint){
 						s.replace('.', decimalPoint);

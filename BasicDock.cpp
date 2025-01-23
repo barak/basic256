@@ -17,8 +17,8 @@
 
 #include <qglobal.h>
 
-#include <QtWidgets/QDockWidget>
-#include <QtWidgets/QAction>
+#include <QDockWidget>
+#include <QAction>
 #include <QCloseEvent>
 #include "BasicDock.h"
 
