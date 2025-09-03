@@ -711,6 +711,10 @@ Please check your printer settings.</source>
         <source>User thrown error number</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Number exceeds unsigned integer range (</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>FindWin</name>
@@ -1198,15 +1202,19 @@ Please check your printer settings.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Number too large</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Syntax error around beginning line</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Syntax error around character </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Integer number too large</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floating point number too large</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2109,34 +2117,6 @@ Please check your printer settings.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Graphics Window &amp;Zoom</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>1:4 (quarter)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>1:2 (half)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>1:1 (original)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>2:1 (double)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>3:1 (triple)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>4:1 (quadruple)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Font...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2290,6 +2270,10 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>Do you really want to discard your changes?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>W&amp;rap Long Lines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
