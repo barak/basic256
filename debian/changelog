@@ -1,3 +1,9 @@
+basic256 (2.0.99.10-3) UNRELEASED; urgency=medium
+
+  * forward port patches, context changes only
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Thu, 04 Sep 2025 15:41:30 +0100
+
 basic256 (2.0.99.10-2) unstable; urgency=medium
 
   * remove unnecessary build dependency (closes: #1093804)

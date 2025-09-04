@@ -10,10 +10,10 @@ Forwarded: not-needed
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/BASIC256.pro b/BASIC256.pro
-index 07799f8..4183a35 100644
+index 949eec4..43d19d6 100644
 --- a/BASIC256.pro
 +++ b/BASIC256.pro
-@@ -98,7 +98,7 @@ unix:!macx {
+@@ -99,7 +99,7 @@ unix:!macx {
  	########
  	exampleFiles.files			=	./Examples
  	exampleFiles.path			=	/usr/share/basic256

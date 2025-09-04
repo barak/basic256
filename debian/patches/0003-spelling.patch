@@ -35,10 +35,10 @@ index a964772..a53be54 100644
  
  	// imagesave valid image types
 diff --git a/Interpreter.cpp b/Interpreter.cpp
-index fa58799..1234ab7 100644
+index 61ceaf8..1ad3ab9 100644
 --- a/Interpreter.cpp
 +++ b/Interpreter.cpp
-@@ -577,8 +577,8 @@ bool Interpreter::isStopped() {
+@@ -578,8 +578,8 @@ bool Interpreter::isStopped() {
  
  bool Interpreter::isStopping() {
  	// interpreter is stopped or is about to stop
@@ -49,7 +49,7 @@ index fa58799..1234ab7 100644
  }
  
  void Interpreter::setStatus(run_status s) {
-@@ -1114,8 +1114,8 @@ Interpreter::run() {
+@@ -1118,8 +1118,8 @@ Interpreter::run() {
  
  void Interpreter::runLoop() {
  	int rv = 0;
@@ -61,7 +61,7 @@ index fa58799..1234ab7 100644
  		// and we are not at a programatic "end"
  		//qDebug() << "onstop" << op;
 diff --git a/Interpreter.h b/Interpreter.h
-index 4e58850..9cd5449 100644
+index 7313ca5..a4b9bb6 100644
 --- a/Interpreter.h
 +++ b/Interpreter.h
 @@ -56,7 +56,7 @@
@@ -74,7 +74,7 @@ index 4e58850..9cd5449 100644
  #define NUMFILES 8
  #define NUMSOCKETS 8
 diff --git a/MainWindow.cpp b/MainWindow.cpp
-index 53376a6..42a8b07 100644
+index 0028530..eaab19d 100644
 --- a/MainWindow.cpp
 +++ b/MainWindow.cpp
 @@ -791,7 +791,7 @@ void MainWindow::setRunState(int state) {
@@ -112,23 +112,23 @@ index 8aa0cbf..af96cfe 100644
  		// wait for speech to stop
  		if(speech && speech->state()==QTextToSpeech::Speaking) {
 diff --git a/Translations/basic256_de.ts b/Translations/basic256_de.ts
-index 8da3340..068dae4 100644
+index 677557f..087cc96 100644
 --- a/Translations/basic256_de.ts
 +++ b/Translations/basic256_de.ts
-@@ -1415,7 +1415,7 @@ Bitte die Drucker-Einstellungen überprüfen.</translation>
+@@ -1430,7 +1430,7 @@ Bitte die Drucker-Einstellungen überprüfen.</translation>
      </message>
      <message>
-         <location filename="../MainWindow.cpp" line="798"/>
+         <location filename="../MainWindow.cpp" line="805"/>
 -        <source>Stoping</source>
 +        <source>Stopping</source>
          <translation type="unfinished"></translation>
      </message>
      <message>
 diff --git a/Translations/basic256_en.ts b/Translations/basic256_en.ts
-index 84a455d..477db00 100644
+index 907dc26..3d85720 100644
 --- a/Translations/basic256_en.ts
 +++ b/Translations/basic256_en.ts
-@@ -894,7 +894,7 @@ Please check your printer settings.</source>
+@@ -902,7 +902,7 @@ Please check your printer settings.</source>
          <translation type="unfinished"></translation>
      </message>
      <message>
@@ -138,49 +138,49 @@ index 84a455d..477db00 100644
      </message>
      <message>
 diff --git a/Translations/basic256_es.ts b/Translations/basic256_es.ts
-index 3e1a771..634dcae 100644
+index 14ca28a..580a7ca 100644
 --- a/Translations/basic256_es.ts
 +++ b/Translations/basic256_es.ts
-@@ -1200,7 +1200,7 @@ Por favor, comprueba la configuración de la impresora.</translation>
+@@ -1215,7 +1215,7 @@ Por favor, comprueba la configuración de la impresora.</translation>
      </message>
      <message>
-         <location filename="../MainWindow.cpp" line="798"/>
+         <location filename="../MainWindow.cpp" line="805"/>
 -        <source>Stoping</source>
 +        <source>Stopping</source>
          <translation type="unfinished"></translation>
      </message>
      <message>
 diff --git a/Translations/basic256_fr.ts b/Translations/basic256_fr.ts
-index 63e40b1..403a4f1 100644
+index 8c75792..f6273ad 100644
 --- a/Translations/basic256_fr.ts
 +++ b/Translations/basic256_fr.ts
-@@ -1210,7 +1210,7 @@ Please check your printer settings.</source>
+@@ -1225,7 +1225,7 @@ Please check your printer settings.</source>
      </message>
      <message>
-         <location filename="../MainWindow.cpp" line="798"/>
+         <location filename="../MainWindow.cpp" line="805"/>
 -        <source>Stoping</source>
 +        <source>Stopping</source>
          <translation type="unfinished"></translation>
      </message>
      <message>
 diff --git a/Translations/basic256_it.ts b/Translations/basic256_it.ts
-index bb85ece..b0227a6 100644
+index e6d2853..8ba77be 100644
 --- a/Translations/basic256_it.ts
 +++ b/Translations/basic256_it.ts
-@@ -1597,7 +1597,7 @@ Controllare le impostazione della stampante.</translation>
+@@ -1612,7 +1612,7 @@ Controllare le impostazione della stampante.</translation>
      </message>
      <message>
-         <location filename="../MainWindow.cpp" line="798"/>
+         <location filename="../MainWindow.cpp" line="805"/>
 -        <source>Stoping</source>
 +        <source>Stopping</source>
          <translation type="unfinished"></translation>
      </message>
      <message>
 diff --git a/Translations/basic256_nl.ts b/Translations/basic256_nl.ts
-index bfe9a3b..b8f116b 100644
+index 3de2332..d688ac6 100644
 --- a/Translations/basic256_nl.ts
 +++ b/Translations/basic256_nl.ts
-@@ -1185,7 +1185,7 @@ Check uw printer instelling.</translation>
+@@ -1193,7 +1193,7 @@ Check uw printer instelling.</translation>
          <translation type="unfinished">Debuggen</translation>
      </message>
      <message>
@@ -190,23 +190,23 @@ index bfe9a3b..b8f116b 100644
      </message>
      <message>
 diff --git a/Translations/basic256_pt.ts b/Translations/basic256_pt.ts
-index 469ac6a..d2b7659 100644
+index 29c7958..99991b5 100644
 --- a/Translations/basic256_pt.ts
 +++ b/Translations/basic256_pt.ts
-@@ -1200,7 +1200,7 @@ Por favor, veja a configuração da impressora.</translation>
+@@ -1215,7 +1215,7 @@ Por favor, veja a configuração da impressora.</translation>
      </message>
      <message>
-         <location filename="../MainWindow.cpp" line="798"/>
+         <location filename="../MainWindow.cpp" line="805"/>
 -        <source>Stoping</source>
 +        <source>Stopping</source>
          <translation type="unfinished"></translation>
      </message>
      <message>
 diff --git a/Translations/basic256_ru.ts b/Translations/basic256_ru.ts
-index 8449852..0a359f4 100644
+index 31b99ae..3351b59 100644
 --- a/Translations/basic256_ru.ts
 +++ b/Translations/basic256_ru.ts
-@@ -1245,7 +1245,7 @@ Please check your printer settings.</source>
+@@ -1605,7 +1605,7 @@ Please check your printer settings.</source>
          <translation type="unfinished">Отладка</translation>
      </message>
      <message>
