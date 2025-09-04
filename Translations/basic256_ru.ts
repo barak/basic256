@@ -5,7 +5,7 @@
     <name>BasicEdit</name>
     <message>
         <source>Line: </source>
-        <translation type="unfinished">Строка: </translation>
+        <translation>Строка: </translation>
     </message>
     <message>
         <source>New Program?</source>
@@ -97,81 +97,81 @@
     </message>
     <message>
         <source> Character: </source>
-        <translation type="unfinished"></translation>
+        <translation> Символ: </translation>
     </message>
     <message>
         <source>Save File</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить файл</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">Печать</translation>
+        <translation>Печать</translation>
     </message>
     <message>
         <source>Printing is not supported in this platform at this time.</source>
-        <translation type="unfinished"></translation>
+        <translation>На этой платформе печать ещё не поддерживается.</translation>
     </message>
     <message>
         <source>Print Code</source>
-        <translation type="unfinished">Распечатать исходный текст</translation>
+        <translation>Распечатать исходный текст</translation>
     </message>
     <message>
         <source>Unable to carry out printing.
 Please check your printer settings.</source>
-        <translation type="unfinished">Не удается распечатать информацию.
-Проверьте настройки принтера.</translation>
+        <translation>Не удалось выполнить печать.
+Проверьте параметры принтера.</translation>
     </message>
     <message>
         <source>Find</source>
-        <translation type="unfinished">Найти</translation>
+        <translation>Найти</translation>
     </message>
     <message>
         <source>Replace</source>
-        <translation type="unfinished">Заменить</translation>
+        <translation>Заменить</translation>
     </message>
     <message>
         <source>occurrence(s) were replaced.</source>
-        <translation type="unfinished"></translation>
+        <translation>— количество заменённых совпадений.</translation>
     </message>
     <message>
         <source>Remove breakpoint from line</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить точку останова из строки</translation>
     </message>
     <message>
         <source>Set breakpoint at line</source>
-        <translation type="unfinished"></translation>
+        <translation>Установить точку останова в строке</translation>
     </message>
     <message>
         <source>Clear all breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить все точки останова</translation>
     </message>
     <message>
         <source>File has been removed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл удалён.</translation>
     </message>
     <message>
         <source>It seems that file %1 was removed from disk. Don&apos;t forget to save your work.</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл %1 был удалён с диска. Сохраните изменения.</translation>
     </message>
     <message>
         <source>File changed</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл изменён</translation>
     </message>
     <message>
         <source>The file %1 has changed outside BASIC256 editor. Do you want to reload it?</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл %1 был изменён вне редактора BASIC256. Загрузить его заново?</translation>
     </message>
     <message>
         <source>Load File</source>
-        <translation type="unfinished"></translation>
+        <translation>Загрузка файла</translation>
     </message>
     <message>
         <source>Unable to open program file</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно открыть файл программы</translation>
     </message>
     <message>
         <source>File permissions problem or file open by another process.</source>
-        <translation type="unfinished"></translation>
+        <translation>Проблема с разрешениями доступа к файлу, либо он открыт другим процессом.</translation>
     </message>
 </context>
 <context>
@@ -208,451 +208,511 @@ Please check your printer settings.</source>
         <source>&amp;Exit</source>
         <translation type="vanished">В&amp;ыход</translation>
     </message>
+    <message>
+        <source>Off-line help does not appear to be installed.  Please use on-line help.</source>
+        <translation type="vanished">Автономная справка не установлена. Воспользуйтесь справкой в Интернете.</translation>
+    </message>
+    <message>
+        <source>Contextual help for the word &apos;</source>
+        <translation type="vanished">Контекстная справка для слова &apos;</translation>
+    </message>
+    <message>
+        <source>&apos; is not available.</source>
+        <translation type="vanished">&apos; недоступна.</translation>
+    </message>
 </context>
 <context>
     <name>Error</name>
     <message>
         <source>No such label %VARNAME%</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет такой метки %VARNAME%</translation>
     </message>
     <message>
         <source>No such SUBROUTINE %VARNAME%</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет такой ПОДПРОГРАММЫ %VARNAME%</translation>
     </message>
     <message>
         <source>No such FUNCTION %VARNAME%</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет такой ФУНКЦИИ %VARNAME%</translation>
     </message>
     <message>
         <source>Next without FOR</source>
-        <translation type="unfinished">Next без FOR</translation>
+        <translation>Next без FOR</translation>
     </message>
     <message>
         <source>Invalid File Number</source>
-        <translation type="unfinished"></translation>
+        <translation>Неверный номер файла</translation>
     </message>
     <message>
         <source>Unable to open file</source>
-        <translation type="unfinished">Невозможно открыть файл</translation>
+        <translation>Невозможно открыть файл</translation>
     </message>
     <message>
         <source>File not open</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл не открыт</translation>
     </message>
     <message>
         <source>Unable to write to file</source>
-        <translation type="unfinished">Невозможно записать в файл</translation>
+        <translation>Невозможно выполнить запись в файл</translation>
     </message>
     <message>
         <source>Unable to reset file</source>
-        <translation type="unfinished">Не удается очистить файл</translation>
+        <translation>Невозможно перезагрузить файл</translation>
     </message>
     <message>
         <source>Array %VARNAME% dimension too large</source>
-        <translation type="unfinished"></translation>
+        <translation>Размер массива %VARNAME% слишком велик</translation>
     </message>
     <message>
         <source>Array %VARNAME% dimension too small</source>
-        <translation type="unfinished"></translation>
+        <translation>Размер массива %VARNAME% слишком мал</translation>
     </message>
     <message>
         <source>Array data must be one dimensional with an even number of elements or two dimemsional with two elements in each row</source>
-        <translation type="unfinished"></translation>
+        <translation>Данные массива должны быть одномерными с чётным количеством элементов или двумерными с двумя элементами в каждой строке</translation>
     </message>
     <message>
         <source>Variable %VARNAME% is not an array</source>
-        <translation type="unfinished"></translation>
+        <translation>Переменная %VARNAME% не является массивом</translation>
     </message>
     <message>
         <source>Array %VARNAME% index out of bounds</source>
-        <translation type="unfinished"></translation>
+        <translation>Выход за границы массива %VARNAME%</translation>
     </message>
     <message>
         <source>Array %VARNAME% rows must have the same number of items</source>
-        <translation type="unfinished"></translation>
+        <translation>Строки массива %VARNAME% должны содержать одинаковое количество элементов</translation>
     </message>
     <message>
         <source>Starting position less than zero</source>
-        <translation type="unfinished"></translation>
+        <translation>Начальная позиция меньше нуля</translation>
     </message>
     <message>
         <source>RGB Color values must be in the range of 0 to 255</source>
-        <translation type="unfinished">Значения RGB цветов должны быть в диапазоне от 0 до 255. {0 ?} {255?}</translation>
+        <translation>Значения RGB цветов должны быть в диапазоне от 0 до 255</translation>
     </message>
     <message>
         <source>Not enough points in array for poly()/stamp()</source>
-        <translation type="unfinished"></translation>
+        <translation>Недостаточно точек в массиве для poly()/stamp()</translation>
     </message>
     <message>
         <source>Unable to load image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно загрузить файл изображения</translation>
     </message>
     <message>
         <source>Sprite number out of range</source>
-        <translation type="unfinished"></translation>
+        <translation>Номер спрайта вне диапазона</translation>
     </message>
     <message>
         <source>Sprite has not been assigned</source>
-        <translation type="unfinished"></translation>
+        <translation>Спрайт не присвоен</translation>
     </message>
     <message>
         <source>Unable to slice image</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно разделить изображение</translation>
     </message>
     <message>
         <source>Invalid directory name</source>
-        <translation type="unfinished"></translation>
+        <translation>Неверное имя каталога</translation>
     </message>
     <message>
         <source>Operation returned infinity</source>
-        <translation type="unfinished"></translation>
+        <translation>Операция вернула бесконечное значение</translation>
     </message>
     <message>
         <source>Unable to open SQLITE database</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно открыть базу данных SQLITE</translation>
     </message>
     <message>
         <source>Database query error (message follows)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка запроса к базе данных (сообщение приводится далее)</translation>
     </message>
     <message>
         <source>Database must be opened first</source>
-        <translation type="unfinished"></translation>
+        <translation>Сначала необходимо открыть базу данных</translation>
     </message>
     <message>
         <source>Column number out of range or column name not in data set</source>
-        <translation type="unfinished"></translation>
+        <translation>Номер колонки вне диапазона или имя колонки отсутствует в наборе данных</translation>
     </message>
     <message>
         <source>Record set must be opened first</source>
-        <translation type="unfinished"></translation>
+        <translation>Сначала необходимо открыть набор записей</translation>
     </message>
     <message>
         <source>Error opening network socket</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка открытия сетевого сокета</translation>
     </message>
     <message>
         <source>Error finding network host</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка поиска сетевого хоста</translation>
     </message>
     <message>
         <source>Unable to connect to network host</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно подключиться к сетевому хосту</translation>
     </message>
     <message>
         <source>Unable to read from network connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно выполнить чтение данных сетевого подключения</translation>
     </message>
     <message>
         <source>Network connection has not been opened</source>
-        <translation type="unfinished"></translation>
+        <translation>Сетевое подключение не открыто</translation>
     </message>
     <message>
         <source>Unable to write to network connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно выполнить запись данных сетевого подключения</translation>
     </message>
     <message>
         <source>Unable to set network socket options</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно задать параметры сетевого сокета</translation>
     </message>
     <message>
         <source>Unable to bind network socket</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно выполнить привязку сетевого сокета</translation>
     </message>
     <message>
         <source>Unable to accept network connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно принять сетевое подключение</translation>
     </message>
     <message>
         <source>Invalid Socket Number</source>
-        <translation type="unfinished"></translation>
+        <translation>Неверный номер сокета</translation>
     </message>
     <message>
         <source>You do not have permission to use this statement/function</source>
-        <translation type="unfinished"></translation>
+        <translation>Недостаточно прав для использования этого оператора/функции</translation>
     </message>
     <message>
         <source>Invalid image save type</source>
-        <translation type="unfinished"></translation>
+        <translation>Неверный формат сохранения изображения</translation>
     </message>
     <message>
         <source>Number of arguments passed does not match FUNCTION/SUBROUTINE definition</source>
-        <translation type="unfinished"></translation>
+        <translation>Количество переданных аргументов не соответствует определению FUNCTION/SUBROUTINE</translation>
     </message>
     <message>
         <source>Maximum levels of recursion exceeded</source>
-        <translation type="unfinished"></translation>
+        <translation>Превышено максимальное количество уровней рекурсии</translation>
     </message>
     <message>
         <source>Division by zero</source>
-        <translation type="unfinished"></translation>
+        <translation>Деление на ноль</translation>
     </message>
     <message>
         <source>Expected array</source>
-        <translation type="unfinished"></translation>
+        <translation>Ожидался массив</translation>
     </message>
     <message>
         <source>There are no free file numbers to allocate</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствуют свободные номера файлов для выделения</translation>
     </message>
     <message>
         <source>There are no free network connections to allocate</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствуют свободные сетевые подключения для выделения</translation>
     </message>
     <message>
         <source>There are no free database connections to allocate</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствуют свободные подключения к базам данных для выделения</translation>
     </message>
     <message>
         <source>Invalid Database Connection Number</source>
-        <translation type="unfinished"></translation>
+        <translation>Неверный номер подключения к базе данных</translation>
     </message>
     <message>
         <source>There are no free data sets to allocate for that database connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствуют свободные наборы данных для выделения этому подключению к базе данных</translation>
     </message>
     <message>
         <source>Invalid data set number</source>
-        <translation type="unfinished"></translation>
+        <translation>Неверный номер набора данных</translation>
     </message>
     <message>
         <source>You must advance the data set using DBROW before you can read data from it</source>
-        <translation type="unfinished"></translation>
+        <translation>Для чтения данных из набора данных необходимо сначала выполнить переход к его следующей строке с помощью DBROW</translation>
     </message>
     <message>
         <source>Drawing pen width must be a non-negative number</source>
-        <translation type="unfinished"></translation>
+        <translation>Ширина рейсфедера не может быть отрицательным числом</translation>
     </message>
     <message>
         <source>Array variable %VARNAME% has no value without an index</source>
-        <translation type="unfinished"></translation>
+        <translation>Переменная массива %VARNAME% не имеет значения без индекса</translation>
     </message>
     <message>
         <source>Image scale must be greater than or equal to zero</source>
-        <translation type="unfinished"></translation>
+        <translation>Масштаб изображения должен быть больше или равен нулю</translation>
     </message>
     <message>
         <source>Unable to convert radix string back to a decimal number</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось преобразовать строку основания системы счисления обратно в десятичное число</translation>
     </message>
     <message>
         <source>Radix conversion base muse be between 2 and 36</source>
-        <translation type="unfinished"></translation>
+        <translation>Основание системы счисления должно находиться в диапазоне от 2 до 36</translation>
     </message>
     <message>
         <source>Unable to calculate the logarithm of a number less than or equal to 0</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно вычислить логарифм числа, которое меньше или равно нулю</translation>
     </message>
     <message>
         <source>String exceeds maximum length of 16,777,216 characters</source>
-        <translation type="unfinished"></translation>
+        <translation>Строка превышает максимально допустимую длину 16777216 символов</translation>
     </message>
     <message>
         <source>Stack Underflow Error</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка: недостаточно данных в стеке</translation>
     </message>
     <message>
         <source>Printer is not on</source>
-        <translation type="unfinished"></translation>
+        <translation>Принтер не включён</translation>
     </message>
     <message>
         <source>Printing is already on</source>
-        <translation type="unfinished"></translation>
+        <translation>Принтер уже включён</translation>
     </message>
     <message>
         <source>Unable to open printer</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно открыть принтер</translation>
     </message>
     <message>
         <source>Unable to convert to number</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно преобразовать в число</translation>
     </message>
     <message>
         <source>Unable to convert to a string</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно преобразовать в строку</translation>
     </message>
     <message>
         <source>Unable to convert to a Boolean</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно преобразовать в логическое значение</translation>
     </message>
     <message>
         <source>Can not perform that operation on a Serial Port</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно выполнить эту операцию на последовательным порте</translation>
     </message>
     <message>
         <source>Invalid serial port parameter</source>
-        <translation type="unfinished"></translation>
+        <translation>Неверный параметр последовательного порта</translation>
     </message>
     <message>
         <source>Variable %VARNAME% has not been assigned a value</source>
-        <translation type="unfinished"></translation>
+        <translation>Переменной %VARNAME% не присвоено значение</translation>
     </message>
     <message>
         <source>Number exceeds long integer range (</source>
-        <translation type="unfinished"></translation>
+        <translation>Число превышает диапазон длинного целого (</translation>
     </message>
     <message>
         <source> to </source>
-        <translation type="unfinished"></translation>
+        <translation> — </translation>
     </message>
     <message>
         <source>)</source>
-        <translation type="unfinished"></translation>
+        <translation>)</translation>
     </message>
     <message>
         <source>Number exceeds integer range (</source>
-        <translation type="unfinished"></translation>
+        <translation>Число превышает диапазон целого (</translation>
     </message>
     <message>
         <source>Unable to UnSerialize string</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно десериализировать строку</translation>
     </message>
     <message>
         <source>Invalid Slice dimensions</source>
-        <translation type="unfinished"></translation>
+        <translation>Неверные размеры разделения</translation>
     </message>
     <message>
         <source>Can not get a single length of a two dimensional array</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно получить единую длину двумерного массива</translation>
     </message>
     <message>
         <source>Variable %VARNAME% refers to a non-existent variable</source>
-        <translation type="unfinished"></translation>
+        <translation>Переменная %VARNAME% ссылается на несуществующую переменную</translation>
     </message>
     <message>
         <source>Circular reference in variable %VARNAME%</source>
-        <translation type="unfinished"></translation>
+        <translation>Циклическая ссылка в переменной %VARNAME%</translation>
     </message>
     <message>
         <source>Specified image resource not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Указанный ресурс изображения не найден</translation>
     </message>
     <message>
         <source>Specified sound resource not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Указанный ресурс звука не найден</translation>
     </message>
     <message>
         <source>Specified resource not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Указанный ресурс не найден</translation>
     </message>
     <message>
         <source>Unable to load sound file</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно загрузить файл звука</translation>
     </message>
     <message>
         <source>Error downloading file</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка загрузки файла</translation>
     </message>
     <message>
         <source>Expected sound</source>
-        <translation type="unfinished"></translation>
+        <translation>Ожидался звук</translation>
     </message>
     <message>
         <source>Too many sound instances</source>
-        <translation type="unfinished"></translation>
+        <translation>Слишком много экземпляров звука</translation>
     </message>
     <message>
         <source>Envelope data must contain at least 4 elements and an odd number of elements</source>
-        <translation type="unfinished"></translation>
+        <translation>Данные огибающей должны содержать не менее 4 элементов и нечётное количество элементов</translation>
     </message>
     <message>
         <source>It was exceeded the maximum length of an envelope, which is 20 seconds</source>
-        <translation type="unfinished"></translation>
+        <translation>Превышена максимальная длина огибающей (20 секунд)</translation>
     </message>
     <message>
         <source>Harmonic number must be an integer greater than zero</source>
-        <translation type="unfinished"></translation>
+        <translation>Номер гармоники должен быть целым числом, которое больше нуля</translation>
     </message>
     <message>
         <source>Harmonics list must be one dimensional array with an even number of elements or two dimemsional array with two elements in each row</source>
-        <translation type="unfinished"></translation>
+        <translation>Список гармоник должен быть одномерным массивом с чётным количеством элементов или двумерным массивом с двумя элементами в каждой строке</translation>
     </message>
     <message>
         <source>Expects one dimensional array or one dimensional list of elements</source>
-        <translation type="unfinished"></translation>
+        <translation>Ожидается одномерный массив или одномерный список элементов</translation>
     </message>
     <message>
         <source>Creating custom waveform using logical coordinates it request at least 3 elements</source>
-        <translation type="unfinished"></translation>
+        <translation>Для создания пользовательского сигнала с помощью логических координат необходимо не менее 3 элементов</translation>
     </message>
     <message>
         <source>Unable to convert string to musical note</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно преобразовать строку в музыкальную ноту</translation>
     </message>
     <message>
         <source>Element of array %VARNAME% has not been assigned a value</source>
-        <translation type="unfinished"></translation>
+        <translation>Элементу массива %VARNAME% не присвоено значение</translation>
     </message>
     <message>
         <source>The program does not have permission to read settings from other program. Check access level from &apos;Preferences&apos; panel</source>
-        <translation type="unfinished"></translation>
+        <translation>У программы нет прав на чтение параметров из другой программы. Проверьте уровень доступа на панели «Параметры»</translation>
     </message>
     <message>
         <source>The program does not have permission to write settings for other program. Check access level from &apos;Preferences&apos; panel</source>
-        <translation type="unfinished"></translation>
+        <translation>У программы нет прав на запись параметров в другую программу. Проверьте уровень доступа на панели «Параметры»</translation>
     </message>
     <message>
         <source>Invalid program name</source>
-        <translation type="unfinished"></translation>
+        <translation>Неверное имя программы</translation>
     </message>
     <message>
         <source>Invalid key name</source>
-        <translation type="unfinished"></translation>
+        <translation>Неверное имя ключа</translation>
     </message>
     <message>
         <source>Setting string exceeds maximum length of 16,383 characters</source>
-        <translation type="unfinished"></translation>
+        <translation>Строка параметра превышает максимально допустимую длину 16383 символа</translation>
     </message>
     <message>
         <source>The maximum number of keys for this program has been exceeded</source>
-        <translation type="unfinished"></translation>
+        <translation>Превышено максимально допустимое количество ключей для этой программы</translation>
     </message>
     <message>
         <source>Variable %VARNAME% refers to an unassigned variable</source>
-        <translation type="unfinished"></translation>
+        <translation>Переменная %VARNAME% ссылается на неприсвоенную переменную</translation>
     </message>
     <message>
         <source>Unexpected RETURN</source>
-        <translation type="unfinished"></translation>
+        <translation>RETURN не ожидалось</translation>
     </message>
     <message>
         <source>SUBROUTINE %VARNAME% expects arguments and therefore can not be used by ONERROR statement</source>
-        <translation type="unfinished"></translation>
+        <translation>SUBROUTINE %VARNAME% ожидает аргументов и, следовательно, не может использоваться оператором ONERROR</translation>
     </message>
     <message>
         <source>Unable to calculate the root of a negative number</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно вычислить корень отрицательного числа</translation>
     </message>
     <message>
         <source>Unable to calculate the arc-sine or arc-cosine of a value outside the interval [-1.0, +1.0]</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно вычислить арксинус или арккосинус значения вне интервала [-1.0, +1.0]</translation>
     </message>
     <message>
         <source>Array Expression Expected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ожидалось выражение массива.</translation>
     </message>
     <message>
         <source>Numeric Expression Expected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ожидалось численное выражение.</translation>
     </message>
     <message>
         <source>String Expression Expected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ожидалось строковое выражение.</translation>
     </message>
     <message>
         <source>Zero or one expected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ожидался ноль или единица.</translation>
     </message>
     <message>
         <source>Variable %VARNAME% is not a map</source>
-        <translation type="unfinished"></translation>
+        <translation>Переменная %VARNAME% не является схемой</translation>
     </message>
     <message>
         <source>Array or Map Expression Expected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ожидалось выражение массива или схемы.</translation>
     </message>
     <message>
         <source>Map key does not exist</source>
+        <translation>Ключ схемы не существует</translation>
+    </message>
+    <message>
+        <source>Feature not implemented in this environment</source>
+        <translation>Возможность не реализована в этой среде</translation>
+    </message>
+    <message>
+        <source>Unable to convert string to number, zero used</source>
+        <translation>Невозможно преобразовать строку в число, используется ноль</translation>
+    </message>
+    <message>
+        <source>Unable to convert to a string, &apos;&apos; used</source>
+        <translation>Невозможно преобразовать в строку, используется &apos;&apos;</translation>
+    </message>
+    <message>
+        <source>Unable to convert to a Boolean, false used</source>
+        <translation>Невозможно преобразовать в логический тип, используется false</translation>
+    </message>
+    <message>
+        <source>), zero used</source>
+        <translation>), используется ноль</translation>
+    </message>
+    <message>
+        <source>Media file is not seekable</source>
+        <translation>Файл мультимедиа не поддерживает поиск</translation>
+    </message>
+    <message>
+        <source>Duration is not available for media file</source>
+        <translation>Невозможно получить длительность файла мультимедиа</translation>
+    </message>
+    <message>
+        <source>WAVPLAY suite is obsolete. Use SOUND/SOUNDPLAY/SOUNDPLAYER instead</source>
+        <translation>Набор WAVPLAY устарел. Вместо него следует использовать SOUND/SOUNDPLAY/SOUNDPLAYER</translation>
+    </message>
+    <message>
+        <source>Unable to play the selected file</source>
+        <translation>Невозможно воспроизвести выбранный файл</translation>
+    </message>
+    <message>
+        <source>Unable to play the sound</source>
+        <translation>Невозможно воспроизвести звук</translation>
+    </message>
+    <message>
+        <source>User thrown error number</source>
+        <translation>Номер вызванной пользователем ошибки</translation>
+    </message>
+    <message>
+        <source>Number exceeds unsigned integer range (</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -664,51 +724,7 @@ Please check your printer settings.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Feature not implemented in this environment</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to convert string to number, zero used</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to convert to a string, &apos;&apos; used</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to convert to a Boolean, false used</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>), zero used</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Media file is not seekable</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Duration is not available for media file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>WAVPLAY suite is obsolete. Use SOUND/SOUNDPLAY/SOUNDPLAYER instead</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to play the selected file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to play the sound</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Map key has not been assigned a value</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>User thrown error number</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -747,7 +763,7 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>Syntax error on line </source>
-        <translation type="obsolete">Ошибка синтаксиса на строке </translation>
+        <translation type="vanished">Ошибка синтаксиса в строке </translation>
     </message>
     <message>
         <source> around end of line.</source>
@@ -759,11 +775,11 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>No such label</source>
-        <translation type="obsolete">Нет такой метки</translation>
+        <translation type="vanished">Нет такой метки</translation>
     </message>
     <message>
         <source>Next without FOR</source>
-        <translation type="obsolete">Next без FOR</translation>
+        <translation type="vanished">Next без FOR</translation>
     </message>
     <message>
         <source>Array dimension too large</source>
@@ -831,7 +847,7 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>Unable to open file</source>
-        <translation type="obsolete">Невозможно открыть файл</translation>
+        <translation type="vanished">Невозможно открыть файл</translation>
     </message>
     <message>
         <source>Illegal argument to open()</source>
@@ -843,7 +859,7 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>Unable to write to file</source>
-        <translation type="obsolete">Невозможно записать в файл</translation>
+        <translation type="vanished">Невозможно записать в файл</translation>
     </message>
     <message>
         <source>Illegal argument to write()</source>
@@ -867,7 +883,7 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>Unable to reset file</source>
-        <translation type="obsolete">Не удается очистить файл</translation>
+        <translation type="vanished">Невозможно очистить файл</translation>
     </message>
     <message>
         <source>Illegal argument to mid()</source>
@@ -875,7 +891,7 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>String not long enough for given starting character</source>
-        <translation type="obsolete">Недостаточная длина строки для заданного начального символа</translation>
+        <translation type="vanished">Недостаточная длина строки для заданного начального символа</translation>
     </message>
     <message>
         <source>Illegal argument to instr()</source>
@@ -883,11 +899,11 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>Illegal FOR -- start number &gt; end number</source>
-        <translation type="obsolete">Неверный FOR -- начальный индекс &gt; конечного</translation>
+        <translation type="vanished">Неверный FOR -- начальный индекс &gt; конечного</translation>
     </message>
     <message>
         <source>Illegal FOR -- start number &lt; end number</source>
-        <translation type="obsolete">Неверный FOR -- начальный индекс &lt; конечного</translation>
+        <translation type="vanished">Неверный FOR -- начальный индекс &lt; конечного</translation>
     </message>
     <message>
         <source>Array dimension too small</source>
@@ -935,23 +951,23 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>RGB Color values must be in the range of 0 to 255.</source>
-        <translation type="obsolete">Значения RGB цветов должны быть в диапазоне от 0 до 255.</translation>
+        <translation type="vanished">Значения RGB цветов должны быть в диапазоне от 0 до 255.</translation>
     </message>
     <message>
         <source>String input to putbit incorrect.</source>
-        <translation type="obsolete">Строка ввода в putbit некорректна.</translation>
+        <translation type="vanished">Строка ввода в putbit некорректна.</translation>
     </message>
     <message>
         <source>Unable to load image file.</source>
-        <translation type="obsolete">Невозможно загрузить графический файл.</translation>
+        <translation type="vanished">Невозможно загрузить файл изображения.</translation>
     </message>
     <message>
         <source>Sprite number out of range.</source>
-        <translation type="obsolete">Номер спрайта вне диапазона.</translation>
+        <translation type="vanished">Номер спрайта вне диапазона.</translation>
     </message>
     <message>
         <source>Sprite has not been assigned.</source>
-        <translation type="obsolete">Спрайт не был назначен.</translation>
+        <translation type="vanished">Спрайт не был назначен.</translation>
     </message>
     <message>
         <source>Invallid File Number</source>
@@ -959,254 +975,566 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>Unable to slice image.</source>
-        <translation type="obsolete">Невозможно отрезать изображение.</translation>
+        <translation type="vanished">Невозможно разделить изображение.</translation>
     </message>
     <message>
         <source>Invalid Extended Op-code.</source>
-        <translation type="obsolete">Неверный расширенный Op-код.</translation>
+        <translation type="vanished">Неверный расширенный код операции.</translation>
     </message>
     <message>
         <source>Invalid directory name.</source>
-        <translation type="obsolete">Неверное имя каталога.</translation>
+        <translation type="vanished">Неверное имя каталога.</translation>
     </message>
     <message>
         <source>ERROR - Unable to initialize Winsock library.
 </source>
-        <translation>ОШИБКА - невозможно инциализировать Winsock.</translation>
+        <translation>ОШИБКА — невозможно инциализировать библиотеку Winsock.
+</translation>
     </message>
     <message>
         <source>ERROR - Unable to find inpout32.dll - direct port I/O disabled.
 </source>
-        <translation>ОШИБКА - не найден inpout32.dll - .порт ввода-вывода отключен.</translation>
+        <translation>ОШИБКА — не найден inpout32.dll — порт ввода-вывода отключён.
+</translation>
     </message>
     <message>
         <source>ERROR - Unable to find Inp32 in inpout32.dll - direct port I/O disabled.
 </source>
-        <translation>ОШИБКА - не найден Inp32 в inpout32.dll - .порт ввода-вывода отключен.</translation>
+        <translation>ОШИБКА -— не найден Inp32 в inpout32.dll — порт ввода-вывода отключён.
+</translation>
     </message>
     <message>
         <source>ERROR - Unable to find Out32 in inpout32.dll - direct port I/O disabled.
 </source>
-        <translation>ОШИБКА - не найден Out32 в inpout32.dll - .порт ввода-вывода отключен.</translation>
+        <translation>ОШИБКА — не найден Out32 в inpout32.dll — порт ввода-вывода отключён.
+</translation>
     </message>
     <message>
         <source>Error in bytecode during label referencing at line </source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка в байт-коде при ссылке на метку в строке </translation>
+    </message>
+    <message>
+        <source>Invalid File Number</source>
+        <translation type="vanished">Неверный номер файла</translation>
+    </message>
+    <message>
+        <source>File not open.</source>
+        <translation type="vanished">Файл не открыт.</translation>
+    </message>
+    <message>
+        <source>Array %VARNAME% dimension too large</source>
+        <translation type="vanished">Размер массива %VARNAME% слишком велик</translation>
+    </message>
+    <message>
+        <source>Array %VARNAME% dimension too small</source>
+        <translation type="vanished">Размер массива %VARNAME% слишком мал</translation>
+    </message>
+    <message>
+        <source>Unknown variable %VARNAME%</source>
+        <translation type="vanished">Неизвестная переменная %VARNAME%</translation>
+    </message>
+    <message>
+        <source>Variable %VARNAME% is not an array</source>
+        <translation type="vanished">Переменная %VARNAME% не является массивом</translation>
+    </message>
+    <message>
+        <source>Variable %VARNAME% is not a string array</source>
+        <translation type="vanished">Переменная %VARNAME% не является массивом строк</translation>
+    </message>
+    <message>
+        <source>Array %VARNAME% index out of bounds</source>
+        <translation type="vanished">Выход за границы массива %VARNAME%</translation>
+    </message>
+    <message>
+        <source>Substring length less that zero</source>
+        <translation type="vanished">Длина подстроки меньше нуля</translation>
+    </message>
+    <message>
+        <source>Starting position less than zero</source>
+        <translation type="vanished">Начальная позиция меньше нуля</translation>
+    </message>
+    <message>
+        <source>Non-numeric value in numeric expression</source>
+        <translation type="vanished">Нечисловое значение в численном выражении</translation>
+    </message>
+    <message>
+        <source>Argument not an array for poly()/stamp()</source>
+        <translation type="vanished">Аргумент для poly()/stamp() не массив</translation>
+    </message>
+    <message>
+        <source>Not enough points in array for poly()/stamp()</source>
+        <translation type="vanished">Недостаточно точек в массиве для poly()/stamp()</translation>
+    </message>
+    <message>
+        <source>Operation returned infinity.</source>
+        <translation type="vanished">Операция вернула бесконечное значение.</translation>
+    </message>
+    <message>
+        <source>Unable to open SQLITE database.</source>
+        <translation type="vanished">Невозможно открыть базу данных SQLITE.</translation>
+    </message>
+    <message>
+        <source>Database query error (message follows).</source>
+        <translation type="vanished">Ошибка запроса к базе данных (сообщение приводится далее).</translation>
+    </message>
+    <message>
+        <source>Database must be opened first.</source>
+        <translation type="vanished">Сначала необходимо открыть базу данных.</translation>
+    </message>
+    <message>
+        <source>Column number out of range or column name not in data set.</source>
+        <translation type="vanished">Номер колонки вне диапазона или имя колонки отсутствует в наборе данных.</translation>
+    </message>
+    <message>
+        <source>Record set must be opened first.</source>
+        <translation type="vanished">Сначала необходимо открыть набор записей.</translation>
+    </message>
+    <message>
+        <source>Error opening network socket.</source>
+        <translation type="vanished">Ошибка открытия сетевого сокета.</translation>
+    </message>
+    <message>
+        <source>Error finding network host.</source>
+        <translation type="vanished">Ошибка поиска сетевого хоста.</translation>
+    </message>
+    <message>
+        <source>Unable to connect to network host.</source>
+        <translation type="vanished">Невозможно подключиться к сетевому хосту.</translation>
+    </message>
+    <message>
+        <source>Unable to read from network connection.</source>
+        <translation type="vanished">Невозможно выполнить чтение данных сетевого подключения.</translation>
+    </message>
+    <message>
+        <source>Network connection has not been opened.</source>
+        <translation type="vanished">Сетевое подключение не открыто.</translation>
+    </message>
+    <message>
+        <source>Unable to write to network connection.</source>
+        <translation type="vanished">Невозможно выполнить запись данных сетевого подключения.</translation>
+    </message>
+    <message>
+        <source>Unable to set network socket options.</source>
+        <translation type="vanished">Невозможно задать параметры сетевого сокета.</translation>
+    </message>
+    <message>
+        <source>Unable to bind network socket.</source>
+        <translation type="vanished">Невозможно выполнить привязку сетевого сокета.</translation>
+    </message>
+    <message>
+        <source>Unable to accept network connection.</source>
+        <translation type="vanished">Невозможно принять сетевое подключение.</translation>
+    </message>
+    <message>
+        <source>Invalid Socket Number</source>
+        <translation type="vanished">Неверный номер сокета</translation>
+    </message>
+    <message>
+        <source>You do not have permission to use this statement/function.</source>
+        <translation type="vanished">Недостаточно прав для использования этого оператора/функции.</translation>
+    </message>
+    <message>
+        <source>Invalid image save type.</source>
+        <translation type="vanished">Неверный формат сохранения изображения.</translation>
+    </message>
+    <message>
+        <source>Number of arguments passed does not match FUNCTION/SUBROUTINE definition.</source>
+        <translation type="vanished">Количество переданных аргументов не соответствует определению FUNCTION/SUBROUTINE.</translation>
+    </message>
+    <message>
+        <source>Maximum levels of recursion exceeded.</source>
+        <translation type="vanished">Превышено максимальное количество уровней рекурсии.</translation>
+    </message>
+    <message>
+        <source>Division by zero.</source>
+        <translation type="vanished">Деление на ноль.</translation>
+    </message>
+    <message>
+        <source>Function/Subroutine expecting variable reference in call.</source>
+        <translation type="vanished">Функция/Подпрограмма ожидает ссылки на переменную в вызове.</translation>
+    </message>
+    <message>
+        <source>Function/Subroutine variable incorrect reference type in call.</source>
+        <translation type="vanished">Неверный тип ссылки на переменную функции/подпрограммы в вызове.</translation>
+    </message>
+    <message>
+        <source>There are no free file numbers to allocate.</source>
+        <translation type="vanished">Отсутствуют свободные номера файлов для выделения.</translation>
+    </message>
+    <message>
+        <source>There are no free network connections to allocate.</source>
+        <translation type="vanished">Отсутствуют свободные сетевые подключения для выделения.</translation>
+    </message>
+    <message>
+        <source>There are no free database connections to allocate.</source>
+        <translation type="vanished">Отсутствуют свободные подключения к базам данных для выделения.</translation>
+    </message>
+    <message>
+        <source>Invalid Database Connection Number</source>
+        <translation type="vanished">Неверный номер подключения к базе данных</translation>
+    </message>
+    <message>
+        <source>There are no free data sets to allocate for that database connection.</source>
+        <translation type="vanished">Отсутствуют свободные наборы данных для выделения данному подключению к базе данных.</translation>
+    </message>
+    <message>
+        <source>Invalid data set number.</source>
+        <translation type="vanished">Неверный номер набора данных.</translation>
+    </message>
+    <message>
+        <source>You must advance the data set using DBROW before you can read data from it.</source>
+        <translation type="vanished">Для чтения данных из набора данных необходимо сначала выполнить переход к его следующей строке с помощью DBROW.</translation>
+    </message>
+    <message>
+        <source>Drawing pen width must be a non-negative number.</source>
+        <translation type="vanished">Ширина рейсфедера не может быть отрицательным числом.</translation>
+    </message>
+    <message>
+        <source>Color values must be in the range of -1 to 16,777,215.</source>
+        <translation type="vanished">Значения цветов должны находиться в диапазоне от 1 до 16777215.</translation>
+    </message>
+    <message>
+        <source>Array variable %VARNAME% has no value without an index</source>
+        <translation type="vanished">Переменная массива %VARNAME% не имеет значения без индекса</translation>
+    </message>
+    <message>
+        <source>Image scale must be greater than or equal to zero.</source>
+        <translation type="vanished">Масштаб изображения должен быть больше или равен нулю.</translation>
+    </message>
+    <message>
+        <source>Font size, in points, must be greater than or equal to zero.</source>
+        <translation type="vanished">Размер шрифта в пунктах должен быть больше или равен нулю.</translation>
+    </message>
+    <message>
+        <source>Font weight must be greater than or equal to zero.</source>
+        <translation type="vanished">Насыщенность шрифта должна быть больше или равна нулю.</translation>
+    </message>
+    <message>
+        <source>Unable to convert radix string back to a decimal number.</source>
+        <translation type="vanished">Не удалось преобразовать строку основания системы счисления обратно в десятичное число.</translation>
+    </message>
+    <message>
+        <source>Radix conversion base muse be between 2 and 36.</source>
+        <translation type="vanished">Основание системы счисления должно находиться в диапазоне от 2 до 36.</translation>
+    </message>
+    <message>
+        <source>Unable to calculate the logarithm or root of a negative number.</source>
+        <translation type="vanished">Не удалось вычислить логарифм или корень отрицательного числа.</translation>
+    </message>
+    <message>
+        <source>String exceeds maximum length of 16,777,216 characters.</source>
+        <translation type="vanished">Строка превышает максимально допустимую длину 16777216 символов.</translation>
+    </message>
+    <message>
+        <source>Feature not implemented in this environment.</source>
+        <translation type="vanished">В этой среде не реализована данная возможность.</translation>
+    </message>
+    <message>
+        <source>User thrown error number.</source>
+        <translation type="vanished">Номер вызванной пользователем ошибки.</translation>
+    </message>
+    <message>
+        <source>The used format of the statement has been deprecated.  It is recommended that you reauthor that statement.</source>
+        <translation type="vanished">Использованный формат оператора устарел. Рекомендуется переформулировать этот оператор.</translation>
+    </message>
+    <message>
+        <source>Error assigning a string to a numeric variable on line </source>
+        <translation type="vanished">Ошибка присвоения строки числовой переменной в строке </translation>
+    </message>
+    <message>
+        <source>Error assigning a number to a string variable on line </source>
+        <translation type="vanished">Ошибка присвоения числа строковой переменной в строке </translation>
+    </message>
+    <message>
+        <source>You may not define a label or use a GOTO or GOSUB statement in a FUNCTION/SUBROUTINE declaration on line </source>
+        <translation type="vanished">Нельзя определить метку или использовать оператор GOTO или GOSUB в объявлении FUNCTION/SUBROUTINE в строке </translation>
+    </message>
+    <message>
+        <source>You may not define GLOBAL variable(s) inside an IF, loop, or FUNCTION/SUBROUTINE on line </source>
+        <translation type="vanished">Нельзя определить переменную (переменные) GLOBAL внутри IF, цикла или FUNCTION/SUBROUTINE в строке </translation>
+    </message>
+    <message>
+        <source>You may not define a FUNCTION/SUBROUTINE inside an IF, loop, or other FUNCTION/SUBROUTINE on line </source>
+        <translation type="vanished">Нельзя определить FUNCTION/SUBROUTINE внутри IF, цикла или другого FUNCTION/SUBROUTINE в строке </translation>
+    </message>
+    <message>
+        <source>END FUNCTION/SUBROUTINE without matching FUNCTION/SUBROUTINE on line </source>
+        <translation type="vanished">END FUNCTION/SUBROUTINE без соответствующего FUNCTION/SUBROUTINE в строке </translation>
+    </message>
+    <message>
+        <source>FUNCTION/SUBROUTINE without matching END FUNCTION/SUBROUTINE statement on line </source>
+        <translation type="vanished">FUNCTION/SUBROUTINE без соответствующего оператора END FUNCTION/SUBROUTINE в строке </translation>
+    </message>
+    <message>
+        <source>FOR without matching NEXT statement on line </source>
+        <translation type="vanished">FOR без соответствующего оператора NEXT в строке </translation>
+    </message>
+    <message>
+        <source>WHILE without matching END WHILE statement on line </source>
+        <translation type="vanished">WHILE без соответствующего оператора END WHILE в строке </translation>
+    </message>
+    <message>
+        <source>DO without matching UNTIL statement on line </source>
+        <translation type="vanished">DO без соответствующего оператора UNTIL в строке </translation>
+    </message>
+    <message>
+        <source>ELSE without matching END IF statement on line </source>
+        <translation type="vanished">ELSE без соответствующего оператора END IF в строке </translation>
+    </message>
+    <message>
+        <source>IF without matching END IF or ELSE statement on line </source>
+        <translation type="vanished">IF без соответствующего оператора END IF или ELSE в строке </translation>
+    </message>
+    <message>
+        <source>UNTIL without matching DO on line </source>
+        <translation type="vanished">UNTIL без соответствующего DO в строке </translation>
+    </message>
+    <message>
+        <source>END WHILE without matching WHILE on line </source>
+        <translation type="vanished">END WHILE без соответствующего WHILE в строке </translation>
+    </message>
+    <message>
+        <source>ELSE without matching IF on line </source>
+        <translation type="vanished">ELSE без соответствующего IF в строке </translation>
+    </message>
+    <message>
+        <source>END IF without matching IF on line </source>
+        <translation type="vanished">END IF без соответствующего IF в строке </translation>
+    </message>
+    <message>
+        <source>NEXT without matching FOR on line </source>
+        <translation type="vanished">NEXT без соответствующего FOR в строке </translation>
+    </message>
+    <message>
+        <source>RETURN with a value is only valid inside a FUNCTION on line </source>
+        <translation type="vanished">RETURN со значением действительно только внутри FUNCTION в строке </translation>
+    </message>
+    <message>
+        <source>RETURN value type is not the same as FUNCTION on line </source>
+        <translation type="vanished">Тип значения RETURN не соответствует FUNCTION в строке </translation>
     </message>
     <message>
         <source>ERROR</source>
-        <translation type="unfinished"></translation>
+        <translation>ОШИБКА</translation>
     </message>
     <message>
         <source>WARNING</source>
-        <translation type="unfinished"></translation>
+        <translation>ПРЕДУПРЕЖДЕНИЕ</translation>
     </message>
     <message>
         <source> in included file &apos;</source>
-        <translation type="unfinished"></translation>
+        <translation> во включённом файле &apos;</translation>
     </message>
     <message>
         <source> on line </source>
-        <translation type="unfinished"></translation>
+        <translation> в строке </translation>
     </message>
     <message>
         <source>COMPILE ERROR</source>
-        <translation type="unfinished"></translation>
+        <translation>ОШИБКА КОМПИЛЯЦИИ</translation>
     </message>
     <message>
         <source>Out of memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Недостаточно памяти</translation>
     </message>
     <message>
         <source>COMPILE WARNING</source>
-        <translation type="unfinished"></translation>
+        <translation>ПРЕДУПРЕЖДЕНИЕ КОМПИЛЯЦИИ</translation>
     </message>
     <message>
         <source>The maximum number of compiler warnings have been displayed</source>
-        <translation type="unfinished"></translation>
+        <translation>Показано максимальное количество предупреждений компилятора</translation>
     </message>
     <message>
         <source>Statement format has been deprecated. It is recommended that you reauthor</source>
-        <translation type="unfinished"></translation>
+        <translation>Формат оператора устарел. Рекомендуется переформулировать этот оператор</translation>
     </message>
     <message>
         <source>You should use REF() when passing arguments, not in the SUBROUTINE/FUNCTION definition</source>
-        <translation type="unfinished"></translation>
+        <translation>REF() следует использовать при передаче аргументов, а не в определении SUBROUTINE/FUNCTION</translation>
     </message>
     <message>
         <source>Unknown compiler warning #</source>
-        <translation type="unfinished"></translation>
+        <translation>Неизвестное предупреждение компилятора #</translation>
     </message>
     <message>
         <source>You may not define a label or use a GOTO or GOSUB statement in a FUNCTION/SUBROUTINE declaration</source>
-        <translation type="unfinished"></translation>
+        <translation>Нельзя определить метку или использовать оператор GOTO или GOSUB в объявлении FUNCTION/SUBROUTINE</translation>
     </message>
     <message>
         <source>You may not define GLOBAL variable(s) inside an IF, loop, TRY, CATCH, or FUNCTION/SUBROUTINE</source>
-        <translation type="unfinished"></translation>
+        <translation>Нельзя определить переменную (переменные) GLOBAL внутри IF, цикла, TRY, CATCH или FUNCTION/SUBROUTINE</translation>
     </message>
     <message>
         <source>You may not define a FUNCTION/SUBROUTINE inside an IF, loop, TRY, CATCH, or other FUNCTION/SUBROUTINE</source>
-        <translation type="unfinished"></translation>
+        <translation>Нельзя определить FUNCTION/SUBROUTINE внутри IF, цикла, TRY, CATCH или другого FUNCTION/SUBROUTINE</translation>
     </message>
     <message>
         <source>END FUNCTION without matching FUNCTION</source>
-        <translation type="unfinished"></translation>
+        <translation>END FUNCTION без соответствующего FUNCTION</translation>
     </message>
     <message>
         <source>END SUBROUTINE without matching SUBROUTINE</source>
-        <translation type="unfinished"></translation>
+        <translation>END SUBROUTINE без соответствующего SUBROUTINE</translation>
     </message>
     <message>
         <source>FUNCTION without matching END FUNCTION statement</source>
-        <translation type="unfinished"></translation>
+        <translation>FUNCTION без соответствующего оператора END FUNCTION</translation>
     </message>
     <message>
         <source>SUBROUTINE without matching END SUBROUTINE statement</source>
-        <translation type="unfinished"></translation>
+        <translation>SUBROUTINE без соответствующего оператора END SUBROUTINE</translation>
     </message>
     <message>
         <source>FOR without matching NEXT statement</source>
-        <translation type="unfinished"></translation>
+        <translation>FOR без соответствующего оператора NEXT</translation>
     </message>
     <message>
         <source>WHILE without matching END WHILE statement</source>
-        <translation type="unfinished"></translation>
+        <translation>WHILE без соответствующего оператора END WHILE</translation>
     </message>
     <message>
         <source>DO without matching UNTIL statement</source>
-        <translation type="unfinished"></translation>
+        <translation>DO без соответствующего оператора UNTIL</translation>
     </message>
     <message>
         <source>ELSE without matching END IF or END CASE statement</source>
-        <translation type="unfinished"></translation>
+        <translation>ELSE без соответствующего оператора END IF или END CASE</translation>
     </message>
     <message>
         <source>IF without matching END IF or ELSE statement</source>
-        <translation type="unfinished"></translation>
+        <translation>IF без соответствующего оператора END IF или ELSE</translation>
     </message>
     <message>
         <source>UNTIL without matching DO</source>
-        <translation type="unfinished"></translation>
+        <translation>UNTIL без соответствующего DO</translation>
     </message>
     <message>
         <source>END WHILE without matching WHILE</source>
-        <translation type="unfinished"></translation>
+        <translation>END WHILE без соответствующего WHILE</translation>
     </message>
     <message>
         <source>ELSE without matching IF</source>
-        <translation type="unfinished"></translation>
+        <translation>ELSE без соответствующего IF</translation>
     </message>
     <message>
         <source>END IF without matching IF</source>
-        <translation type="unfinished"></translation>
+        <translation>END IF без соответствующего IF</translation>
     </message>
     <message>
         <source>NEXT without matching FOR</source>
-        <translation type="unfinished"></translation>
+        <translation>NEXT без соответствующего FOR</translation>
     </message>
     <message>
         <source>RETURN with a value is only valid inside a FUNCTION</source>
-        <translation type="unfinished"></translation>
+        <translation>RETURN со значением действительно только внутри FUNCTION</translation>
     </message>
     <message>
         <source>CONTINUE DO without matching DO</source>
-        <translation type="unfinished"></translation>
+        <translation>CONTINUE DO без соответствующего DO</translation>
     </message>
     <message>
         <source>CONTINUE WHILE without matching WHILE</source>
-        <translation type="unfinished"></translation>
+        <translation>CONTINUE WHILE без соответствующего WHILE</translation>
     </message>
     <message>
         <source>EXIT DO without matching DO</source>
-        <translation type="unfinished"></translation>
+        <translation>EXIT DO без соответствующего DO</translation>
     </message>
     <message>
         <source>EXIT FOR without matching FOR</source>
-        <translation type="unfinished"></translation>
+        <translation>EXIT FOR без соответствующего FOR</translation>
     </message>
     <message>
         <source>EXIT WHILE without matching WHILE</source>
-        <translation type="unfinished"></translation>
+        <translation>EXIT WHILE без соответствующего WHILE</translation>
     </message>
     <message>
         <source>Unable to open INCLUDE file</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно открыть файл INCLUDE</translation>
     </message>
     <message>
         <source>Maximum depth of INCLUDE files</source>
-        <translation type="unfinished"></translation>
+        <translation>Максимальная глубина файлов INCLUDE</translation>
     </message>
     <message>
         <source>TRY without matching CATCH statement</source>
-        <translation type="unfinished"></translation>
+        <translation>TRY без соответствующего оператора CATCH</translation>
     </message>
     <message>
         <source>CATCH without matching TRY statement</source>
-        <translation type="unfinished"></translation>
+        <translation>CATCH без соответствующего оператора TRY</translation>
     </message>
     <message>
         <source>CATCH without matching ENDTRY statement</source>
-        <translation type="unfinished"></translation>
+        <translation>CATCH без соответствующего оператора ENDTRY</translation>
     </message>
     <message>
         <source>ENDTRY without matching CATCH statement</source>
-        <translation type="unfinished"></translation>
+        <translation>ENDTRY без соответствующего оператора CATCH</translation>
     </message>
     <message>
         <source>CASE without matching BEGIN CASE statement</source>
-        <translation type="unfinished"></translation>
+        <translation>CASE без соответствующего оператора BEGIN CASE</translation>
     </message>
     <message>
         <source>END CASE without matching BEGIN CASE statement</source>
-        <translation type="unfinished"></translation>
+        <translation>END CASE без соответствующего оператора BEGIN CASE</translation>
     </message>
     <message>
         <source>END CASE without matching CASE statement</source>
-        <translation type="unfinished"></translation>
+        <translation>END CASE без соответствующего оператора CASE</translation>
     </message>
     <message>
         <source>BEGIN CASE without matching END CASE statement</source>
-        <translation type="unfinished"></translation>
+        <translation>BEGIN CASE без соответствующего оператора END CASE</translation>
     </message>
     <message>
         <source>CASE without next CASE or matching END CASE statement</source>
-        <translation type="unfinished"></translation>
+        <translation>CASE без следующего CASE или соответствующего оператора END CASE</translation>
     </message>
     <message>
         <source>Labels, functions and subroutines must have a unique name</source>
-        <translation type="unfinished"></translation>
+        <translation>Имена меток, функций и подпрограмм должны быть уникальными</translation>
     </message>
     <message>
         <source>Variable in NEXT does not match FOR</source>
-        <translation type="unfinished"></translation>
+        <translation>Переменная в NEXT не соответствует FOR</translation>
     </message>
     <message>
         <source>Maximum number of INCLUDE files</source>
-        <translation type="unfinished"></translation>
+        <translation>Максимальное количество файлов INCLUDE</translation>
     </message>
     <message>
         <source>INCLUDE must be placed in a separate line</source>
-        <translation type="unfinished"></translation>
+        <translation>INCLUDE необходимо разместить в отдельной строке</translation>
     </message>
     <message>
         <source>No file specified for INCLUDE</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указан файл для INCLUDE</translation>
     </message>
     <message>
         <source>Cannot pass arguments to a SUBROUTINE used by ONERROR statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно передать аргументы SUBROUTINE, используемому оператором ONERROR</translation>
     </message>
     <message>
         <source>Number too large</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Слишком большое число</translation>
     </message>
     <message>
         <source>Syntax error around beginning line</source>
-        <translation type="unfinished"></translation>
+        <translation>Синтаксическая ошибка рядом с начальной строкой</translation>
     </message>
     <message>
         <source>Syntax error around character </source>
+        <translation>Синтаксическая ошибка рядом с символом </translation>
+    </message>
+    <message>
+        <source>Integer number too large</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floating point number too large</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1226,11 +1554,43 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>Error</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка</translation>
     </message>
     <message>
         <source>Current program has terminated in an unusual way.</source>
-        <translation type="unfinished"></translation>
+        <translation>Текущая программа завершила работу необычным образом.</translation>
+    </message>
+    <message>
+        <source>Check for an update</source>
+        <translation>Проверка обновлений</translation>
+    </message>
+    <message>
+        <source>Unknown error.</source>
+        <translation>Неизвестная ошибка.</translation>
+    </message>
+    <message>
+        <source>BASIC-256</source>
+        <translation>Программа BASIC-256</translation>
+    </message>
+    <message>
+        <source>is now available - you have</source>
+        <translation>доступна для загрузки — сейчас установлена</translation>
+    </message>
+    <message>
+        <source>Would you like to download the new version now?</source>
+        <translation>Загрузить новую версию?</translation>
+    </message>
+    <message>
+        <source>You are currently using a development version.</source>
+        <translation>Сейчас используется версия для разработчиков.</translation>
+    </message>
+    <message>
+        <source>You are using the latest software version for your current OS.</source>
+        <translation>Используется самая последняя версия программы для текущей ОС.</translation>
+    </message>
+    <message>
+        <source>We are unable to connect right now. Please check your network connection and try again.</source>
+        <translation>Не удалось выполнить подключение. Проверьте параметры сетевого подключения и попробуйте снова.</translation>
     </message>
     <message>
         <source>Ready</source>
@@ -1252,44 +1612,12 @@ Please check your printer settings.</source>
         <source>Running in Debug</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Check for an update</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unknown error.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>BASIC-256</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>is now available - you have</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Would you like to download the new version now?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>You are currently using a development version.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>You are using the latest software version for your current OS.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>We are unable to connect right now. Please check your network connection and try again.</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>PreferencesWin</name>
     <message>
         <source>BASIC-256 Preferences and Settings</source>
-        <translation>BASIC-256 настройки и параметры</translation>
+        <translation>BASIC-256 — Параметры настройки</translation>
     </message>
     <message>
         <source>Preferences and Settings Password:</source>
@@ -1317,195 +1645,271 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>Preferences and settings have been saved.</source>
-        <translation>Настройки и параметры сохранены.</translation>
+        <translation>Параметры настройки сохранены.</translation>
+    </message>
+    <message>
+        <source>Show runtime warning messages</source>
+        <translation type="vanished">Показывать предупреждения выполнения</translation>
     </message>
     <message>
         <source>Advanced Preferences Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>Пароль для расширенных параметров:</translation>
     </message>
     <message>
         <source>Allow SYSTEM statement:</source>
-        <translation type="unfinished"></translation>
+        <translation>Разрешить оператор SYSTEM:</translation>
     </message>
     <message>
         <source>Do not allow</source>
-        <translation type="unfinished"></translation>
+        <translation>Не разрешать</translation>
     </message>
     <message>
         <source>Ask confirmation from user</source>
-        <translation type="unfinished"></translation>
+        <translation>Запрашивать подтверждение у пользователя</translation>
     </message>
     <message>
         <source>Allow</source>
-        <translation type="unfinished"></translation>
+        <translation>Разрешить</translation>
     </message>
     <message>
         <source>Allow PORTIN/PORTOUT statements:</source>
-        <translation type="unfinished"></translation>
+        <translation>Разрешить операторы PORTIN/PORTOUT:</translation>
     </message>
     <message>
         <source>GETSETTING/SETSETTING access level:</source>
-        <translation type="unfinished"></translation>
+        <translation>Уровень доступа GETSETTING/SETSETTING:</translation>
     </message>
     <message>
         <source>Get / set only owned settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Получать / устанавливать только параметры с принадлежностью</translation>
     </message>
     <message>
         <source>Get any settings / set only owned settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Получать любые параметры / устанавливать только параметры с принадлежностью</translation>
     </message>
     <message>
         <source>Full access (get/set) to settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Полный доступ (получение/установка) к параметрам</translation>
     </message>
     <message>
         <source>Allow programs to use persistent settings (SETSETTING statement)</source>
-        <translation type="unfinished"></translation>
+        <translation>Разрешить программам использовать постоянные параметры (оператор SETSETTING)</translation>
     </message>
     <message>
         <source>Browse persistent settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Обзор постоянных параметров</translation>
     </message>
     <message>
         <source>Clear all persistent settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить все постоянные параметры</translation>
     </message>
     <message>
         <source>Max number of settings for each program:</source>
-        <translation type="unfinished"></translation>
+        <translation>Максимальное количество параметров для каждой программы:</translation>
     </message>
     <message>
         <source>No limit</source>
-        <translation type="unfinished"></translation>
+        <translation>Без ограничений</translation>
     </message>
     <message>
         <source>50 keys</source>
-        <translation type="unfinished"></translation>
+        <translation>50 ключей</translation>
     </message>
     <message>
         <source>100 keys</source>
-        <translation type="unfinished"></translation>
+        <translation>100 ключей</translation>
     </message>
     <message>
         <source>200 keys</source>
-        <translation type="unfinished"></translation>
+        <translation>200 ключей</translation>
     </message>
     <message>
         <source>Startup</source>
-        <translation type="unfinished"></translation>
+        <translation>Запуск</translation>
     </message>
     <message>
         <source>Restore last windows position on start</source>
-        <translation type="unfinished"></translation>
+        <translation>Восстановить последнее положение окон при запуске</translation>
     </message>
     <message>
         <source>Check for an update on start</source>
-        <translation type="unfinished"></translation>
+        <translation>Проверить наличие обновлений при запуске</translation>
     </message>
     <message>
         <source>Runtime handling of bad type conversions:</source>
-        <translation type="unfinished"></translation>
+        <translation>Обработка ошибочных преобразований типов при выполнении:</translation>
     </message>
     <message>
         <source>Ignore</source>
-        <translation type="unfinished"></translation>
+        <translation>Игнорировать</translation>
     </message>
     <message>
         <source>Warn</source>
-        <translation type="unfinished"></translation>
+        <translation>Предупреждать</translation>
     </message>
     <message>
         <source>Error</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка</translation>
     </message>
     <message>
         <source>Runtime handling of unassigned variables:</source>
-        <translation type="unfinished"></translation>
+        <translation>Обработка неприсвоенных переменных при выполнении:</translation>
     </message>
     <message>
         <source>Automatically save program when it is successfully run</source>
-        <translation type="unfinished"></translation>
+        <translation>Автоматически сохранять программу после успешного выполнения</translation>
     </message>
     <message>
         <source>Number of digits to print numbers:</source>
-        <translation type="unfinished"></translation>
+        <translation>Количество цифр для вывода чисел:</translation>
     </message>
     <message>
         <source>Use localized decimal point on floating point numbers</source>
-        <translation type="unfinished"></translation>
+        <translation>Использовать локализованную десятичную запятую для чисел с плавающей запятой</translation>
     </message>
     <message>
         <source>Always show decimal point on floating point numbers</source>
-        <translation type="unfinished"></translation>
+        <translation>Всегда отображать десятичную запятую в числах с плавающей запятой</translation>
     </message>
     <message>
         <source>Debugging Speed:</source>
-        <translation type="unfinished"></translation>
+        <translation>Скорость отладки:</translation>
     </message>
     <message>
         <source>Fast</source>
-        <translation type="unfinished"></translation>
+        <translation>Быстро</translation>
     </message>
     <message>
         <source>Slow</source>
-        <translation type="unfinished"></translation>
+        <translation>Медленно</translation>
     </message>
     <message>
         <source>Volume:</source>
-        <translation type="unfinished"></translation>
+        <translation>Громкость:</translation>
     </message>
     <message>
         <source>Sound sample rate:</source>
-        <translation type="unfinished"></translation>
+        <translation>Частота дискретизации звука:</translation>
     </message>
     <message>
         <source>44100 Hz</source>
-        <translation type="unfinished"></translation>
+        <translation>44100 Гц</translation>
     </message>
     <message>
         <source>32000 Hz</source>
-        <translation type="unfinished"></translation>
+        <translation>32000 Гц</translation>
     </message>
     <message>
         <source>22050 Hz</source>
-        <translation type="unfinished"></translation>
+        <translation>22050 Гц</translation>
     </message>
     <message>
         <source>16000 Hz</source>
-        <translation type="unfinished"></translation>
+        <translation>16000 Гц</translation>
     </message>
     <message>
         <source>11025 Hz</source>
-        <translation type="unfinished"></translation>
+        <translation>11025 Гц</translation>
     </message>
     <message>
         <source>8000 Hz</source>
-        <translation type="unfinished"></translation>
+        <translation>8000 Гц</translation>
     </message>
     <message>
         <source>4400 Hz</source>
-        <translation type="unfinished"></translation>
+        <translation>4400 Гц</translation>
     </message>
     <message>
         <source>Min. period to normalize louder sounds:</source>
-        <translation type="unfinished"></translation>
+        <translation>Мин. период для нормализации более громких звуков:</translation>
     </message>
     <message>
         <source>Period to restore volume after louder sound:</source>
-        <translation type="unfinished"></translation>
+        <translation>Период для восстановления громкости после более громкого звука:</translation>
+    </message>
+    <message>
+        <source>SAY Voice:</source>
+        <translation type="vanished">Голос SAY:</translation>
+    </message>
+    <message>
+        <source>PDF File Name:</source>
+        <translation>Имя файла PDF:</translation>
     </message>
     <message>
         <source>Printer:</source>
-        <translation type="unfinished"></translation>
+        <translation>Принтер:</translation>
     </message>
     <message>
         <source>PDF File Output</source>
-        <translation type="unfinished"></translation>
+        <translation>Выходной файл PDF</translation>
     </message>
     <message>
         <source>Paper:</source>
-        <translation type="unfinished"></translation>
+        <translation>Бумага:</translation>
+    </message>
+    <message>
+        <source>Printer Resolution:</source>
+        <translation>Разрешение принтера:</translation>
+    </message>
+    <message>
+        <source>High</source>
+        <translation>Высокое</translation>
+    </message>
+    <message>
+        <source>Screen</source>
+        <translation>Экран</translation>
+    </message>
+    <message>
+        <source>Orientation:</source>
+        <translation>Ориентация:</translation>
+    </message>
+    <message>
+        <source>Portrait</source>
+        <translation>Книжная</translation>
+    </message>
+    <message>
+        <source>Landscape</source>
+        <translation>Альбомная</translation>
+    </message>
+    <message>
+        <source>User</source>
+        <translation>Пользователь</translation>
+    </message>
+    <message>
+        <source>Sound</source>
+        <translation>Звук</translation>
+    </message>
+    <message>
+        <source>Printing</source>
+        <translation>Печать</translation>
+    </message>
+    <message>
+        <source>Advanced</source>
+        <translation>Дополнительно</translation>
+    </message>
+    <message>
+        <source>File name required for PDF output.</source>
+        <translation>Укажите имя файла для сохранения вывода в формате PDF.</translation>
+    </message>
+    <message>
+        <source>digits</source>
+        <translation>(количество цифр)</translation>
+    </message>
+    <message>
+        <source>pause</source>
+        <translation>приостановить</translation>
+    </message>
+    <message>
+        <source>ms</source>
+        <translation>мс</translation>
+    </message>
+    <message>
+        <source>Delete persistent settings</source>
+        <translation>Удалить постоянные параметры</translation>
+    </message>
+    <message>
+        <source>Do you really want to delete persistent settings for all programs?</source>
+        <translation>Действительно удалить постоянные параметры для всех программ?</translation>
     </message>
     <message>
         <source>A0 (841 x 1189 mm)</source>
@@ -1625,74 +2029,6 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>Tabloid (279.4 x 431.8 mm)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>PDF File Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Printer Resolution:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>High</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Screen</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Orientation:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Portrait</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Landscape</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>User</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sound</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Printing</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Advanced</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>File name required for PDF output.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>digits</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>pause</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ms</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete persistent settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Do you really want to delete persistent settings for all programs?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2014,282 +2350,332 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>Variable Watch</source>
-        <translation type="unfinished">Наблюдение за переменными</translation>
+        <translation>Наблюдение за переменными</translation>
+    </message>
+    <message>
+        <source>&amp;Font</source>
+        <translation type="vanished">&amp;Шрифт</translation>
     </message>
     <message>
         <source>Graphics Window Grid &amp;Lines</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Линии сетки окна вывода графики</translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;BASIC-256</source>
+        <translation type="vanished">&lt;h2&gt;BASIC-256</translation>
     </message>
     <message>
         <source> Portable</source>
-        <translation type="unfinished"></translation>
+        <translation> Portable</translation>
     </message>
     <message>
         <source>ERROR on line </source>
-        <translation type="obsolete">ОШИБКА в строке </translation>
+        <translation type="vanished">ОШИБКА в строке </translation>
+    </message>
+    <message>
+        <source>WARNING on line </source>
+        <translation type="vanished">ПРЕДУПРЕЖДЕНИЕ в строке </translation>
+    </message>
+    <message>
+        <source>&lt;/h2&gt;</source>
+        <translation type="vanished">&lt;/h2&gt;</translation>
+    </message>
+    <message>
+        <source>version &lt;b&gt;</source>
+        <translation type="vanished">версия &lt;b&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;/b&gt; - built with QT &lt;b&gt;</source>
+        <translation type="vanished">&lt;/b&gt; - собрана с QT &lt;b&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;/b&gt;</source>
+        <translation type="vanished">&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Copyright &amp;copy; 2006-2010, The BASIC-256 Team&lt;/p&gt;</source>
+        <translation type="vanished">&lt;p&gt;Авторское право &amp;copy; Команда BASIC-256, 2006—2010&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please visit our web site at &lt;a href=http://www.basic256.org&gt;basic256.org&lt;/a&gt; for tutorials and documentation.&lt;/p&gt;</source>
+        <translation type="vanished">&lt;p&gt;Обучающие уроки и документация доступны на нашем веб-сайте: &lt;a href=http://www.basic256.org&gt;basic256.org&lt;/a&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please see the CONTRIBUTORS file for a list of developers and translators for this project.&lt;/p&gt;</source>
+        <translation type="vanished">&lt;p&gt;Перечень разработчиков и переводчиков этого проекта находится в файле CONTRIBUTORS.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;&lt;i&gt;You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.&lt;/i&gt;&lt;/p&gt;</source>
+        <translation type="vanished">&lt;p&gt;&lt;i&gt;Вы должны были получить копию лицензии GNU General Public License c этой 
+программой. Если это не так, известите об этом Фонд свободного программного 
+обеспечения по адресу Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.&lt;/i&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Очистить</translation>
     </message>
     <message>
         <source>Printing is not supported in this platform at this time.</source>
-        <translation type="unfinished"></translation>
+        <translation>На этой платформе ещё не поддерживается печать.</translation>
     </message>
     <message>
         <source>BASIC-256 is an easy to use version of BASIC designed to teach anybody (especially middle and high-school students) the basics of computer programming.</source>
-        <translation type="unfinished"></translation>
+        <translation>BASIC-256 — это простая в использовании версия BASIC, с помощью которой любой пользователь (в частности, учащиеся средних и старших классов) может изучить основы программирования.</translation>
     </message>
     <message>
         <source>BASIC file in format &lt;name.kbs&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл BASIC в формате &lt;name.kbs&gt;</translation>
     </message>
     <message>
         <source>Run specified file</source>
-        <translation type="unfinished"></translation>
+        <translation>Запустить указанный файл</translation>
     </message>
     <message>
         <source>Run specified file as an application</source>
-        <translation type="unfinished"></translation>
+        <translation>Запустить указанный файл как приложение</translation>
     </message>
     <message>
         <source>Set language to &lt;language&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Установить язык в значение &lt;language&gt;.</translation>
     </message>
     <message>
         <source>language</source>
-        <translation type="unfinished"></translation>
+        <translation>язык</translation>
     </message>
     <message>
         <source>&amp;Open...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Открыть...</translation>
     </message>
     <message>
         <source>Open &amp;Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть &amp;последние</translation>
     </message>
     <message>
         <source>&amp;Clear list</source>
-        <translation type="unfinished"></translation>
+        <translation>О&amp;чистить список</translation>
     </message>
     <message>
         <source>Save &amp;As...</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить &amp;как...</translation>
     </message>
     <message>
         <source>Save All</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить все</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Закрыть</translation>
+        <translation>Закрыть</translation>
     </message>
     <message>
         <source>Close All</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрыть все</translation>
     </message>
     <message>
         <source>&amp;Print...</source>
-        <translation type="unfinished"></translation>
+        <translation>П&amp;ечать...</translation>
     </message>
     <message>
         <source>&amp;Find...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Найти...</translation>
     </message>
     <message>
         <source>Find &amp;Next</source>
-        <translation type="unfinished"></translation>
+        <translation>Найти &amp;далее</translation>
     </message>
     <message>
         <source>&amp;Replace...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Заменить...</translation>
     </message>
     <message>
         <source>Preferences...</source>
-        <translation type="unfinished"></translation>
+        <translation>Параметры...</translation>
     </message>
     <message>
         <source>Graphics Window &amp;Zoom</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">&amp;Масштаб окна вывода графики</translation>
     </message>
     <message>
         <source>1:4 (quarter)</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">1:4 (четверть)</translation>
     </message>
     <message>
         <source>1:2 (half)</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">1:2 (половина)</translation>
     </message>
     <message>
         <source>1:1 (original)</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">1:1 (исходный)</translation>
     </message>
     <message>
         <source>2:1 (double)</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">2:1 (двойной)</translation>
     </message>
     <message>
         <source>3:1 (triple)</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">3:1 (тройной)</translation>
     </message>
     <message>
         <source>4:1 (quadruple)</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">4:1 (четверной)</translation>
     </message>
     <message>
         <source>&amp;Font...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Шрифт...</translation>
     </message>
     <message>
         <source>Show &amp;Whitespace Characters</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать п&amp;робельные символы</translation>
     </message>
     <message>
         <source>Run &amp;to</source>
-        <translation type="unfinished"></translation>
+        <translation>Выполнить &amp;до</translation>
     </message>
     <message>
         <source>&amp;Clear all breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Удалить все точки останова</translation>
     </message>
     <message>
         <source>&amp;Window</source>
-        <translation type="unfinished"></translation>
+        <translation>О&amp;кно</translation>
     </message>
     <message>
         <source>&amp;Online help...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Интернет-справка...</translation>
     </message>
     <message>
         <source>&amp;Check for update...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Проверить обновления...</translation>
     </message>
     <message>
         <source>&amp;About BASIC-256...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;О BASIC-256...</translation>
     </message>
     <message>
         <source> Android</source>
-        <translation type="unfinished"></translation>
+        <translation> Android</translation>
     </message>
     <message>
         <source>BASIC-256</source>
-        <translation type="unfinished"></translation>
+        <translation>BASIC-256</translation>
     </message>
     <message>
         <source>version </source>
-        <translation type="unfinished"></translation>
+        <translation>версия </translation>
     </message>
     <message>
         <source> - built with QT </source>
-        <translation type="unfinished"></translation>
+        <translation> — собрана с QT </translation>
     </message>
     <message>
         <source>Locale Name: </source>
-        <translation type="unfinished"></translation>
+        <translation>Имя языкового стандарта: </translation>
     </message>
     <message>
         <source>Decimal Point: </source>
-        <translation type="unfinished"></translation>
+        <translation>Десятичная запятая: </translation>
     </message>
     <message>
         <source>Copyright &amp;copy; 2006-2020, The BASIC-256 Team</source>
-        <translation type="unfinished"></translation>
+        <translation>Авторское право &amp;copy; Команда BASIC-256, 2006—2020</translation>
     </message>
     <message>
         <source>Please visit our web site at http://www.basic256.org for tutorials and documentation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Обучающие уроки и документация доступны на нашем веб-сайте: http://www.basic256.org.</translation>
     </message>
     <message>
         <source>Please see the CONTRIBUTORS file for a list of developers and translators for this project.</source>
-        <translation type="unfinished"></translation>
+        <translation>Перечень разработчиков и переводчиков этого проекта находится в файле CONTRIBUTORS.</translation>
     </message>
     <message>
         <source>You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы должны были получить копию лицензии GNU General Public License c этой программой. Если это не так, известите об этом Фонд свободного программного обеспечения по адресу Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</translation>
     </message>
     <message>
         <source>Please visit our web site at &lt;a href=&quot;http://www.basic256.org&quot;&gt;http://www.basic256.org&lt;/a&gt; for tutorials and documentation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Обучающие уроки и документация доступны на нашем веб-сайте: &lt;a href=&quot;http://www.basic256.org&quot;&gt;http://www.basic256.org&lt;/a&gt;.</translation>
     </message>
     <message>
         <source> - BASIC-256</source>
-        <translation type="unfinished"> - BASIC-256</translation>
+        <translation> — BASIC-256</translation>
     </message>
     <message>
         <source>Untitled</source>
-        <translation type="unfinished"></translation>
+        <translation>Без названия</translation>
     </message>
     <message>
         <source>Open a file</source>
-        <translation type="unfinished">Открыть файл</translation>
+        <translation>Открыть файл</translation>
     </message>
     <message>
         <source>BASIC-256 file </source>
-        <translation type="unfinished">Файлы BASIC-256 </translation>
+        <translation>Файлы BASIC-256 </translation>
     </message>
     <message>
         <source>Any File </source>
-        <translation type="unfinished">Все файлы </translation>
+        <translation>Все файлы </translation>
     </message>
     <message>
         <source>Load File</source>
-        <translation type="unfinished"></translation>
+        <translation>Загрузка файла</translation>
     </message>
     <message>
         <source>It does not seem to be a text file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Это не текстовый файл.</translation>
     </message>
     <message>
         <source>Load it anyway?</source>
-        <translation type="unfinished"></translation>
+        <translation>Всё равно загрузить?</translation>
     </message>
     <message>
         <source>You&apos;re about to load a file that does not end with the .kbs extension.</source>
-        <translation type="unfinished"></translation>
+        <translation>Планируется загрузка файла, который не заканчивается расширением .kbs.</translation>
     </message>
     <message>
         <source>Loading file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Загрузка файла...</translation>
     </message>
     <message>
         <source>Unable to open program file</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно открыть файл программы</translation>
     </message>
     <message>
         <source>File permissions problem or file open by another process.</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствуют необходимые разрешения доступа к файлу, либо этот файл открыт другим процессом.</translation>
     </message>
     <message>
         <source>Program file does not exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл программы не существует.</translation>
     </message>
     <message>
         <source>&quot;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;.</translation>
     </message>
     <message>
         <source>Save changes?</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить изменения?</translation>
     </message>
     <message>
         <source>The following file have unsaved changes:</source>
-        <translation type="unfinished"></translation>
+        <translation>В следующем файле имеются несохранённые изменения:</translation>
     </message>
     <message>
         <source>The following files have unsaved changes:</source>
-        <translation type="unfinished"></translation>
+        <translation>В следующих файлах имеются несохранённые изменения:</translation>
     </message>
     <message>
         <source>Unsaved files</source>
-        <translation type="unfinished"></translation>
+        <translation>Несохранённые файлы</translation>
     </message>
     <message>
         <source>There are unsaved files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Имеются несохранённые файлы.</translation>
     </message>
     <message>
         <source>Do you really want to discard your changes?</source>
+        <translation>Действительно отменить изменения?</translation>
+    </message>
+    <message>
+        <source>W&amp;rap Long Lines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2329,47 +2715,47 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>Search Backwards</source>
-        <translation type="obsolete">Искать назад</translation>
+        <translation type="vanished">Искать назад</translation>
     </message>
     <message>
         <source>Replace &amp;All</source>
-        <translation type="unfinished"></translation>
+        <translation>Заменить &amp;все</translation>
     </message>
     <message>
         <source>&amp;Replace</source>
-        <translation type="unfinished">&amp;Заменить</translation>
+        <translation>&amp;Заменить</translation>
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation type="unfinished">&amp;Найти</translation>
+        <translation>&amp;Найти</translation>
     </message>
     <message>
         <source>BASIC-256 Find/Replace</source>
-        <translation type="unfinished"></translation>
+        <translation>BASIC-256 — Найти и заменить</translation>
     </message>
     <message>
         <source>BASIC-256 Find</source>
-        <translation type="unfinished">BASIC-256 Найти</translation>
+        <translation>BASIC-256 — Найти</translation>
     </message>
     <message>
         <source>Find:</source>
-        <translation type="unfinished"></translation>
+        <translation>Найти:</translation>
     </message>
     <message>
         <source>Replace with:</source>
-        <translation type="unfinished"></translation>
+        <translation>Заменить на:</translation>
     </message>
     <message>
         <source>Case sensitive</source>
-        <translation type="unfinished"></translation>
+        <translation>Учитывать регистр</translation>
     </message>
     <message>
         <source>Only whole words</source>
-        <translation type="unfinished"></translation>
+        <translation>Только слова целиком</translation>
     </message>
     <message>
         <source>Search backwards</source>
-        <translation type="unfinished"></translation>
+        <translation>Поиск в обратном направлении</translation>
     </message>
 </context>
 <context>
@@ -2407,23 +2793,31 @@ Please check your printer settings.</source>
         <translation>Пароль:</translation>
     </message>
     <message>
+        <source>Saved</source>
+        <translation type="vanished">Сохранено</translation>
+    </message>
+    <message>
+        <source>Stopping.</source>
+        <translation type="vanished">Остановка.</translation>
+    </message>
+    <message>
         <source>BASIC-256 Advanced Preferences and Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>BASIC-256 — Расширенные параметры настройки</translation>
     </message>
     <message>
         <source>Confirmation</source>
-        <translation type="unfinished"></translation>
+        <translation>Подтверждение</translation>
     </message>
     <message>
         <source>Do you want to allow a PORTIN/PORTOUT command?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Do not ask me again</source>
-        <translation type="unfinished"></translation>
+        <translation>Разрешить команду PORTIN/PORTOUT?</translation>
     </message>
     <message>
         <source>Do you want to allow a SYSTEM command?</source>
+        <translation>Разрешить команду SYSTEM?</translation>
+    </message>
+    <message>
+        <source>Do not ask me again</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2431,27 +2825,27 @@ Please check your printer settings.</source>
     <name>SettingsBrowser</name>
     <message>
         <source>BASIC-256 Persistent settings</source>
-        <translation type="unfinished"></translation>
+        <translation>BASIC-256 — Постоянные параметры</translation>
     </message>
     <message>
         <source>Program/Key</source>
-        <translation type="unfinished"></translation>
+        <translation>Программа/Ключ</translation>
     </message>
     <message>
         <source>Value</source>
-        <translation type="unfinished">Значение</translation>
+        <translation>Значение</translation>
     </message>
     <message>
         <source>Delete selected settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить выбранные параметры</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Отмена</translation>
     </message>
     <message>
         <source>Do you really want to delete selected persistent settings?</source>
-        <translation type="unfinished"></translation>
+        <translation>Действительно удалить выбранные постоянные параметры?</translation>
     </message>
 </context>
 <context>
@@ -2474,38 +2868,46 @@ Please check your printer settings.</source>
     </message>
     <message>
         <source>Level - Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Уровень — Имя</translation>
+    </message>
+    <message>
+        <source>&lt;unassigned&gt;</source>
+        <translation type="vanished">&lt;не назначено&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;&gt;unassigned&gt;</source>
+        <translation type="vanished">&lt;&gt;не назначено&gt;</translation>
     </message>
     <message>
         <source>Ty</source>
-        <translation type="unfinished"></translation>
+        <translation>Ty</translation>
     </message>
     <message>
         <source>Type: String</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип: строка</translation>
     </message>
     <message>
         <source>Type: Integer</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип: целое число</translation>
     </message>
     <message>
         <source>Type: Float</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип: число с плавающей точкой</translation>
     </message>
     <message>
         <source>Type: Array</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип: массив</translation>
     </message>
     <message>
         <source>Type: Reference</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Type: Map</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип: ссылка</translation>
     </message>
     <message>
         <source>?</source>
+        <translation>?</translation>
+    </message>
+    <message>
+        <source>Type: Map</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
