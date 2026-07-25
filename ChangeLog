@@ -6,6 +6,7 @@
 	* A new Example program 'ImageStatementDemo.kbs' demonstrating the new IMAGExxx statements has been added to the Examples/Image directory
  	* The REF() command (passing arrays to subroutines by reference) has been corrected.
 	* The Edit and Output windows are now pinned to a white/light scheme so code and text stay readable on desktops using a dark OS theme (Ubuntu dark, iPhone/iPad, etc.).
+	* The project has been relicensed from GPL version 2 to GPL version 3 or later. The original GPLv2 headers all carried the "or (at your option) any later version" clause, which permits this upgrade; every original copyright holder and year has been preserved. license.txt now holds the full GPLv3 text. The bundled md5 (RSA Data Security) and LineNumberArea (Qt example, BSD) files keep their own compatible licenses.
 *
 
 2026-07-17 M. Vilain <uglymike17@gmail.com>  

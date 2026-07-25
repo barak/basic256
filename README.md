@@ -2,7 +2,7 @@
 
 [![Build](https://img.shields.io/github/actions/workflow/status/uglymike17/basic256/build.yml?label=CI)](https://github.com/uglymike17/basic256/actions)
 [![Latest release](https://img.shields.io/github/v/release/uglymike17/basic256?include_prereleases)](https://github.com/uglymike17/basic256/releases)
-[![License: GPL](https://img.shields.io/badge/license-GPL-blue)](license.txt)
+[![License: GPLv3](https://img.shields.io/badge/license-GPLv3-blue)](license.txt)
 
 > **The continuation of the classic BASIC256 educational programming environment.**
 
@@ -281,7 +281,9 @@ Bug reports, feature requests, documentation improvements and pull requests are 
 
 ## License
 
-BASIC256 continues to be distributed under the GNU General Public License (GPL), the same open-source license as the original project. See the [license.txt](license.txt) file in the root directory for details.
+BASIC256 is distributed under the GNU General Public License, version 3 or later (GPLv3+). The original project was released under GPLv2 "or (at your option) any later version", which is what allows this upgrade; all original copyright notices have been preserved. See the [license.txt](license.txt) file in the root directory for the full license text.
+
+Two components keep their own, compatible licenses: `src/core/md5.cpp` / `md5.h` (RSA Data Security, adapted by Frank Thilo) and `src/gui/LineNumberArea.cpp` / `LineNumberArea.h` (BSD, from the Qt examples).
 
 ## About the maintainer
 
