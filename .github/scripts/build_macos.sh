@@ -14,11 +14,18 @@ TARGET_ARCH="${TARGET_ARCH:-$(uname -m)}"
 # from whatever image the build happened on, so it creeps upwards silently
 # every time GitHub advances its runner labels.
 #
-# 14.0 is not arbitrary: it is the floor Homebrew's Qt libraries themselves
-# declare, so it is the lowest value we can claim honestly. Going lower would
-# produce an app that launches on, say, 13 and then fails when dyld loads a Qt
-# library that requires 14. Raise this only together with the runner image.
-MACOS_DEPLOYMENT_TARGET="${MACOS_DEPLOYMENT_TARGET:-14.0}"
+# 15.0 matches what the app actually needs. Qt's own libraries declare 14.0,
+# but macdeployqt also copies in Homebrew dependencies built for the runner
+# image -- libpcre2 and the virtual-keyboard plugin both require 15 -- and the
+# bundle is only as portable as its least portable library. Declaring 14 here
+# would give an app that launches on 14 and then dies when dyld reaches one of
+# those, which is a worse failure than an honest "requires macOS 15".
+#
+# 15 is also the practical floor: GitHub's oldest Intel image is macos-15, so
+# the Intel build cannot be produced against anything older. Lowering this means
+# moving both builds to an older image AND checking what macdeployqt pulls in --
+# see the bundled-library check at the end of package_macos.sh.
+MACOS_DEPLOYMENT_TARGET="${MACOS_DEPLOYMENT_TARGET:-15.0}"
 
 echo "==> Installing Qt6 via Homebrew..."
 brew install qt
@@ -55,21 +62,11 @@ BIN="${APP_BUNDLE}/Contents/MacOS/${APP_TARGET}"
 if [ -x "${BIN}" ]; then
     echo "==> Built binary architecture: $(lipo -archs "${BIN}")"
 
-    # The app is only as portable as the least portable thing in the bundle, so
-    # check the bundled Qt libraries too, not just our own binary.
     APP_MIN="$(vtool -show-build "${BIN}" 2>/dev/null | awk '/minos/{print $2; exit}')"
     echo "==> Binary minimum macOS: ${APP_MIN:-unknown}"
-
-    WORST="$(find "${APP_BUNDLE}" -type f \( -name '*.dylib' -o -path '*.framework/Versions/*' \) \
-        -exec vtool -show-build {} \; 2>/dev/null \
-        | awk '/minos/{print $2}' | sort -t. -k1,1n -k2,2n | tail -1)"
-    echo "==> Highest minimum macOS across bundled libraries: ${WORST:-unknown}"
-
-    if [ -n "${WORST}" ] && [ "${WORST%%.*}" -gt "${MACOS_DEPLOYMENT_TARGET%%.*}" ]; then
-        echo "::warning::A bundled library requires macOS ${WORST}, above the" \
-             "requested deployment target ${MACOS_DEPLOYMENT_TARGET}. The app will" \
-             "in practice need macOS ${WORST}. Homebrew bottles follow the runner" \
-             "image, so pin a different macOS image rather than only lowering the" \
-             "deployment target."
-    fi
 fi
+
+# NOTE: the bundled *libraries* are deliberately checked in package_macos.sh
+# instead of here. macdeployqt has not run at this point, so the bundle holds
+# only our own binary -- scanning for Qt libraries here finds nothing and
+# reports a reassuring "unknown" rather than the truth.

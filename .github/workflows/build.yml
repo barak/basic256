@@ -18,6 +18,11 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # Oldest macOS the .app is built to run on. Read by both build_macos.sh (as
+  # CMAKE_OSX_DEPLOYMENT_TARGET) and package_macos.sh (which checks the finished
+  # bundle against it), so the two cannot drift apart. Keep in step with the
+  # pinned macos-* runner images and with the requirement stated in README.md.
+  MACOS_DEPLOYMENT_TARGET: "15.0"
 
 jobs:
   build:
