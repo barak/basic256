@@ -1,8 +1,8 @@
 /** Copyright (C) 2006, Ian Paul Larsen.
  **
- **  This program is free software; you can redistribute it and/or modify
+ **  This program is free software: you can redistribute it and/or modify
  **  it under the terms of the GNU General Public License as published by
- **  the Free Software Foundation; either version 2 of the License, or
+ **  the Free Software Foundation, either version 3 of the License, or
  **  (at your option) any later version.
  **
  **  This program is distributed in the hope that it will be useful,
@@ -10,9 +10,8 @@
  **  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **  GNU General Public License for more details.
  **
- **  You should have received a copy of the GNU General Public License along
- **  with this program; if not, write to the Free Software Foundation, Inc.,
- **  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ **  You should have received a copy of the GNU General Public License
+ **  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  **/
 
 #include <iostream>
@@ -3430,6 +3429,13 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					if (oneval==0) {
 						error->q(ERROR_DIVZERO);
 						stack->pushLong(0);
+					} else if (oneval==-1 && twoval==LLONG_MIN) {
+						// LLONG_MIN \ -1 overflows: the result 2^63 is not
+						// representable in a signed 64-bit int. Computing it is
+						// undefined behavior (traps as SIGFPE on x86), so report
+						// the range error instead.
+						error->q(ERROR_LONGRANGE);
+						stack->pushLong(0);
 					} else {
 						stack->pushLong(twoval / oneval);
 					}
@@ -3441,6 +3447,11 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					qint64 twoval = stack->popLong();
 					if (oneval==0) {
 						error->q(ERROR_DIVZERO);
+						stack->pushLong(0);
+					} else if (oneval==-1) {
+						// any integer mod -1 is 0. Special-cased because
+						// LLONG_MIN % -1 is undefined behavior (the quotient
+						// 2^63 is not representable) and traps as SIGFPE on x86.
 						stack->pushLong(0);
 					} else {
 						stack->pushLong(twoval % oneval);
@@ -3838,7 +3849,9 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						}
 					} else {
 						// get the 4 values and build own
-						std::vector<double> envelope;
+						// (fill the outer 'envelope' declared above -- do NOT
+						// redeclare it here, or sound->envelope() below receives
+						// an empty vector and reads e[0] out of bounds)
 						double r = convert->getFloat(de); //release
 						double s = stack->popDouble(); //sustain
 						double d = stack->popDouble(); //decrease
@@ -3952,8 +3965,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					emit(soundFade(convert->getInt(e), v, int(ms*1000), int(delay*1000)));
 					waitCond->wait(mymutex);
 					mymutex->unlock();
-					delete e;
 					}
+					delete e;			// both branches own e (RELEASE)
 				}
 				break;
 

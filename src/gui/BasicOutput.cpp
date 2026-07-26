@@ -1,8 +1,8 @@
 /** Copyright (C) 2006, Ian Paul Larsen.
  **
- **  This program is free software; you can redistribute it and/or modify
+ **  This program is free software: you can redistribute it and/or modify
  **  it under the terms of the GNU General Public License as published by
- **  the Free Software Foundation; either version 2 of the License, or
+ **  the Free Software Foundation, either version 3 of the License, or
  **  (at your option) any later version.
  **
  **  This program is distributed in the hope that it will be useful,
@@ -10,9 +10,8 @@
  **  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **  GNU General Public License for more details.
  **
- **  You should have received a copy of the GNU General Public License along
- **  with this program; if not, write to the Free Software Foundation, Inc.,
- **  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ **  You should have received a copy of the GNU General Public License
+ **  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  **/
 
 #include <iostream>
@@ -48,6 +47,18 @@ BasicOutput::BasicOutput( ) : QTextEdit () {
 	setFocusPolicy(Qt::StrongFocus);
 	setAcceptRichText(false);
 	setUndoRedoEnabled(false);
+	// Pin the output pane to a fixed light scheme regardless of the OS colour
+	// scheme. Text is emitted with hardcoded colours (default Qt::black) and no
+	// background is ever set, so on Qt 6.5+ under a dark desktop theme the
+	// widget's Base role turns near-black and black-on-black text disappears.
+	// A stylesheet reliably overrides both the style and the OS scheme.
+	setStyleSheet(
+		"QTextEdit{"
+		"  background-color:#ffffff;"
+		"  color:#000000;"
+		"  selection-background-color:#c0d8f0;"
+		"  selection-color:#000000;"
+		"}");
 	gettingInput = false;
 	saveLastPosition();
 

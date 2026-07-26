@@ -1,8 +1,8 @@
 /** Copyright (C) 2006, Ian Paul Larsen.
  **
- **  This program is free software; you can redistribute it and/or modify
+ **  This program is free software: you can redistribute it and/or modify
  **  it under the terms of the GNU General Public License as published by
- **  the Free Software Foundation; either version 2 of the License, or
+ **  the Free Software Foundation, either version 3 of the License, or
  **  (at your option) any later version.
  **
  **  This program is distributed in the hope that it will be useful,
@@ -10,9 +10,8 @@
  **  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **  GNU General Public License for more details.
  **
- **  You should have received a copy of the GNU General Public License along
- **  with this program; if not, write to the Free Software Foundation, Inc.,
- **  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ **  You should have received a copy of the GNU General Public License
+ **  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  **/
 
 %{
@@ -1048,6 +1047,14 @@ functionvariable:
 		variable_a {
 			args[numargs] = varnumber[--nvarnumber]; argstype[numargs] = ARGSTYPEVALUE; numargs++;
 			//printf("functionvariable %i %i %i\n", args[numargs-1], argstype[numargs-1],numargs);
+		}
+		| B256REF '(' variable_a ')' {
+			// ref(variable) parameter - the caller passes a T_REF (see callexpr's
+			// OP_VAR_REF) so the ordinary OP_VAR_SET / setData stores the reference
+			// and the parameter aliases the caller's variable. The keyword here is
+			// accepted for documentation/symmetry and generates the same code as a
+			// plain value parameter.
+			args[numargs] = varnumber[--nvarnumber]; argstype[numargs] = ARGSTYPEVALUE; numargs++;
 		}
 		;
 
@@ -2117,8 +2124,9 @@ expr_numeric:
 		addOp(OP_SOUNDPLAYER);
 	}
 	| B256SOUNDPLAYER '(' args_ee ')' {
-		addIntOp(OP_PUSHINT, 2);	// 2 columns
+		addIntOp(OP_PUSHINT, 2);	// 2 columns (this)
 		addIntOp(OP_PUSHINT, 1);	// 1 row
+		addIntOp(OP_PUSHINT, 2);	// 2 columns (max)
 		addOp(OP_LIST2ARRAY);
 		addOp(OP_SOUNDPLAYER);
 	}
@@ -2281,8 +2289,9 @@ expr_string:
 		addOp(OP_SOUNDLOAD);
 	}
 	| B256SOUNDLOAD '(' args_ee ')' {
-		addIntOp(OP_PUSHINT, 2);	// 2 columns
+		addIntOp(OP_PUSHINT, 2);	// 2 columns (this)
 		addIntOp(OP_PUSHINT, 1);	// 1 row
+		addIntOp(OP_PUSHINT, 2);	// 2 columns (max)
 		addOp(OP_LIST2ARRAY);
 		addOp(OP_SOUNDLOAD);
 	}
@@ -3358,8 +3367,9 @@ soundplaystmt:	B256SOUNDPLAY args_none {
 		addOp(OP_SOUNDPLAY);
 	}
 	| B256SOUNDPLAY args_ee {
-		addIntOp(OP_PUSHINT, 2);	// 2 columns
+		addIntOp(OP_PUSHINT, 2);	// 2 columns (this)
 		addIntOp(OP_PUSHINT, 1);	// 1 row
+		addIntOp(OP_PUSHINT, 2);	// 2 columns (max)
 		addOp(OP_LIST2ARRAY);
 		addOp(OP_SOUNDPLAY);
 	}
@@ -3450,11 +3460,12 @@ soundfadestmt:  B256SOUNDFADE args_eeee {
 		addOp(OP_SOUNDFADE);
 	}
 	| B256SOUNDFADE args_eee {
-		addOp(OP_STACKTOPTO2);
-		addOp(OP_STACKTOPTO2);
-		addIntOp(OP_PUSHINT, -1);
-		addOp(OP_STACKSWAP);
-		addOp(OP_STACKSWAP2);
+		// documented 3-arg form: soundfade player#, volume, seconds
+		// -- identical to the 4-arg form with the trailing delay omitted,
+		// so just default delay to 0. (The previous code instead inserted
+		// player#=-1 at the front, shifting the args to volume/seconds/delay
+		// so `soundfade id, vol, secs` was misread and no fade was heard.)
+		addIntOp(OP_PUSHINT, 0);	// default delay = 0 seconds
 		addOp(OP_SOUNDFADE);
 	}
 	;

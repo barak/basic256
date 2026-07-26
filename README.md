@@ -2,7 +2,7 @@
 
 [![Build](https://img.shields.io/github/actions/workflow/status/uglymike17/basic256/build.yml?label=CI)](https://github.com/uglymike17/basic256/actions)
 [![Latest release](https://img.shields.io/github/v/release/uglymike17/basic256?include_prereleases)](https://github.com/uglymike17/basic256/releases)
-[![License: GPL](https://img.shields.io/badge/license-GPL-blue)](license.txt)
+[![License: GPLv3](https://img.shields.io/badge/license-GPLv3-blue)](license.txt)
 
 > **The continuation of the classic BASIC256 educational programming environment.**
 
@@ -110,7 +110,7 @@ for i = 1 to 200
 next i
 ```
 
-For more advanced example programs than the ones included in the Examples directory (fractals, attractors, simulations and more), have a look at https://uglymike.static.domains or for older programs, you can find a lot of interesting things at https://basic256.blogspot.com/.
+The Examples directory has some more or less advanced example programs to play and experiment with (fractals, attractors, simulations, sounds and more). The original, minimalistic example programs from the 2.0.0.11 version are also included in sub-directory Original_Examples. Although some of Manuel Santos' programs are already included, you can still find the odd gem of his on https://basic256.blogspot.com/.
 
 ## Download & install
 
@@ -252,7 +252,7 @@ Highlights of the modernized build:
 
 ### The original project
 
-The original BASIC-256 v2.0.0.11 is a GPL-licensed, retro BASIC programming environment for learning coding and having fun. It was originally called KidBasic and was started in 2006 by Ian Paul Larsen, later maintained by Jim Reneau and many contributors through the SourceForge project. After years of updates by the contributors and a rename to BASIC-256, it is in its current state still quite capable for everyday hobby use, but it is showing its age.
+The original BASIC-256 v2.0.0.11 is a GPL-licensed, retro BASIC programming environment for learning coding and having fun. It was originally called KidBasic and was started in 2006 by Ian Paul Larsen, later maintained by James Reneau and many contributors through the SourceForge project. After years of updates by the contributors and a rename to BASIC-256, it is in its current state still quite capable for everyday hobby use, but the source and build setup is showing its age.
 
 The original code and last downloadable version reside on [SourceForge](https://sourceforge.net/projects/kidbasic/) at version 2.0.0.11, released in 2020. It uses qmake and MinGW to compile the Windows version and is Qt5-based. It comes with an Examples directory, but most programs there need to be updated to modern specs related to speed and graphics sizes. There is also a TestSuite directory to test edge cases, but this doesn't run fully on 2.0.0.11.
 
@@ -277,12 +277,14 @@ BASIC-256 should remain one of the easiest programming languages for beginners, 
 
 ## Contributing
 
-Bug reports, feature requests, documentation improvements and pull requests are welcome.
+Bug reports, feature requests, documentation improvements and pull requests are welcome. There are forms for this on the github site.
 
 ## License
 
-BASIC256 continues to be distributed under the GNU General Public License (GPL), the same open-source license as the original project. See the [license.txt](license.txt) file in the root directory for details.
+BASIC256 is distributed under the GNU General Public License, version 3 or later (GPLv3+). The original project was released under GPLv2 "or (at your option) any later version", which is what allows this upgrade; all original copyright notices have been preserved. See the [license.txt](license.txt) file in the root directory for the full license text.
+
+Two components keep their own, compatible licenses: `src/core/md5.cpp` / `md5.h` (RSA Data Security, adapted by Frank Thilo) and `src/gui/LineNumberArea.cpp` / `LineNumberArea.h` (BSD, from the Qt examples).
 
 ## About the maintainer
 
-I'm first and foremost a BASIC256 fan (see https://uglymike.static.domains/) rather than a professional developer. This project is maintained with the help of AI assistants (ChatGPT, Claude, Google's Gemini and Perplexity, all on free accounts) — proof of what the modern toolchain makes possible for a determined hobbyist. Contributions from people with more C++ and project-management experience are very welcome!
+I'm first and foremost a BASIC256 fan (see https://uglymike.static.domains/) rather than a professional developer. This project is maintained with the help of AI assistants (ChatGPT, Claude, Google's Gemini and Perplexity, all on free accounts) — proof of what the modern toolchain makes possible for a determined hobbyist. Contributions for fleshing out the translated documentation or other aspects of the project would be greatly appreciated.

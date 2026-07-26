@@ -398,7 +398,7 @@ endif()
 # "2.1.0" (PROJECT_VERSION stays numeric for bundle metadata).
 # build_installer_Windows.ps1 parses this exact set() line so the installer
 # label cannot drift from the About box; keep the two in lockstep.
-set(BASIC256_MAIN_DISPLAY_VERSION "2.1.beta")
+set(BASIC256_MAIN_DISPLAY_VERSION "2.1.beta2")
 if(BASIC256_BUILD_BRANCH MATCHES "^[vV][0-9]")
     string(REGEX REPLACE "^[vV]" "" BASIC256_BUILD_VERSION "${BASIC256_BUILD_BRANCH}")
 else()

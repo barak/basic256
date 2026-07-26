@@ -1,8 +1,8 @@
 /** Copyright (C) 2006, Ian Paul Larsen.
  **
- **  This program is free software; you can redistribute it and/or modify
+ **  This program is free software: you can redistribute it and/or modify
  **  it under the terms of the GNU General Public License as published by
- **  the Free Software Foundation; either version 2 of the License, or
+ **  the Free Software Foundation, either version 3 of the License, or
  **  (at your option) any later version.
  **
  **  This program is distributed in the hope that it will be useful,
@@ -10,9 +10,8 @@
  **  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **  GNU General Public License for more details.
  **
- **  You should have received a copy of the GNU General Public License along
- **  with this program; if not, write to the Free Software Foundation, Inc.,
- **  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ **  You should have received a copy of the GNU General Public License
+ **  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  **/
 
 
@@ -757,7 +756,7 @@ void MainWindow::about() {
             "<p>" + QObject::tr("Copyright &copy; 2006-2026, The BASIC-256 Team") + "</p>" +
 			"<p>" + QObject::tr("Please visit our web site at <a href=\"https://uglymike17.github.io/Basic256-Docs/\">https://uglymike17.github.io/Basic256-Docs/</a> for documentation.") + "</p>" +
 			"<p>" + QObject::tr("Please see the CONTRIBUTORS file for a list of developers and translators for this project.")  + "</p>" +
-			"<p><i>" + QObject::tr("You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.")  + "</i></p>";
+			"<p><i>" + QObject::tr("This program is free software under the GNU General Public License, either version 3 of the License, or (at your option) any later version. You should have received a copy of the license along with this program; if not, see <a href=\"https://www.gnu.org/licenses/\">https://www.gnu.org/licenses/</a>.")  + "</i></p>";
 
     // Async (RULE 2): the static QMessageBox::about()'s exec() never
     // returns on the WASM main thread without Asyncify -- build the same
