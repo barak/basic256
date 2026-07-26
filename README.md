@@ -122,8 +122,8 @@ Grab the latest build for your platform from the [Releases page](https://github.
 | Windows (installer .exe) | ✅ | SmartScreen will initially block it as it comes from an unknown source — "More info" → "Run anyway" fixes this. A signed version might come later thanks to [SignPath's open-source program](https://signpath.io/solutions/open-source-community); this depends on GitHub stars and the success of the project. |
 | Linux x86 (tarball / AppImage) | ✅ | Both are quite large as they include all prerequisite software. A .deb package (which would be much smaller, listing its prerequisites in metadata instead of bundling them) does not exist yet. |
 | Raspberry Pi (tarball / AppImage) | ✅ | Same remark as Linux x86 regarding .deb. Speech does not work out of the box: Debian 13 ("Trixie") does not ship speech-dispatcher, so it must be installed manually. |
-| macOS (Apple Silicon) | ⚠️ | Builds as a Homebrew-based app. Having no developer license, I can only apply ad-hoc signing — see below. |
-| macOS (Intel) | ⚠️ | Same Homebrew-based app and the same ad-hoc signing caveat, built separately for x86_64 Macs. These are two single-architecture downloads, not one universal binary, so pick the one matching your Mac. |
+| macOS (Apple Silicon) | ⚠️ | Needs **macOS 14 (Sonoma) or newer**. Builds as a Homebrew-based app. Having no developer license, I can only apply ad-hoc signing — see below. |
+| macOS (Intel) | ⚠️ | Needs **macOS 14 (Sonoma) or newer**. Same Homebrew-based app and the same ad-hoc signing caveat, built separately for x86_64 Macs. These are two single-architecture downloads, not one universal binary, so pick the one matching your Mac. |
 | Web (WASM) | 🧪 v1 | Works, with a few known gaps — see below. |
 
 ### macOS notes
@@ -141,6 +141,8 @@ codesign --force --deep -s - /path/to/app.app
 ```
 
 There is however a possibility to add your own Developer ID in the build script, opening a path to notarization, which would allow seamless installation on modern macOS versions.
+
+**Older macOS versions.** Both macOS downloads need macOS 14 (Sonoma) or newer. That floor comes from Qt 6 and from the Qt libraries bundled into the app, not from BASIC256 itself, so it cannot be lowered by a build setting. Qt 5 was the last version to support macOS 10.13/10.14, so on an older Mac (High Sierra, Mojave, Catalina and similar) the option is the original Qt5-based BASIC-256 2.0.0.11 from [SourceForge](https://sourceforge.net/projects/kidbasic/), or building from source against Qt 5.15 yourself. Note that an Intel download will also run on an Apple Silicon Mac through Rosetta 2, which is useful if only one of the two builds starts on your system.
 
 ### Browser build (WASM) limitations
 

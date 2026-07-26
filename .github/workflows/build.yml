@@ -41,7 +41,13 @@ jobs:
             arch: arm64
             use_jurplel: false
             artifact_name: BASIC256-RaspberryPi-ARM64
-          - os: macos-latest
+          # Pinned, NOT macos-latest. The image decides the minimum macOS the
+          # artifact will run on: when macos-latest rolled to macOS 26 this
+          # build silently started requiring macOS 26 (Homebrew's QtMultimedia
+          # bottle was built for 26), locking out everyone on Sequoia and older.
+          # Pin the image and set a deployment target so that floor is a
+          # decision rather than a side effect of GitHub moving the label.
+          - os: macos-15
             arch: arm64
             use_jurplel: false
             qt_arch: clang_64
