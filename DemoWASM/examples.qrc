@@ -21,6 +21,7 @@
         <file>Games/MarbleGame.kbs</file>
         <file>Games/PacMan.kbs</file>
         <file>Games/SlidingPuzzle.kbs</file>
+        <file>Image/ImageStatementDemo.kbs</file>
         <file>Original_Examples/15puzzle.kbs</file>
         <file>Original_Examples/arc_example.kbs</file>
         <file>Original_Examples/arrays.kbs</file>

@@ -346,6 +346,13 @@ jobs:
         cp wasm-deploy/index.html public/index.html
         cp wasm-deploy/coi-serviceworker.min.js public/coi-serviceworker.min.js
         cp wasm-deploy/favicon.png public/favicon.png
+        # Assets that bundled example programs load at runtime. In the browser
+        # a relative path in imageload/soundload is fetched over HTTP relative
+        # to the page (MediaPath::downloadUrl), never read from the :/examples
+        # resource -- the qrc only ever supplies .kbs source. So anything an
+        # example opens by name has to sit next to index.html.
+        cp wasm-deploy/lady.png public/lady.png                          # Image/ImageStatementDemo.kbs
+        cp wasm-deploy/jim_saying_numbers.mp3 public/jim_saying_numbers.mp3
         # GitHub Pages runs deployed sites through Jekyll by default, which
         # ignores/mangles files and directories starting with an underscore
         # -- .nojekyll disables that processing.
