@@ -485,30 +485,35 @@ subroutine notecolor(hz)
 end subroutine
 # --------------------------------------------------------------------------
 #  7. SOUND FILES & PLAYERS
-#     The player API works on any sound source. To keep the demo self-
-#     contained we build a ~5-second tone "track", but if you type the
-#     path to a real .wav or .mp3 it will use that instead.
+#     The player API works on any sound source. This WASM copy of the demo
+#     always uses the bundled jim_saying_numbers.mp3, which the Pages deploy
+#     places next to index.html. (The desktop copy under Examples/ still asks
+#     for a path, since there you have a real filesystem to point at.)
 # --------------------------------------------------------------------------
 subroutine demoFilesAndPlayers()
 	call plotframe("Sound files & players")
 
-	print
-	print "  Enter a path to a .wav or .mp3 file, or just press Enter"
-	print "  to use a generated 5-second tone instead."
-	input "  File (or blank): ", path$
+	# A bare relative name is all that is needed: in the browser the sound
+	# statements hand it to MediaPath, which resolves it against the page URL
+	# and fetches it over HTTP -- so this becomes <site>/jim_saying_numbers.mp3.
+	# ("./jim_saying_numbers.mp3" is equivalent; the "./" just collapses.)
+	#
+	# Note there is deliberately no exists() guard. exists() only ever looks at
+	# the in-browser filesystem, so it answers "no" for every fetchable URL and
+	# would push us into a fallback even when the file is sitting right there.
+	track$ = "jim_saying_numbers.mp3"        # a filename is a valid source
 
-	if length(path$) > 0 and exists(path$) then
-		track$ = path$                       # a filename is a valid source
-		print "  Using file: " + path$
-	else
-		if length(path$) > 0 then print "  (not found - using a generated tone)"
-		track$ = soundload(220, 5000)        # 5-second A3 tone, as a resource
-		print "  Using a generated 5-second tone."
-	endif
+	print
+	print "  Using file: " + track$
 
 	# Build ONE reusable player instance (does not start it yet)
 	p = soundplayer(track$)
 	soundvolume p, 8                         # this instance only, 0..10
+
+	# Unlike a local file, a fetched track needs a moment before the media
+	# object knows how long it is -- without this, soundlength() below can
+	# still report 0.
+	pause 1
 
 	print
 	print "  length : " + soundlength(p) + " s"
@@ -526,7 +531,7 @@ subroutine demoFilesAndPlayers()
 	print "  resume (soundplay on the same player picks up where it left off)..."
 	soundplay p
 
-	print "  seek to 3.0 s (near the end)..."
+	print "  seek back to 3.0 s..."
 	pause 2
 	soundseek p, 3.0
 	print "  position: " + int(soundposition(p)*100)/100 + " s"
