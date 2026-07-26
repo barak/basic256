@@ -10,6 +10,16 @@ ARTIFACT_NAME="${ARTIFACT_NAME:-basic256-MacOS.zip}"
 # on either kind of Mac. Both values are valid CMAKE_OSX_ARCHITECTURES entries.
 TARGET_ARCH="${TARGET_ARCH:-$(uname -m)}"
 
+# Oldest macOS the app should run on. Without this, the minimum is inherited
+# from whatever image the build happened on, so it creeps upwards silently
+# every time GitHub advances its runner labels.
+#
+# 14.0 is not arbitrary: it is the floor Homebrew's Qt libraries themselves
+# declare, so it is the lowest value we can claim honestly. Going lower would
+# produce an app that launches on, say, 13 and then fails when dyld loads a Qt
+# library that requires 14. Raise this only together with the runner image.
+MACOS_DEPLOYMENT_TARGET="${MACOS_DEPLOYMENT_TARGET:-14.0}"
+
 echo "==> Installing Qt6 via Homebrew..."
 brew install qt
 
@@ -28,17 +38,38 @@ if [ -n "${GITHUB_PATH:-}" ]; then
     echo "${QT_PREFIX}/bin" >> "$GITHUB_PATH"
 fi
 
-echo "==> Configuring CMake for macOS ${TARGET_ARCH}..."
+echo "==> Configuring CMake for macOS ${TARGET_ARCH} (min ${MACOS_DEPLOYMENT_TARGET})..."
 cmake -B build -S . \
     -DCMAKE_PREFIX_PATH="${QT_PREFIX}" \
     -DCMAKE_OSX_ARCHITECTURES="${TARGET_ARCH}" \
+    -DCMAKE_OSX_DEPLOYMENT_TARGET="${MACOS_DEPLOYMENT_TARGET}" \
     -DCMAKE_BUILD_TYPE=Release
 
 echo "==> Building Project..."
 cmake --build build --config Release
 
-# Confirm what actually came out -- a silent arch mismatch here would only show
-# up as "app is damaged" on a user's machine.
-if [ -x "${APP_BUNDLE}/Contents/MacOS/${APP_TARGET}" ]; then
-    echo "==> Built binary architecture: $(lipo -archs "${APP_BUNDLE}/Contents/MacOS/${APP_TARGET}")"
+# Report what actually came out. Both of these have failed silently before: a
+# wrong architecture only shows up as "app is damaged" on a user's machine, and
+# a drifting minimum OS only shows up as "requires a newer version of macOS".
+BIN="${APP_BUNDLE}/Contents/MacOS/${APP_TARGET}"
+if [ -x "${BIN}" ]; then
+    echo "==> Built binary architecture: $(lipo -archs "${BIN}")"
+
+    # The app is only as portable as the least portable thing in the bundle, so
+    # check the bundled Qt libraries too, not just our own binary.
+    APP_MIN="$(vtool -show-build "${BIN}" 2>/dev/null | awk '/minos/{print $2; exit}')"
+    echo "==> Binary minimum macOS: ${APP_MIN:-unknown}"
+
+    WORST="$(find "${APP_BUNDLE}" -type f \( -name '*.dylib' -o -path '*.framework/Versions/*' \) \
+        -exec vtool -show-build {} \; 2>/dev/null \
+        | awk '/minos/{print $2}' | sort -t. -k1,1n -k2,2n | tail -1)"
+    echo "==> Highest minimum macOS across bundled libraries: ${WORST:-unknown}"
+
+    if [ -n "${WORST}" ] && [ "${WORST%%.*}" -gt "${MACOS_DEPLOYMENT_TARGET%%.*}" ]; then
+        echo "::warning::A bundled library requires macOS ${WORST}, above the" \
+             "requested deployment target ${MACOS_DEPLOYMENT_TARGET}. The app will" \
+             "in practice need macOS ${WORST}. Homebrew bottles follow the runner" \
+             "image, so pin a different macOS image rather than only lowering the" \
+             "deployment target."
+    fi
 fi
