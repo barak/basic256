@@ -123,6 +123,7 @@ Grab the latest build for your platform from the [Releases page](https://github.
 | Linux x86 (tarball / AppImage) | ✅ | Both are quite large as they include all prerequisite software. A .deb package (which would be much smaller, listing its prerequisites in metadata instead of bundling them) does not exist yet. |
 | Raspberry Pi (tarball / AppImage) | ✅ | Same remark as Linux x86 regarding .deb. Speech does not work out of the box: Debian 13 ("Trixie") does not ship speech-dispatcher, so it must be installed manually. |
 | macOS (Apple Silicon) | ⚠️ | Builds as a Homebrew-based app. Having no developer license, I can only apply ad-hoc signing — see below. |
+| macOS (Intel) | ⚠️ | Same Homebrew-based app and the same ad-hoc signing caveat, built separately for x86_64 Macs. These are two single-architecture downloads, not one universal binary, so pick the one matching your Mac. |
 | Web (WASM) | 🧪 v1 | Works, with a few known gaps — see below. |
 
 ### macOS notes

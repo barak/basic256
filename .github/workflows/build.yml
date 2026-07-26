@@ -39,7 +39,16 @@ jobs:
             arch: arm64
             use_jurplel: false
             qt_arch: clang_64
-            artifact_name: BASIC256-MacOS
+            artifact_name: BASIC256-MacOS-AppleSilicon
+          # Intel. Deliberately the macOS 15 image rather than a newer one: a
+          # binary linked against a newer SDK can refuse to start on older
+          # systems, so building on the oldest available Intel image gives the
+          # widest compatibility. macos-13 (the old Intel label) is retired.
+          - os: macos-15-intel
+            arch: x86_64
+            use_jurplel: false
+            qt_arch: clang_64
+            artifact_name: BASIC256-MacOS-Intel
 
     steps:
     - name: Checkout
@@ -108,11 +117,12 @@ jobs:
     # ---------------------------
     # MacOS Build
     # ---------------------------
-    - name: Build MacOS ARM64
+    - name: Build macOS (${{ matrix.arch }})
       if: runner.os == 'macOS'
       shell: bash
       env:
         ARTIFACT_NAME: ${{ matrix.artifact_name }}.zip
+        TARGET_ARCH: ${{ matrix.arch }}
       run: |
         chmod +x ./.github/scripts/build_macos.sh
         bash ./.github/scripts/build_macos.sh
@@ -193,7 +203,7 @@ jobs:
     # ---------------------------
     # Packaging MacOS
     # ---------------------------
-    - name: Package MacOS Build
+    - name: Package macOS (${{ matrix.arch }})
       if: runner.os == 'macOS'
       shell: bash
       env:
