@@ -68,6 +68,38 @@ else
     codesign --force --deep --sign - "${DIST_DIR}/${APP_NAME}.app"
 fi
 
+# Report the real minimum macOS of the finished bundle. This has to happen
+# here, after macdeployqt: the app is only as portable as the least portable
+# library inside it, and macdeployqt copies in not just Qt but whatever
+# Homebrew dependencies Qt drags along (libpcre2, plugins, ...), which are
+# built for the runner image and can sit above Qt's own floor. Checking this
+# before macdeployqt finds nothing at all and reports a misleading "unknown".
+EXPECTED_MIN="${MACOS_DEPLOYMENT_TARGET:-15.0}"
+APP_PATH="${DIST_DIR}/${APP_NAME}.app"
+
+echo "==> Checking minimum macOS across the finished bundle..."
+WORST=""
+WORST_NAME=""
+while IFS= read -r lib; do
+    m="$(vtool -show-build "${lib}" 2>/dev/null | awk '/minos/{print $2; exit}')" || true
+    [ -n "${m}" ] || continue
+    if [ -z "${WORST}" ] || \
+       [ "$(printf '%s\n%s\n' "${WORST}" "${m}" | sort -t. -k1,1n -k2,2n | tail -1)" = "${m}" ]; then
+        WORST="${m}"
+        WORST_NAME="$(basename "${lib}")"
+    fi
+done < <(find "${APP_PATH}" -type f \( -perm -u+x -o -name '*.dylib' \) 2>/dev/null)
+
+echo "==> Highest minimum macOS in bundle: ${WORST:-unknown} (${WORST_NAME:-none})"
+
+if [ -n "${WORST}" ] && [ "${WORST%%.*}" -gt "${EXPECTED_MIN%%.*}" ]; then
+    echo "::warning::${WORST_NAME} requires macOS ${WORST}, above this build's" \
+         "deployment target ${EXPECTED_MIN}. The app will in practice need macOS" \
+         "${WORST}, so the README's stated requirement is wrong. Homebrew bottles" \
+         "track the runner image, so fix this by pinning a different macOS image," \
+         "not by changing the deployment target alone."
+fi
+
 echo "==> Creating zip artifact..."
 rm -f "${ARTIFACT_NAME}"
 ditto -c -k --sequesterRsrc --keepParent "${DIST_DIR}" "${ARTIFACT_NAME}"
