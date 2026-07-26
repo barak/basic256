@@ -543,7 +543,7 @@ subroutine demoFilesAndPlayers()
 	b = soundplayer(beep$)
 	soundloop b, 3                           # count=0 would loop forever
 	soundplay b
-	soundwait b*50
+	soundwait b                              # blocks until all three loops are done
 
 	soundplayeroff p                         # release this player's memory
 	soundplayeroff b
