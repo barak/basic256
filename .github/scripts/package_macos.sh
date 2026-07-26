@@ -6,7 +6,14 @@ APP_BUNDLE="build/${APP_NAME}.app"
 DIST_DIR="${APP_NAME}-Distribution"
 ARTIFACT_NAME="${ARTIFACT_NAME:-Basic256-MacOS.zip}"
 
-# 1. Fix the Qt dependencies inside the .app bundle so it runs on other Macs
+# 1. Fix the Qt dependencies inside the .app bundle so it runs on other Macs.
+#    build_macos.sh puts Qt's bin on GITHUB_PATH, but fall back to asking brew
+#    so this script also works standalone and on either architecture (Homebrew
+#    lives under /opt/homebrew on Apple Silicon, /usr/local on Intel).
+if ! command -v macdeployqt >/dev/null 2>&1; then
+    QT_PREFIX="$(brew --prefix qt)"
+    export PATH="${QT_PREFIX}/bin:$PATH"
+fi
 macdeployqt "${APP_BUNDLE}" -always-overwrite
 
 # # 2. Bundle the translation (.qm) files into the standard macOS location
