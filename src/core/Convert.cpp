@@ -73,7 +73,7 @@ int Convert::getBool(DataElement *d) {
 }
 
 int Convert::getInt(DataElement *d) {
-	long l=getLong(d);
+	qint64 l=getLong(d);
 	if (l<INT_MIN||l>INT_MAX) {
 		e = ERROR_INTEGERRANGE;
 		l = 0;
