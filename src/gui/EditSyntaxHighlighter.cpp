@@ -28,6 +28,19 @@ EditSyntaxHighlighter::EditSyntaxHighlighter(QTextDocument *parent)
 	initComments();
 }
 
+void EditSyntaxHighlighter::applyTheme() {
+	// Each rule holds its own copy of the format, so the rules have to be built
+	// again from the new colours rather than just re-tinted.
+	m_standardRules.clear();
+	initLabels();
+	initKeywords();
+	initConstants();
+	initNumbers();
+	initQuotes();
+	initComments();
+	rehighlight();
+}
+
 void EditSyntaxHighlighter::highlightBlock(const QString &text) {
 	HighlightRule rule;
 

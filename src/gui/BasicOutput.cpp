@@ -18,6 +18,9 @@
 
 #include <QPainter>
 #include <QTextCursor>
+#include <QTextBlock>
+#include <QList>
+#include <QPair>
 #include <QMutex>
 #include <QClipboard>
 #include <QMimeData>
@@ -255,6 +258,40 @@ void BasicOutput::slotWrap(bool checked) {
 	} else {
 		setLineWrapMode(QTextEdit::NoWrap);
 	}
+}
+
+void BasicOutput::applyTheme() {
+	setStyleSheet(EditorTheme::current().paneStyleSheet("QTextEdit"));
+
+	// Text already on screen keeps the colour it was written with, so output
+	// from before the switch would stay dark on a dark page. Repaint only the
+	// runs written in the other theme's normal colour; error lines have their
+	// own colour and are left as they are. Ranges are collected first because
+	// merging a format invalidates the fragment iterators.
+	const QColor normal = EditorTheme::current().outputText;
+	QList<QPair<int,int> > ranges;
+	for (QTextBlock b = document()->begin(); b.isValid(); b = b.next()) {
+		for (QTextBlock::iterator it = b.begin(); !it.atEnd(); ++it) {
+			const QTextFragment f = it.fragment();
+			if (!f.isValid()) continue;
+			const QColor c = f.charFormat().foreground().color();
+			if (c != EditorTheme::light().outputText && c != EditorTheme::dark().outputText) continue;
+			if (c == normal) continue;
+			ranges.append(qMakePair(f.position(), f.length()));
+		}
+	}
+
+	QTextCharFormat fmt;
+	fmt.setForeground(normal);
+	for (int i = 0; i < ranges.size(); i++) {
+		QTextCursor cur(document());
+		cur.setPosition(ranges.at(i).first);
+		cur.setPosition(ranges.at(i).first + ranges.at(i).second, QTextCursor::KeepAnchor);
+		cur.mergeCharFormat(fmt);
+	}
+
+	// Anything printed from here on uses the new normal colour.
+	setTextColor(normal);
 }
 
 void BasicOutput::outputText(QString text) {

@@ -126,6 +126,11 @@ public:
 	QAction *main_toolbar_visible_act;
 	QAction *outwin_toolbar_visible_act;
 	QAction *graphwin_toolbar_visible_act;
+    QMenu *viewmenu_theme;
+    QActionGroup *viewmenu_theme_group;
+    QAction *viewmenu_theme_system;
+    QAction *viewmenu_theme_light;
+    QAction *viewmenu_theme_dark;
     QMenu * viewmenu_zoom;
     QActionGroup *viewmenu_zoom_group;
     QAction *viewmenu_zoom_1_4;
@@ -223,6 +228,9 @@ private slots:
     void about();
     void openRecent();
     void dialogFontSelect();
+    void themeGroupActionEvent(QAction*);
+    // Repaint every editor tab and the output pane from the current theme.
+    void applyEditorTheme();
     void activeEditorPrint();
     void activeEditorSaveProgram();
     void activeEditorSaveAsProgram();

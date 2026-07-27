@@ -39,6 +39,7 @@
 #include "Settings.h"
 #include "Constants.h"
 #include "EditorTheme.h"
+#include "EditSyntaxHighlighter.h"
 
 extern int guiState;
 
@@ -593,6 +594,16 @@ void BasicEdit::updateLineNumberArea(const QRect &rect, int dy) {
 }
 
 
+
+void BasicEdit::applyTheme() {
+    setStyleSheet(EditorTheme::current().paneStyleSheet("QPlainTextEdit"));
+    // The highlighter is parented to the document by the QSyntaxHighlighter
+    // base ctor, so nothing else holds the pointer (see MainWindow).
+    EditSyntaxHighlighter *h = document()->findChild<EditSyntaxHighlighter*>();
+    if (h) h->applyTheme();
+    highlightCurrentLine();
+    if (lineNumberArea) lineNumberArea->update();
+}
 
 void BasicEdit::highlightCurrentLine() {
     if(guiState==GUISTATEAPP) return;

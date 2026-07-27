@@ -72,8 +72,23 @@ struct EditorTheme {
 	static const EditorTheme &light();
 	static const EditorTheme &dark();
 
+	// How the theme is chosen. System follows the desktop colour scheme and is
+	// the default; Light and Dark pin it regardless. Stored as these numbers,
+	// so do not renumber them.
+	enum Mode { System = 0, Light = 1, Dark = 2 };
+
 	// The theme the panes should paint with right now.
 	static const EditorTheme &current();
+
+	static Mode mode();
+	static void setMode(Mode m);
+
+	// Resolves System against the desktop; never returns System.
+	static Mode effectiveMode();
+
+	// True when this Qt build can report the desktop colour scheme. On older Qt
+	// there is nothing to follow, so System resolves to Light.
+	static bool systemSchemeAvailable();
 };
 
 #endif	// __EDITORTHEME_H

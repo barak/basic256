@@ -15,6 +15,16 @@
 
 #include "EditorTheme.h"
 
+#include <QGuiApplication>
+#include <QStyleHints>
+
+#include "Settings.h"
+
+// Loaded from the stored setting on first use rather than at start up, so the
+// panes get the right colours no matter how early they are constructed.
+static EditorTheme::Mode s_mode = EditorTheme::System;
+static bool s_modeLoaded = false;
+
 QString EditorTheme::paneStyleSheet(const QString &widgetClass) const {
 	return widgetClass + "{"
 		"  background-color:" + background.name() + ";"
@@ -105,8 +115,43 @@ const EditorTheme &EditorTheme::dark() {
 	return t;
 }
 
+bool EditorTheme::systemSchemeAvailable() {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+	return true;
+#else
+	return false;
+#endif
+}
+
+EditorTheme::Mode EditorTheme::mode() {
+	if (!s_modeLoaded) {
+		SETTINGS;
+		const int m = settings.value(SETTINGSTHEME, SETTINGSTHEMEDEFAULT).toInt();
+		s_mode = (m == Light || m == Dark) ? (Mode)m : System;
+		s_modeLoaded = true;
+	}
+	return s_mode;
+}
+
+void EditorTheme::setMode(Mode m) {
+	s_mode = m;
+	s_modeLoaded = true;
+}
+
+EditorTheme::Mode EditorTheme::effectiveMode() {
+	const Mode m = mode();
+	if (m != System) return m;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+	// QStyleHints::colorScheme() is Qt 6.5 and later. It reports Unknown when
+	// the platform cannot say, which we treat as light -- the scheme every
+	// BASIC-256 release before this one assumed. styleHints() needs a live
+	// QGuiApplication, so guard against being asked this too early.
+	if (QGuiApplication::instance() &&
+		QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark) return Dark;
+#endif
+	return Light;
+}
+
 const EditorTheme &EditorTheme::current() {
-	// Selecting between light and dark arrives with the Theme setting; for now
-	// this keeps the panes on the light scheme they are pinned to today.
-	return light();
+	return effectiveMode() == Dark ? dark() : light();
 }

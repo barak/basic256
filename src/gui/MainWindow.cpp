@@ -49,6 +49,7 @@
 #endif
 
 #include <QScreen>
+#include <QStyleHints>
 #include <QTimer>
 
 #include "MainWindow.h"
@@ -58,6 +59,7 @@
 #include "BasicIcons.h"
 #include "BasicKeyboard.h"
 #include "EditSyntaxHighlighter.h"
+#include "EditorTheme.h"
 
 // global mymutexes and timers
 QMutex* mymutex;
@@ -340,6 +342,30 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f, QString localestring
     // Editor and Output font and Editor settings
     viewmenu->addSeparator();
     fontact = viewmenu->addAction(basicIcons->fontIcon, QObject::tr("&Font..."));
+
+    // Colour theme for the Edit and Text Output panes. System follows the
+    // desktop and is the default; Light and Dark pin it. The Graphics Output
+    // window is deliberately not themed -- see EditorTheme.h.
+    viewmenu_theme = viewmenu->addMenu(QObject::tr("&Theme"));
+    viewmenu_theme_group = new QActionGroup(this);
+    viewmenu_theme_group->setExclusive(true);
+    viewmenu_theme_system = viewmenu_theme_group->addAction(QObject::tr("Follow &System"));
+    viewmenu_theme_system->setCheckable(true);
+    viewmenu_theme_system->setData(EditorTheme::System);
+    // Nothing to follow on a Qt too old to report the desktop scheme.
+    viewmenu_theme_system->setEnabled(EditorTheme::systemSchemeAvailable());
+    viewmenu_theme_light = viewmenu_theme_group->addAction(QObject::tr("&Light"));
+    viewmenu_theme_light->setCheckable(true);
+    viewmenu_theme_light->setData(EditorTheme::Light);
+    viewmenu_theme_dark = viewmenu_theme_group->addAction(QObject::tr("&Dark"));
+    viewmenu_theme_dark->setCheckable(true);
+    viewmenu_theme_dark->setData(EditorTheme::Dark);
+    viewmenu_theme->addActions(viewmenu_theme_group->actions());
+    switch (EditorTheme::mode()) {
+        case EditorTheme::Light: viewmenu_theme_light->setChecked(true); break;
+        case EditorTheme::Dark: viewmenu_theme_dark->setChecked(true); break;
+        default: viewmenu_theme_system->setChecked(true); break;
+    }
     edit_whitespace_act = viewmenu->addAction(QObject::tr("Show &Whitespace Characters"));
     edit_whitespace_act->setCheckable(true);
     edit_whitespace_act->setChecked(SETTINGSEDITWHITESPACEDEFAULT);
@@ -481,6 +507,14 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f, QString localestring
 
 	QObject::connect(varwin_visible_act, SIGNAL(triggered(bool)), varwin_dock, SLOT(setVisible(bool)));
     QObject::connect(viewmenu_zoom_group, SIGNAL(triggered(QAction*)), this, SLOT(zoomGroupActionEvent(QAction*)));
+    QObject::connect(viewmenu_theme_group, SIGNAL(triggered(QAction*)), this, SLOT(themeGroupActionEvent(QAction*)));
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    // Follow the desktop live, so switching the OS to dark repaints the panes
+    // straight away instead of at the next start up. Only matters while the
+    // theme is set to System; applyEditorTheme() re-reads it either way.
+    QObject::connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged,
+                     this, [this](Qt::ColorScheme){ if (EditorTheme::mode() == EditorTheme::System) applyEditorTheme(); });
+#endif
 
 
 
@@ -1250,6 +1284,25 @@ QFont MainWindow::defaultEditorFont() {
         }
     }
     return f;
+}
+
+void MainWindow::themeGroupActionEvent(QAction *action) {
+    EditorTheme::setMode((EditorTheme::Mode)action->data().toInt());
+    SETTINGS;
+    settings.setValue(SETTINGSTHEME, (int)EditorTheme::mode());
+    applyEditorTheme();
+}
+
+void MainWindow::applyEditorTheme() {
+    mymutex->lock();
+    if(guiState!=GUISTATEAPP){
+        for(int i=0; i<editwintabs->count(); i++){
+            ((BasicEdit*)editwintabs->widget(i))->applyTheme();
+        }
+    }
+    outwin->applyTheme();
+    waitCond->wakeAll();
+    mymutex->unlock();
 }
 
 void MainWindow::dialogFontSelect() {
