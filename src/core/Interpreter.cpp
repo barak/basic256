@@ -6103,7 +6103,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				// The standard says: "If the value of the right operand is negative or is greater than
 				// or equal to the width of the promoted left operand, the behavior is undefined."
 					int n = stack->popInt();
-					unsigned long a = stack->popLong();
+					quint64 a = (quint64)stack->popLong();
 					if(n>=0){
 						if(n>=((int)sizeof(a))*8){
 							stack->pushInt(0);
@@ -6128,7 +6128,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				// The standard says: "If the value of the right operand is negative or is greater than
 				// or equal to the width of the promoted left operand, the behavior is undefined."
 					int n = stack->popInt();
-					unsigned long a = stack->popLong();
+					quint64 a = (quint64)stack->popLong();
 					if(n>=0){
 						if(n>=((int)sizeof(a))*8){
 							stack->pushInt(0);
