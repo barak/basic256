@@ -4837,8 +4837,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						case T_INT:
 							{
 								bool ok;
-								long i=0;
-								i = inputString.toLong(&ok);
+								qint64 i=0;
+								i = inputString.toLongLong(&ok);
 								if (!ok) {
 									error->q(ERROR_NUMBERCONV);
 								}
@@ -4873,8 +4873,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 							{
 								// standard input should try to convert string to a number if it can.
 								bool ok;
-								long i;
-								i = inputString.toLong(&ok);
+								qint64 i;
+								i = inputString.toLongLong(&ok);
 								if (ok) {
 									stack->pushLong(i);
 								} else {

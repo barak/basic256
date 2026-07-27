@@ -96,7 +96,7 @@ qint64 Convert::getLong(DataElement *d) {
 		} else if (d->type == T_STRING) {
 			if (d->stringval.length()!=0) {
 				bool ok;
-				i = d->stringval.toLong(&ok);
+				i = d->stringval.toLongLong(&ok);
 				if(!ok) {
 					i = 0;
 					e = ERROR_NUMBERCONV;
