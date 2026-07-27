@@ -108,6 +108,7 @@ set(SOURCES_GUI
     src/gui/BasicOutput.cpp
     src/gui/BasicWidget.cpp
     src/gui/EditSyntaxHighlighter.cpp
+    src/gui/EditorTheme.cpp
     src/gui/LineNumberArea.cpp
     src/gui/MainWindow.cpp
     src/gui/PreferencesWin.cpp
@@ -124,6 +125,7 @@ set(HEADERS_GUI
     src/gui/BasicOutput.h
     src/gui/BasicWidget.h
     src/gui/EditSyntaxHighlighter.h
+    src/gui/EditorTheme.h
     src/gui/LineNumberArea.h
     src/gui/MainWindow.h
     src/gui/PreferencesWin.h

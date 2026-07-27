@@ -37,6 +37,7 @@
 #include "RunController.h"
 #include "MainWindow.h"
 #include "Settings.h"
+#include "EditorTheme.h"
 #include "md5.h"
 #include "Sleeper.h"
 
@@ -489,7 +490,7 @@ void RunController::outputError(QString text) {
 		std::cerr.flush();
 	} else {
 		mainWindowsVisible(2,true);
-		outwin->outputText(text, Qt::red);
+		outwin->outputText(text, EditorTheme::current().outputError);
 	}
 	waitCond->wakeAll();
 	mymutex->unlock();

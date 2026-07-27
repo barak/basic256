@@ -35,6 +35,7 @@
 
 #include "Settings.h"
 #include "BasicOutput.h"
+#include "EditorTheme.h"
 #include "BasicKeyboard.h"
 
 extern QMutex *mymutex;
@@ -47,18 +48,11 @@ BasicOutput::BasicOutput( ) : QTextEdit () {
 	setFocusPolicy(Qt::StrongFocus);
 	setAcceptRichText(false);
 	setUndoRedoEnabled(false);
-	// Pin the output pane to a fixed light scheme regardless of the OS colour
-	// scheme. Text is emitted with hardcoded colours (default Qt::black) and no
-	// background is ever set, so on Qt 6.5+ under a dark desktop theme the
-	// widget's Base role turns near-black and black-on-black text disappears.
-	// A stylesheet reliably overrides both the style and the OS scheme.
-	setStyleSheet(
-		"QTextEdit{"
-		"  background-color:#ffffff;"
-		"  color:#000000;"
-		"  selection-background-color:#c0d8f0;"
-		"  selection-color:#000000;"
-		"}");
+	// Paint the output pane from EditorTheme rather than leaving it to the OS
+	// colour scheme. Text is emitted with an explicit colour and no background
+	// is ever set, so on Qt 6.5+ under a dark desktop theme the widget's Base
+	// role turns near-black and the text disappears into it.
+	setStyleSheet(EditorTheme::current().paneStyleSheet("QTextEdit"));
 	gettingInput = false;
 	saveLastPosition();
 
@@ -264,7 +258,7 @@ void BasicOutput::slotWrap(bool checked) {
 }
 
 void BasicOutput::outputText(QString text) {
-	outputText(text, Qt::black);
+	outputText(text, EditorTheme::current().outputText);
 }
 
 void BasicOutput::outputText(QString text, QColor color) {

@@ -16,6 +16,7 @@
 #include <QTextDocument>
 
 #include "EditSyntaxHighlighter.h"
+#include "EditorTheme.h"
 
 EditSyntaxHighlighter::EditSyntaxHighlighter(QTextDocument *parent)
 	: 	QSyntaxHighlighter(parent) {
@@ -50,7 +51,7 @@ void EditSyntaxHighlighter::highlightBlock(const QString &text) {
 
 void EditSyntaxHighlighter::initKeywords() {
 
-	m_keywordFmt.setForeground(Qt::darkBlue);
+	m_keywordFmt.setForeground(EditorTheme::current().keyword);
 	m_keywordFmt.setFontWeight(QFont::Bold);
 	QStringList keywordPatterns;
 
@@ -381,7 +382,7 @@ void EditSyntaxHighlighter::initKeywords() {
 
 void EditSyntaxHighlighter::initConstants() {
 
-	m_constantFmt.setForeground(Qt::darkCyan);
+	m_constantFmt.setForeground(EditorTheme::current().constant);
 	QStringList constantPatterns;
 
 	constantPatterns
@@ -559,7 +560,7 @@ void EditSyntaxHighlighter::initConstants() {
 }
 
 void EditSyntaxHighlighter::initQuotes() {
-	m_quoteFmt.setForeground(Qt::magenta);
+	m_quoteFmt.setForeground(EditorTheme::current().quote);
 
 	HighlightRule *rule = new HighlightRule;
 	rule->pattern = QRegularExpression("(\"[^\"]*\")|(\'[^\']*\')");
@@ -568,7 +569,7 @@ void EditSyntaxHighlighter::initQuotes() {
 }
 
 void EditSyntaxHighlighter::initLabels() {
-	m_labelFmt.setForeground(Qt::blue);
+	m_labelFmt.setForeground(EditorTheme::current().label);
 
 	HighlightRule *rule = new HighlightRule;
 	rule->pattern = QRegularExpression("(?:^\\s*)([a-z0-9]+):", QRegularExpression::CaseInsensitiveOption);
@@ -577,7 +578,7 @@ void EditSyntaxHighlighter::initLabels() {
 }
 
 void EditSyntaxHighlighter::initNumbers() {
-	m_numberFmt.setForeground(Qt::darkMagenta);
+	m_numberFmt.setForeground(EditorTheme::current().number);
 
 	HighlightRule *rule = new HighlightRule;
 	rule->pattern = QRegularExpression("(\\b([0-9]*\\.?[0-9]+(e[-+]?[0-9]+)?)\\b)|(\\b0x[0-9a-f]+\\b)|(\\b0b[0-1]+\\b)|(\\b0o[0-7]+\\b)", QRegularExpression::CaseInsensitiveOption);
@@ -586,7 +587,7 @@ void EditSyntaxHighlighter::initNumbers() {
 }
 
 void EditSyntaxHighlighter::initComments() {
-	m_commentFmt.setForeground(Qt::darkGreen);
+	m_commentFmt.setForeground(EditorTheme::current().comment);
 	m_commentFmt.setFontItalic(true);
 
 	HighlightRule *rule;

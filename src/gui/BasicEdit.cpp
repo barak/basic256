@@ -38,6 +38,7 @@
 #include "LineNumberArea.h"
 #include "Settings.h"
 #include "Constants.h"
+#include "EditorTheme.h"
 
 extern int guiState;
 
@@ -57,22 +58,13 @@ BasicEdit::BasicEdit(const QString & defaulttitle) {
     action->setCheckable(true);
     fileChangedOnDiskFlag = false;
 
-    // Pin the editor to a fixed light scheme regardless of the OS colour
-    // scheme. The syntax highlighter (EditSyntaxHighlighter) only ever sets
-    // dark FOREGROUND colours chosen for a white page and never a background,
-    // so on Qt 6.5+ under a dark desktop theme the widget's Base role turns
-    // near-black and the dark code becomes unreadable. A stylesheet (unlike
-    // setPalette(), which some styles ignore under a dark scheme) reliably
-    // overrides both the style and the OS scheme. The gutter and current-line
-    // highlight bands already assume a light background, so this keeps them
-    // consistent too.
-    setStyleSheet(
-        "QPlainTextEdit{"
-        "  background-color:#ffffff;"
-        "  color:#000000;"
-        "  selection-background-color:#c0d8f0;"
-        "  selection-color:#000000;"
-        "}");
+    // Paint the editor from EditorTheme rather than leaving it to the OS
+    // colour scheme. The syntax highlighter sets only foreground colours and
+    // never a background, so on Qt 6.5+ under a dark desktop theme the widget's
+    // Base role turns near-black and the code becomes unreadable. Setting both
+    // here keeps the pane, its gutter and the highlight bands consistent with
+    // each other whichever theme is in force.
+    setStyleSheet(EditorTheme::current().paneStyleSheet("QPlainTextEdit"));
 
     setReadOnly(guiState!=GUISTATENORMAL);
     if(guiState==GUISTATEAPP){
@@ -612,16 +604,16 @@ void BasicEdit::highlightCurrentLine() {
 
     if(guiState==GUISTATERUN || runState==RUNSTATERUN){
         // editor is in readOnly mode so line will be red (forbidden)
-        lineColor = QColor(Qt::red).lighter(175);
-        blockColor = QColor(Qt::red).lighter(190);
+        lineColor = EditorTheme::current().readOnlyLine;
+        blockColor = EditorTheme::current().readOnlyBlock;
     }else if (runState==RUNSTATERUNDEBUG || runState==RUNSTATEDEBUG) {
         // if we are executing in debug mode
-        lineColor = QColor(Qt::green).lighter(175);
+        lineColor = EditorTheme::current().debugLine;
         blockColor = lineColor;
     }else{
         // in edit mode
-        lineColor = QColor(Qt::yellow).lighter(165);
-        blockColor = QColor(Qt::yellow).lighter(190);
+        lineColor = EditorTheme::current().currentLine;
+        blockColor = EditorTheme::current().currentBlock;
     }
 
     blockSelection.format.setBackground(blockColor);
@@ -660,7 +652,7 @@ void BasicEdit::highlightCurrentLine() {
             int quote=0;
             int doubleQuote=0;
             int i = 0;
-            const QColor bracketColor = QColor(Qt::green).lighter(165);
+            const QColor bracketColor = EditorTheme::current().bracketMatch;
             QTextEdit::ExtraSelection selectionBracket;
 
             if(pos>0){
@@ -785,7 +777,7 @@ void BasicEdit::lineNumberAreaPaintEvent(QPaintEvent *event) {
     int lastBlockNumber = t.block().blockNumber();
 
     QPainter painter(lineNumberArea);
-    painter.fillRect(event->rect(), Qt::lightGray);
+    painter.fillRect(event->rect(), EditorTheme::current().gutterBackground);
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
@@ -807,14 +799,14 @@ void BasicEdit::lineNumberAreaPaintEvent(QPaintEvent *event) {
             //Also there is a bug with last block. See http://stackoverflow.com/questions/37890906/qt-linenumberarea-example-blockboundingrectlastblock
             //or http://www.forum.crossplatform.ru/index.php?showtopic=3963
             if (blockNumber==currentBlockNumber)
-                painter.fillRect(0,top,lineNumberArea->width(),bottom-top-(blockNumber==lastBlockNumber?3:0), QColor(Qt::lightGray).lighter(110));
+                painter.fillRect(0,top,lineNumberArea->width(),bottom-top-(blockNumber==lastBlockNumber?3:0), EditorTheme::current().gutterCurrent);
             else if(top <= y && bottom > y && y>=0 && runState != RUNSTATERUN)
-                painter.fillRect(0,top,lineNumberArea->width(),bottom-top-(blockNumber==lastBlockNumber?3:0), QColor(Qt::lightGray).lighter(104));
+                painter.fillRect(0,top,lineNumberArea->width(),bottom-top-(blockNumber==lastBlockNumber?3:0), EditorTheme::current().gutterHover);
 
             // Draw breakpoints
             if (block.userState()==STATEBREAKPOINT) {
-                    painter.setBrush(Qt::red);
-                    painter.setPen(Qt::red);
+                    painter.setBrush(EditorTheme::current().breakpoint);
+                    painter.setPen(EditorTheme::current().breakpoint);
                     int w = lineNumberArea->width();
                     int bh = blockBoundingRect(block).height();
                     int fh = fontMetrics().height();
@@ -822,9 +814,9 @@ void BasicEdit::lineNumberAreaPaintEvent(QPaintEvent *event) {
             }
             // draw text
             if (blockNumber==currentBlockNumber) {
-                painter.setPen(Qt::blue);
+                painter.setPen(EditorTheme::current().gutterTextCurrent);
             } else {
-                painter.setPen(Qt::black);
+                painter.setPen(EditorTheme::current().gutterText);
             }
             painter.drawText(0, top, lineNumberArea->width()-5, fontMetrics().height(), Qt::AlignRight, number);
         }
