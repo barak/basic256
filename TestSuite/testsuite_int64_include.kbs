@@ -1,0 +1,72 @@
+# testsuite_int64_include section for BASIC256
+
+# Modification History
+# date		programmer	description
+# 20260728	M. Vilain	original coding
+
+currentsuite = "int64"
+
+# Whole numbers are 64 bits wide on every platform. Each of these used to
+# give a different answer on Windows than on Linux and macOS, because the
+# Windows build did the work in a 32 bit long.
+
+## shifting bits
+
+call n("1 << 10", 1 << 10, 1024)
+call n("1024 >> 10", 1024 >> 10, 1)
+
+# past bit 31 - the Windows build used to return 0 here
+call n("1 << 40", 1 << 40, 1099511627776)
+call n("1 << 62", 1 << 62, 4611686018427387904)
+
+# shifting further than the number is wide gives 0, and that boundary
+# is now 64 everywhere rather than 32 on Windows
+call n("1 << 64 is 0", 1 << 64, 0)
+call n("1 << 100 is 0", 1 << 100, 0)
+call n("1 << -64 is 0", 1 << -64, 0)
+
+# a negative count shifts the other way
+call n("256 << -4", 256 << -4, 16)
+call n("16 >> -4", 16 >> -4, 256)
+
+# shifting works on the bits, not the sign: >> never drags the sign bit
+# down, and << can push a bit up into it
+call n("-8 >> 1 does not sign extend", -8 >> 1, 9223372036854775804)
+call boolean("1 << 63 sets the sign bit", (1 << 63) < 0)
+
+## reading big numbers out of strings
+# shifting by zero is a no-op that still forces the string through the
+# number conversion. Anything past 2147483647 used to fail on Windows and
+# quietly come back as 0.
+
+s$ = "9999999999"
+call n("string past 32 bits converts", s$ >> 0, 9999999999)
+
+s$ = "9223372036854775807"
+call n("string at the 64 bit limit converts", s$ >> 0, 9223372036854775807)
+
+s$ = "1099511627776"
+call n("string round trips", s$ >> 0, 1 << 40)
+
+## range checking a number that has to fit in a plain integer
+# The shift count has to fit in an int. 4294967304 is 8 more than 2^32, so
+# a build that cut it down to 32 bits saw 8 and shifted by 8 - a wrong
+# answer with no complaint at all. The count is now checked against the
+# real value and rejected. The same guard fires anywhere a number has to
+# narrow to an int, left(a$,n) included.
+#
+# Which of the three outcomes you get depends on the Preferences setting
+# for type conversion. Error raises ERROR_INTEGERRANGE and Warn raises
+# WARNING_INTEGERRANGE, both landing in the catch; None - the default, and
+# what CI runs with - suppresses it and leaves a shift of 0 behind. All
+# three are correct. Silently shifting by 8 is the bug.
+
+big = 4294967304
+res = -1
+caught = 0
+try
+   res = 1 << big
+catch
+   caught = lasterror
+end try
+call boolean("out of range shift count is not truncated", caught = ERROR_INTEGERRANGE or caught = WARNING_INTEGERRANGE or res = 1)

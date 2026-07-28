@@ -308,6 +308,12 @@ call section("Binary Operations and Type Conversions")
 ###################################################
 include "testsuite_binaryop_include.kbs"
 
+section_int64:
+###################################################
+call section("64 bit Whole Numbers")
+###################################################
+include "testsuite_int64_include.kbs"
+
 section_types:
 ###################################################
 call section("Variable and Stack Types Tests")
