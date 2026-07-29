@@ -4,10 +4,33 @@
 [![Latest release](https://img.shields.io/github/v/release/uglymike17/basic256?include_prereleases)](https://github.com/uglymike17/basic256/releases)
 [![License: GPLv3](https://img.shields.io/badge/license-GPLv3-blue)](license.txt)
 
-> **The continuation of the classic BASIC256 educational programming environment.**
+> **BASIC256 is a classic BASIC programming language designed to make learning programming fun through graphics, animation, sound and experimentation.**
 
-BASIC256 is a simple, graphical dialect of BASIC designed for education. It enables beginners to learn programming through immediate visual feedback, graphics, sound and experimentation. This repository continues the original SourceForge project, modernizing the codebase (Qt6, CMake, CI, multi-platform) while preserving the spirit and compatibility of the original language.  
-As I do not control the old docuwiki site https://doc.basic256.org, I created a Docusaurus copy at https://uglymike17.github.io/Basic256-Docs. This is now the online help you will see. The F1 on a Basic256 keyword will also fetch from that site.  
+This project is the actively maintained continuation of the original BASIC256, bringing the educational environment to Windows, Linux, macOS and the Web while preserving compatibility with existing BASIC256 programs. It also has an extensive documentation site, https://doc.basic256.org, accessible from the application's Help → Online Help menu.  
+
+## Why use BASIC256?
+
+- Designed specifically for beginners  
+- Immediate graphics and sound  
+- Cross-platform  
+- Lots of example programs  
+- Simple BASIC syntax  
+- Used for education and hobby programming  
+
+## What's new in BASIC256 2.1
+
+- Qt6
+- CMake build system  
+- Microsoft Visual Studio 2022 support  
+- WebAssembly  
+- macOS builds for Silicon and Intel Macs!  
+- GitHub Actions  
+- New standard library  
+- Better command line (fullscreen mode, graphics only, text only and silent running)  
+- Modern documentation  
+- Updated examples  
+- View > Theme settings for Dark themes  
+
 
 ## Try it in your browser
 
@@ -16,9 +39,24 @@ editor and interpreter, with no install needed.
 
 **Live demo:** https://uglymike17.github.io/basic256/
 
-### Running a program straight from the link
+You will be greeted with an interface like the following image. The interface automatically adapts to both light and dark system themes. The View menu item allows you to show/hide windows and/or toolbars among other things. You can type a program such as 
+```basic
+# bubbles.kbs — random transparent colorful circles
+clg
+fastgraphics
+for i = 1 to 500
+   color rgb(int(rand*256), int(rand*256), int(rand*256), 100+int(rand*150))
+   circle rand*graphwidth, rand*graphheight, rand*40
+   refresh
+next i
+```  
+and click Run to see the result immediately.
 
-You can point the app at a program from the URL. **Which** program to run is one
+![The bubbles program typed into the BASIC256 editor in a browser tab, with its result in the Graphics Output pane on the right: hundreds of overlapping translucent circles in random colours and sizes filling the canvas](Basic256_in_Browser.png)
+
+### Running a program straight from the Web link
+
+You can use the above link with parameters to make a program run directly from the URL. **Which** program to run is one
 parameter, and **how** to show it is another.
 
 Three ways to name the program:
@@ -47,16 +85,16 @@ Then `&mode=` chooses the window layout. These mirror the command-line switches:
 So a plain link opens the IDE with the program loaded and running — you can see
 it, stop it and edit it:
 
-**https://uglymike17.github.io/basic256/?run=mandelbrot**
+**https://uglymike17.github.io/basic256/?run=BubbleUniverse_variations**
 
-![Browser interface](Basic256-Web.png)
+![The Bubble Universe demo running in the browser IDE: its source in the editor on the left, the program's "A cool looking animated demo style program in Basic256" line in Text Output, and a dense multicoloured sphere of plotted points in Graphics Output](Basic256-Web.png)
 
 Add `&mode=graph` and you get just the canvas, with no menus or toolbars — the
 form to use when embedding a demo in a page:
 
-**https://uglymike17.github.io/basic256/?run=mandelbrot&mode=graph**
+**https://uglymike17.github.io/basic256/?run=Mandelbrot-256&mode=graph**
 
-![Browser interface](Basic256-Web_GraphicsOnly.png)
+![The Mandelbrot-256 demo in graphics-only mode: no BASIC256 menus or toolbars, just the program's own window with a colour-banded Mandelbrot set on the left and its Mandel/Julia/Orbits/Zoom/Colors option tabs on the right](Basic256-Web_GraphicsOnly.png)
 
 `mode` works with any of the three, so `?url=demos/bubble.kbs&mode=graph` runs
 your own hosted program as a bare-canvas demo. On your own server, add folders
@@ -77,7 +115,7 @@ With those in place the page loads in a single pass — no reload — and the bu
 `coi-serviceworker` helper (only needed because GitHub Pages can't send those
 headers itself) is no longer required.
 
-### Good to know
+### Browser differences
 
 Running inside a browser sandbox, a few things differ from the desktop version:
 
@@ -91,26 +129,18 @@ Running inside a browser sandbox, a few things differ from the desktop version:
   and particle simulations will run at a gentler pace.
 
 
-## What the standard desktop app looks like
+## The desktop IDE
 
-Started normally, BASIC256 opens a 3-pane IDE with edit, output and graphics windows:
+Started as a standard application, BASIC256 opens the same 3-pane IDE with edit, output and graphics windows as the web version:
 
-![Desktop interface](Basic256-IDE.png)
+![The BASIC256 desktop IDE on Windows running the same Bubble Universe demo, with the syntax-highlighted source on the left and the Text Output and Graphics Output panes on the right](Basic256-IDE.png)
 
-A taste of the language:
 
-```basic
-# bubbles.kbs — random colorful circles
-clg
-fastgraphics
-for i = 1 to 200
-   color rgb(int(rand*256), int(rand*256), int(rand*256))
-   circle rand*graphwidth, rand*graphheight, rand*40
-   refresh
-next i
-```
+## Examples
 
-The Examples directory has some more or less advanced example programs to play and experiment with (fractals, attractors, simulations, sounds and more). The original, minimalistic example programs from the 2.0.0.11 version are also included in sub-directory Original_Examples. Although some of Manuel Santos' programs are already included, you can still find the odd gem of his on https://basic256.blogspot.com/.
+The Examples directories have some more or less advanced example programs to play and experiment with. Note that most of these 'new' examples are also somewhat dated and some are not working on tablets or smartphones but rely on keyboard input.  
+The original, minimalistic example programs from the 2.0.0.11 version are also included in sub-directory Original_Examples.  
+Although some of Manuel Santos' programs are already included, you can still find many additional examples of his on https://basic256.blogspot.com/.
 
 ## Download & install
 
@@ -154,8 +184,6 @@ The browser build is v1 and has a few known gaps compared to the desktop app:
 - `NETREAD` (fetching a URL) is subject to the target site's CORS policy, same as any browser page.
 
 ## Command line / Terminal usage
-
-![CLI interface](Basic256-CLI.png)
 
 BASIC256 can also be called from the command line with the following options:
 
@@ -201,12 +229,16 @@ Set sh = CreateObject("WScript.Shell")
 sh.Run """C:\PATH_TO_BASIC256\basic256.exe"" -g ""C:\PATH_TO_KBS\Mandelbrot-256.kbs""", 1, False
 ```
 
+Shortcuts made this way sit on the desktop like any other application:
+
+![A row of Windows desktop shortcuts — mandel.vbs, mandel.bat, Attractors, chat.bat, basicpaint and Colors.bat — each launching a BASIC256 program directly](Basic256-CLI.png)
+
 An example video of starting several graphics demos from Windows shortcuts can be seen here: https://www.youtube.com/watch?v=D8ord7K2QvI
 
 ## Standard library
 
 This is functionality that does not exist in SourceForge BASIC-256.
-In the program tree, there is now a directory Modules that contains a single standard library: math.kbs.
+The program now contains a Modules directory that contains a single standard library: math.kbs.
 This can be included in any program you write simply with
 
 ```basic
@@ -218,16 +250,16 @@ Currently this provides:
 
 | Function | Meaning |
 | :---: | :--- |
-| minarr(a), maxarr(a)| Returns the smallest/largest element in an array or in a list between {} |
+| minarr(a), maxarr(a)| Returns the smallest/largest element in an array or in a list enclosed in {} |
 | sumarr(a), avgarr(a) | Returns the sum/average of the elements in an array or list. |
 | sign(x) | Returns -1 / 0 / 1. |
 | min(a,b), max(a,b)| Returns the smallest/largest of the two scalars |
 | lerp(a,b,t) | Linear interpolation between a and b by ratio t (usually 0 and 1). |
 | hypot(a, b) | Returns the length of the hypotenuse, sqrt(a*a + b*b) |
-| atan2(y, x) | angle in radians of the point (x, y) |
+| atan2(y, x) | Returns the angle in radians of the point (x, y) |
 | clamp(a,lo,hi) | Clamps the value of a between lo and hi - r=clamp(r,0,255). |
 | remap(x, a1,a2, b1,b2)| remap a value between ranges — very handy in graphics-oriented BASIC256 |
-| wrap(x, lo, hi) | cyclic wrap (angles, screen edges) — natural companion to clamp |
+| wrap(x, lo, hi) | Wraps a value cyclically (angles, screen edges) — natural companion to clamp |
 | dist(x1,y1,x2,y2)| distance between two points|
 | fmod(a,b)| floating-point remainder of a / b|
 | fround(x, n)| round to n decimals (built-in command round is 0-decimal)|
@@ -241,21 +273,11 @@ Detailed compiling instructions can be found in [COMPILING.txt](COMPILING.txt).
 
 For Raspberry Pi, there is a dedicated file: [COMPILING_RaspberryPI.txt](COMPILING_RaspberryPI.txt).
 
-Highlights of the modernized build:
-
-- CMake build system
-- Microsoft Visual Studio 2022 support
-- GitHub Actions CI
-- Automated test suite
-- Windows, Linux, Raspberry Pi and macOS builds
-- WebAssembly (WASM) builds (v1)
-- New command-line options for fullscreen mode, graphics only, text only and silent running
-
 ## History
 
 ### The original project
 
-The original BASIC-256 v2.0.0.11 is a GPL-licensed, retro BASIC programming environment for learning coding and having fun. It was originally called KidBasic and was started in 2006 by Ian Paul Larsen, later maintained by James Reneau and many contributors through the SourceForge project. After years of updates by the contributors and a rename to BASIC-256, it is in its current state still quite capable for everyday hobby use, but the source and build setup is showing its age.
+The original BASIC-256 v2.0.0.11 is a GPL-licensed, retro BASIC programming environment for learning coding and having fun. It was originally called KidBasic and was started in 2006 by Ian Paul Larsen, later maintained by James Reneau and other contributors through the SourceForge project. After years of updates by the contributors and a rename to BASIC-256, it is in its current state still quite capable for everyday hobby use, but the source and build setup is showing its age.
 
 The original code and last downloadable version reside on [SourceForge](https://sourceforge.net/projects/kidbasic/) at version 2.0.0.11, released in 2020. It uses qmake and MinGW to compile the Windows version and is Qt5-based. It comes with an Examples directory, but most programs there need to be updated to modern specs related to speed and graphics sizes. There is also a TestSuite directory to test edge cases, but this doesn't run fully on 2.0.0.11.
 
@@ -267,12 +289,12 @@ This GitHub repository ([uglymike17/basic256](https://github.com/uglymike17/basi
 
 ## Roadmap
 
-Development continues with an emphasis on educational value while preserving compatibility.
-
-### Language
-
-- Adding other include modules such as a graphical BTK2-like toolkit, and extending the existing one.
-- Improving the language syntax and semantics, including new opcodes where a module cannot do the job.
+Development continues with an emphasis on educational value while preserving compatibility.  
+- Package manager (Debian)  
+- More standard modules  (like a BTK2-like graphical module)  
+- More/Better/Updated examples  
+- Education tutorials  
+- New language features when using modules would be too slow.
 
 ## Vision
 
@@ -280,7 +302,17 @@ BASIC-256 should remain one of the easiest programming languages for beginners, 
 
 ## Contributing
 
-Bug reports, feature requests, documentation improvements and pull requests are welcome. There are forms for this on the github site.
+Ways to help
+
+- Report bugs  
+- Improve documentation  
+- Write examples  
+- Translate documentation  
+- Test releases  
+- Improve tutorials  
+- Submit pull requests  
+
+Bug reports and feature requests go to [Issues](https://github.com/uglymike17/basic256/issues); questions, ideas and showing off what you made belong in [Discussions](https://github.com/uglymike17/basic256/discussions).
 
 ## License
 
