@@ -112,40 +112,83 @@ EM_JS(void, wasmSay, (const char* utf8), {
         if (typeof _basic256SayFinished !== "undefined") { _basic256SayFinished(); }
         else if (typeof Module !== "undefined" && Module._basic256SayFinished) { Module._basic256SayFinished(); }
     };
-    // Kill any keepalive still running from a prior utterance so at most one
-    // ever exists (normally its own onend already cleared it -- SAY is
+    // Kill any timers still running from a prior utterance so at most one set
+    // ever exists (normally its own onend already cleared them -- SAY is
     // serialized, the interpreter can't start the next one until this one wakes
     // it, so there is no live overlap; this is belt-and-suspenders).
-    if (Module.__b256SayKeepAlive) { clearInterval(Module.__b256SayKeepAlive); Module.__b256SayKeepAlive = 0; }
+    var clearTimers = function() {
+        if (Module.__b256SayKeepAlive) { clearInterval(Module.__b256SayKeepAlive); Module.__b256SayKeepAlive = 0; }
+        if (Module.__b256SayWatchdog)  { clearInterval(Module.__b256SayWatchdog);  Module.__b256SayWatchdog = 0; }
+    };
+    clearTimers();
     if (!synth) {
         wake();  // no Web Speech support -- wake immediately so SAY doesn't hang
         return;
     }
-    var u = new SpeechSynthesisUtterance(text);
-    // Chrome silently stops speaking after ~15s and may never fire onend on a
-    // long utterance; a periodic pause()+resume() under that window keeps it
-    // going (the standard Web Speech keepalive). Harmless on browsers without
-    // the bug -- the speaking-guard makes it a no-op once speech has ended.
-    Module.__b256SayKeepAlive = setInterval(function() {
-        if (synth.speaking) { synth.pause(); synth.resume(); }
-    }, 10000);
+
+    // Safari/WebKit proper, excluding the Chromium and Firefox wrappers that
+    // also carry AppleWebKit in their UA string on iOS.
+    var isWebKit = /AppleWebKit/.test(navigator.userAgent) &&
+                   !/Chrome|Chromium|CriOS|Edg|FxiOS/.test(navigator.userAgent);
+
     var finished = false;
     var done = function() {
-        if (finished) return;   // onend and onerror can both fire -- wake once
+        if (finished) return;   // onend, onerror and the watchdog all land here
         finished = true;
-        if (Module.__b256SayKeepAlive) { clearInterval(Module.__b256SayKeepAlive); Module.__b256SayKeepAlive = 0; }
+        clearTimers();
         // getVoices() is async (voiceschanged); we deliberately use the default
         // voice rather than block for a specific one.
         wake();
     };
-    u.onend = done;
-    u.onerror = done;
-    synth.cancel();      // drop anything still queued/speaking
-    synth.speak(u);      // first call needs a prior user gesture; Run click satisfies it
+
+    var speakNow = function() {
+        var u = new SpeechSynthesisUtterance(text);
+        u.onend = done;
+        u.onerror = done;
+        try { synth.speak(u); } catch (e) { done(); return; }
+
+        // Chrome silently stops speaking after ~15s and may never fire onend on
+        // a long utterance; a periodic pause()+resume() under that window keeps
+        // it going (the standard Web Speech keepalive). Never on WebKit:
+        // pause() is broken there and can wedge the queue for good, which is
+        // itself a way to lose onend -- exactly what killed a multi-sentence
+        // SAY on iPad while a short one survived.
+        if (!isWebKit) {
+            Module.__b256SayKeepAlive = setInterval(function() {
+                if (synth.speaking) { synth.pause(); synth.resume(); }
+            }, 10000);
+        }
+
+        // Watchdog: do not trust the events to arrive at all. iOS discards an
+        // utterance queued without a live user activation and fires NEITHER
+        // onend nor onerror, which parks the interpreter in OP_SAY forever
+        // (the reported "SAY freezes the program but Stop still works").
+        // Poll the engine instead -- once speech has started and then stopped,
+        // or if it never starts within the grace period, wake the interpreter.
+        var ticks = 0, everSpoke = false;
+        Module.__b256SayWatchdog = setInterval(function() {
+            ticks++;
+            if (synth.speaking || synth.pending) { everSpoke = true; return; }
+            if (everSpoke || ticks >= 12) done();   // 12 ticks == 3s to get going
+        }, 250);
+    };
+
+    // Do not cancel and speak in the same turn -- a long-standing WebKit bug
+    // leaves the queue wedged and the new utterance then reports nothing ever.
+    // Only cancel when there is genuinely something to stop, and let it settle
+    // first. (The previous unconditional synth.cancel() immediately before
+    // speak() ran into this on every single SAY.)
+    if (synth.speaking || synth.pending) {
+        synth.cancel();
+        setTimeout(speakNow, 120);
+    } else {
+        speakNow();
+    }
 });
 
 EM_JS(void, wasmSayCancel, (), {
     if (Module.__b256SayKeepAlive) { clearInterval(Module.__b256SayKeepAlive); Module.__b256SayKeepAlive = 0; }
+    if (Module.__b256SayWatchdog)  { clearInterval(Module.__b256SayWatchdog);  Module.__b256SayWatchdog = 0; }
     if (window.speechSynthesis) { window.speechSynthesis.cancel(); }
 });
 
@@ -586,19 +629,20 @@ void RunController::stopRunFinalized(bool ok) {
 }
 
 void RunController::showOnlineDocumentation() {
-	QDesktopServices::openUrl(QUrl("https://uglymike17.github.io/Basic256-Docs/"));
+	QDesktopServices::openUrl(QUrl("https://doc.basic256.org"));
 }
 
 void RunController::showOnlineContextDocumentation() {
 	if(editwin){
 		QString w = editwin->getCurrentWord();
-		// Basic256-Docs is a Docusaurus site: per-keyword pages live at
-		// /docs/en/<keyword> with case-sensitive, lowercase file names, so
-		// lower-case the word under the cursor. Empty word -> docs home.
+		// doc.basic256.org fronts the Basic256-Docs Docusaurus site, serving the
+		// same pages at the root (no /Basic256-Docs/ base path). Per-keyword
+		// pages live at /docs/en/<keyword> with case-sensitive, lowercase file
+		// names, so lower-case the word under the cursor. Empty word -> home.
 		if(w.isEmpty()){
-			QDesktopServices::openUrl(QUrl("https://uglymike17.github.io/Basic256-Docs/"));
+			QDesktopServices::openUrl(QUrl("https://doc.basic256.org"));
 		}else{
-			QDesktopServices::openUrl(QUrl("https://uglymike17.github.io/Basic256-Docs/docs/en/" + w.toLower()));
+			QDesktopServices::openUrl(QUrl("https://doc.basic256.org/docs/en/" + w.toLower()));
 		}
 	}
 }

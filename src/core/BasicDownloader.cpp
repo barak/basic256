@@ -17,6 +17,8 @@
 
 #include "BasicDownloader.h"
 
+#include <QTimer>
+
 BasicDownloader::BasicDownloader(Error *e) :
     QObject()
 {
@@ -36,6 +38,12 @@ BasicDownloader::~BasicDownloader() {
 void BasicDownloader::download(QUrl url){
     reply = false;
     inprogress = true;
+    // Drop the previous download's bytes up front. fileDownloaded() only
+    // assigns m_data on success, so without this a failed fetch would hand the
+    // caller whatever the last successful one returned -- which now matters,
+    // because SOUND/SOUNDPLAY of a URL on WASM turns the result straight into a
+    // playable sound resource.
+    m_data.clear();
     QNetworkRequest request(url);
 //compile with older Ot (for Linux users)
 #if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
@@ -70,8 +78,16 @@ void BasicDownloader::fileDownloaded(QNetworkReply* ) {
 
 QByteArray BasicDownloader::data() const {
     if(!reply){
+        // Bounded wait. A request that never completes -- offline, or a URL the
+        // browser refuses to serve and reports nothing about -- would otherwise
+        // park the calling thread for the rest of the run. Callers already read
+        // an empty result as a failed load.
         QEventLoop loop;
+        QTimer timer;
+        timer.setSingleShot(true);
+        connect(&timer, SIGNAL(timeout()), &loop, SLOT(quit()));
         connect(this, SIGNAL(done()), &loop, SLOT(quit()));
+        timer.start(30000);
         loop.exec();
     }
     return m_data;

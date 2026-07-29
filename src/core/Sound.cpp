@@ -1136,6 +1136,22 @@ int SoundSystem::playSound(QString s, bool isPlayer){
 			//there is no resource loaded with that ID
 			if(*error)(*error)->q(ERROR_SOUNDRESOURCE);
 		}
+#ifdef Q_OS_WASM
+	}else if(QFileInfo(s).exists() || MediaPath::isFetchable(s)){
+		// Safety net standing in for the two QMediaPlayer branches used
+		// everywhere else. Constructing the QAudioOutput they need resolves the
+		// default audio device, and that call never returns on WASM (same trap
+		// as QMediaDevices::defaultAudioOutput() above, and the reason
+		// WasmAudioSink exists) -- fatal here, because playSound() is a queued
+		// slot running on the MAIN thread, so the spin takes the whole module
+		// down: no repaint, no print output, no working Stop button.
+		//
+		// Nothing should actually reach this point: the interpreter converts a
+		// file or URL into a "sound:" resource before emitting playSound() on
+		// WASM, which lands in the decode-and-play branch at the top of this
+		// function. Fail loudly rather than keep a path that freezes the tab.
+		if(*error)(*error)->q(ERROR_SOUNDFILE);
+#else
 	}else if(QFileInfo(s).exists()){
 		lastIdUsed++;
 		soundsmap[lastIdUsed] = new Sound(this);
@@ -1190,6 +1206,7 @@ int SoundSystem::playSound(QString s, bool isPlayer){
 		soundsmap[lastIdUsed]->isValidated = false;
 		if(!isPlayer) soundsmap[lastIdUsed]->play(); //if is a regular sond then play it, if is a player, then do not play it
 		soundID=lastIdUsed;
+#endif // !Q_OS_WASM
 	}else{
 		//Unable to load sound file
 		if(*error)(*error)->q(ERROR_SOUNDFILE);

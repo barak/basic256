@@ -70,6 +70,7 @@ set(SOURCES_CORE
     src/core/Variables.cpp
     src/core/WasmAudioSink.cpp
     src/core/WasmLaunch.cpp
+    src/core/WasmMediaUnlock.cpp
     src/core/WasmSettings.cpp
 )
 
@@ -95,6 +96,7 @@ set(HEADERS_CORE
     src/core/Version.h
     src/core/WasmAudioSink.h
     src/core/WasmLaunch.h
+    src/core/WasmMediaUnlock.h
     src/core/WasmSettings.h
     src/core/WordCodes.h
 )
