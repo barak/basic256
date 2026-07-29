@@ -22,12 +22,7 @@
 
 #include <functional>
 
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
 #include <QUrl>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
 
 
 
@@ -179,7 +174,7 @@ public slots:
   void updateWindowTitle(BasicEdit *);
   void newProgram();
   void updateEditorButtons();
-  void checkForUpdate(void);
+  void showReleasesPage(void);
 
 private:
 	BasicDock * outwin_dock;
@@ -193,7 +188,6 @@ private:
     
 	// SEE GUISTATE* Constants
 	void configureGuiState();
-    bool autoCheckForUpdate;
     bool guiFullScreen;
 	
 	void loadCustomizations();
@@ -212,9 +206,6 @@ private:
     // qApp->quit() and loop forever. Once set, closeEvent() just accepts.
     bool quitConfirmed;
     QFileSystemWatcher *fileSystemWatcher;
-
-    QNetworkRequest request;
-    QNetworkAccessManager *manager;
 
 	// void pointer to the run controller
 	// can't specify type because of circular reference
@@ -255,8 +246,6 @@ private slots:
     void saveAll();
     void updateBreakPointsAction();
     void zoomGroupActionEvent(QAction*);
-
-    void sourceforgeReplyFinished(QNetworkReply* reply);
 };
 
 #endif

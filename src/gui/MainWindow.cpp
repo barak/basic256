@@ -24,7 +24,6 @@
 #include <QMutex>
 #include <QWaitCondition>
 #include <QDesktopServices>
-#include <QRegularExpression>
 
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGridLayout>
@@ -105,28 +104,6 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f, QString localestring
 
     setWindowIcon(basicIcons->basic256Icon);
 
-#ifndef Q_OS_WASM
-    // Checks for a newer *desktop* download -- meaningless in a browser
-    // (there's nothing to "download and install" over the running page),
-    // and confirmed via a real browser test to fail anyway: sourceforge.net
-    // doesn't send CORS headers allowing this cross-origin fetch, so it was
-    // just a silent, guaranteed-to-fail network call on every WASM startup.
-    manager = new QNetworkAccessManager(this);
-    QSslConfiguration config = QSslConfiguration::defaultConfiguration();
-    config.setProtocol(QSsl::SecureProtocols);
-    request.setSslConfiguration(config);
-#ifdef WIN32PORTABLE
-    request.setUrl(QUrl("http://sourceforge.net/projects/basic256prtbl/best_release.json"));
-#else
-    request.setUrl(QUrl("http://sourceforge.net/projects/kidbasic/best_release.json"));
-#endif
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    request.setHeader(QNetworkRequest::UserAgentHeader, "App/1.0");
-    connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(sourceforgeReplyFinished(QNetworkReply*)));
-#endif
-
-
-	
     // Create a QTabWidget to hold multiple editors
     editwintabs = new QTabWidget(this);
     editwintabs->setMovable(guiState==GUISTATENORMAL);
@@ -422,7 +399,7 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f, QString localestring
     helpthis->setShortcuts(QKeySequence::keyBindings(QKeySequence::HelpContents));
     addAction (helpthis);
     helpmenu->addSeparator();
-    checkupdate = helpmenu->addAction(QObject::tr("&Check for update..."));
+    checkupdate = helpmenu->addAction(basicIcons->webIcon, QObject::tr("&Check for update..."));
     helpmenu->addSeparator();
     QAction *aboutact = helpmenu->addAction(basicIcons->infoIcon, QObject::tr("&About BASIC-256..."));
 
@@ -537,16 +514,8 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f, QString localestring
     QObject::connect(onlinehact, SIGNAL(triggered()), rc, SLOT(showOnlineDocumentation()));
     QObject::connect(aboutact, SIGNAL(triggered()), this, SLOT(about()));
 
-#ifndef Q_OS_WASM
-    QObject::connect(checkupdate, SIGNAL(triggered()), this, SLOT(checkForUpdate()));
-#endif
-QObject::connect(helpthis, SIGNAL(triggered()), rc, SLOT(showOnlineContextDocumentation()));
-
-
-#ifndef Q_OS_WASM
-    //check for update as soon as the event loop is idle (avoid GUI freezing)
-    if(autoCheckForUpdate) QTimer::singleShot(0, this, SLOT(checkForUpdate()));
-#endif
+    QObject::connect(checkupdate, SIGNAL(triggered()), this, SLOT(showReleasesPage()));
+    QObject::connect(helpthis, SIGNAL(triggered()), rc, SLOT(showOnlineContextDocumentation()));
 
     if(guiState==GUISTATENORMAL){
         fileSystemWatcher = new QFileSystemWatcher(this);
@@ -671,8 +640,6 @@ void MainWindow::loadCustomizations() {
         editorFont = defaultEditorFont();
     }
     outwin->setFont(editorFont);
-
-    autoCheckForUpdate = (guiState==GUISTATENORMAL&&settings.value(SETTINGSCHECKFORUPDATE, SETTINGSCHECKFORUPDATEDEFAULT).toBool());
 }
 
 
@@ -788,7 +755,7 @@ void MainWindow::about() {
 	message += QObject::tr("version ") + "<b>" + VERSION + "</b>" + QObject::tr(" - built with QT ") + "<b>" + QT_VERSION_STR + "</b>" +
             "<br>" + QObject::tr("Locale Name: ") + "<b>" + locale->name() + "</b> "+ QObject::tr("Decimal Point: ") + "<b>'" + (usefloatlocale?locale->decimalPoint():QChar('.')) + "'</b>" +
             "<p>" + QObject::tr("Copyright &copy; 2006-2026, The BASIC-256 Team") + "</p>" +
-			"<p>" + QObject::tr("Please visit our web site at <a href=\"https://uglymike17.github.io/Basic256-Docs/\">https://uglymike17.github.io/Basic256-Docs/</a> for documentation.") + "</p>" +
+			"<p>" + QObject::tr("Please visit our web site at <a href=\"https://doc.basic256.org\">https://doc.basic256.org</a> for documentation.") + "</p>" +
 			"<p>" + QObject::tr("Please see the CONTRIBUTORS file for a list of developers and translators for this project.")  + "</p>" +
 			"<p><i>" + QObject::tr("This program is free software under the GNU General Public License, either version 3 of the License, or (at your option) any later version. You should have received a copy of the license along with this program; if not, see <a href=\"https://www.gnu.org/licenses/\">https://www.gnu.org/licenses/</a>.")  + "</i></p>";
 
@@ -1092,53 +1059,11 @@ void MainWindow::setRunState(int state) {
     updateRecent();
 }
 
-//Check for an update
-void MainWindow::checkForUpdate(void){
-    manager->get(request);
-}
-
-void MainWindow::sourceforgeReplyFinished(QNetworkReply* reply){
-    QString url;
-    QString filename;
-    if(reply->error() == QNetworkReply::NoError) {
-        QByteArray  strReply = reply->readAll();
-        QJsonDocument jsonResponse = QJsonDocument::fromJson(strReply);
-        QJsonObject jsonObject = jsonResponse.object();
-#if defined(WIN32PORTABLE) || defined(WIN32)
-        filename = jsonObject["platform_releases"].toObject()["windows"].toObject()["filename"].toString();
-        url = jsonObject["platform_releases"].toObject()["windows"].toObject()["url"].toString();
-#elif defined(LINUX)
-        filename = jsonObject["platform_releases"].toObject()["linux"].toObject()["filename"].toString();
-        url = jsonObject["platform_releases"].toObject()["linux"].toObject()["url"].toString();
-#elif defined(MACX)
-        filename = jsonObject["platform_releases"].toObject()["mac"].toObject()["filename"].toString();
-        url = jsonObject["platform_releases"].toObject()["mac"].toObject()["url"].toString();
-#endif
-        QRegularExpression rx("\\d+\\.\\d+\\.\\d+\\.\\d+");
-        QString siteversion = rx.match(filename).captured(0);
-        QString thisversion = rx.match(VERSION).captured(0);
-        if(siteversion=="" || thisversion==""){
-            //Unknown error
-            if(!autoCheckForUpdate)QMessageBox::warning(this, tr("Check for an update"), tr("Unknown error."),QMessageBox::Ok, QMessageBox::Ok);
-        }else if(siteversion>thisversion){
-            //New version to download
-            if(QMessageBox::information(this, tr("Check for an update"), tr("BASIC-256") + " " + siteversion + " " + tr("is now available - you have") + " " + thisversion + ". " + tr("Would you like to download the new version now?"),QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)==QMessageBox::Yes){
-                QDesktopServices::openUrl(QUrl(url));
-            }
-        }else if(thisversion>siteversion){
-            //Beta version
-            if(!autoCheckForUpdate)QMessageBox::information(this, tr("Check for an update"), tr("You are currently using a development version."),QMessageBox::Ok, QMessageBox::Ok);
-        }else{
-            //No new version to download
-            if(!autoCheckForUpdate)QMessageBox::information(this, tr("Check for an update"), tr("You are using the latest software version for your current OS."),QMessageBox::Ok, QMessageBox::Ok);
-        }
-        autoCheckForUpdate = false; //do automatically check for update only once
-
-    } else {
-        //Network error
-        QMessageBox::warning(this, tr("Check for an update"), tr("We are unable to connect right now. Please check your network connection and try again."),QMessageBox::Ok, QMessageBox::Ok);
-    }
-    reply->deleteLater();
+// Check for an update: open the GitHub releases page in the user's browser and
+// let them compare against Help > About. Releases are the single place every
+// platform's builds are published, so there is nothing to fetch or parse here.
+void MainWindow::showReleasesPage(void){
+    QDesktopServices::openUrl(QUrl("https://github.com/uglymike17/basic256/releases"));
 }
 
 

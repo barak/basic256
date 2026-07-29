@@ -81,8 +81,6 @@
     // startup
     #define SETTINGSWINDOWSRESTORE "Startup/Restore"
     #define SETTINGSWINDOWSRESTOREDEFAULT true
-    #define SETTINGSCHECKFORUPDATE "Startup/CheckForUpdate"
-    #define SETTINGSCHECKFORUPDATEDEFAULT true
 
 	// documentation window
 	#define SETTINGSDOCSIZE "Doc/Size"
