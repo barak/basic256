@@ -189,19 +189,23 @@ BASIC256 can also be called from the command line with the following options:
 
 | Short | Long | Effect |
 | :---: | :--- | :--- |
-| -? -h | --help | Display command-line help. |
+| -h (-? on Windows) | --help | Display command-line help. |
 | | --help-all | Display command-line help including Qt-specific options. |
 | -v | --version | Display the BASIC-256 version. |
 | -r | --run | Load and run the specified .kbs program. Must precede the filename. |
-| -a | --app | Load and run the specified .kbs without the Edit window. |
+| -a | --app --application | Load and run the specified .kbs without the Edit window. |
 | -g | --graph | Load and run the specified .kbs with only the Graphics window. |
 | -t | --text | Load and run the specified .kbs with only the Text window. |
 | -f | --full | When used with -r/-a/-t/-g, the full screen area will be used. |
-| -s | --silent | Suppress all output. |
+| -s | --silent | Run the specified .kbs with no GUI at all: PRINT goes to stdout, errors to stderr, and the exit code says whether it worked. Needs a filename, and cannot be combined with -r/-a/-g/-t. |
 | -l | --lang --language | Start BASIC-256 using the specified language. |
 
 The -a, -g and -t options allow you to run a program in kiosk mode, without showing the actual code window.
 (Careful: if you set edit/graph/outputvisible flags inside your .kbs, these will override your CLI option.)
+
+Without a filename to run, -r/-a/-g/-t are ignored and the normal IDE opens; -s instead reports the problem and stops with exit code 1 — which is also what you get if the file will not load or the program ends in an error. A program that runs to the end exits 0, so -s is the option to drive BASIC256 from a script or a test runner.
+
+On Windows BASIC256 is a windowed program, not a console one. It writes --help, --version and everything -s produces to the console it was started from; started from Explorer or a shortcut there is no console and that text goes nowhere.
 
 You can even make a desktop shortcut with a .bat file like:
 
