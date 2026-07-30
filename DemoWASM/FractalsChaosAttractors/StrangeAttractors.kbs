@@ -3,7 +3,8 @@
 # Based on the work of Simone Conradi here: https://fb.watch/Hqr6gkxun5/
 # Thanks go to Kurt Moermann for the link
 # This program lets you explore the entire [0,2*pi]² area with the mouse
-# Move the mouse slowly over the canvas to hunt for good looking attractors
+# Move the mouse, or drag a finger, slowly over the canvas to hunt for good
+# looking attractors
 # This update does two major things
 # 1.  Attractors have point that attract more than others.
 #     Draw the circles transparent, so causing additive blending.
@@ -11,7 +12,7 @@
 # 2.  Have the color influenced by the jump from one point to the next
 #	  Not really the effect I wanted. Must tune this more  
 # 
-# If you think you found a nice looking attactor, left-click the mouse
+# If you think you found a nice looking attactor, double-click or double-tap
 # This will remove all the trails from the previous attractors.
 #
 # Some variations of xn and yn are commented out. 
@@ -22,14 +23,19 @@
 fastgraphics
 outputvisible 0
 editvisible 0
-width = 1200
-height = 1200 
+# 800 rather than 1200 in the browser build: the canvas sits in a scrolling
+# view, so on a tablet a 1200 wide canvas leaves most of the parameter space
+# scrolled out of finger reach. Raise it if you run this on a desktop.
+width = 800
+height = 800
 graphsize width, height 
 rect 0, 0, width, height
 refresh
 
-# 2. As long as the mouse is not on the canvas, do nothing
-while mousex = 0
+# 2. Wait until the mouse or a finger has been on the canvas. Both coordinates
+#    start at 0 and graphsize resets them, so "both still 0" is the real test --
+#    mousex alone kept waiting forever if you touched down on the left edge.
+while mousex = 0 and mousey = 0
 end while
 
 # 3. Main Loop
@@ -71,17 +77,20 @@ while 1
         	# Change the transarancy to your liking
             color rgb(r, g, bl, 5)             
             circle xplot, yplot, 1
-            # If you see an attractor you like, left-click to clear the trails
-            if mouseb=1 then
-              color black
-              rect 0, 0, width, height
-              refresh
-            endif 
             x = xn
             y = yn
          next chunk
+        # If you see an attractor you like, double-click (or double-tap) to
+        # clear the trails. Deliberately not mouseb: on a touch screen holding
+        # a finger down IS how you point, so mouseb stays 1 the whole time you
+        # explore, and clearing on it blanked the canvas while you dragged.
+        if (clickb & MOUSEBUTTON_DOUBLECLICK) <> 0 then
+            clickclear
+            color black
+            rect 0, 0, width, height
+        endif
         refresh
-    end while      
+    end while
     # When mouse has moved, clear the screen with a slight fade
     color rgb(0,0,0,15)
     rect 0, 0, width, height
