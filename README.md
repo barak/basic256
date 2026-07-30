@@ -50,7 +50,7 @@ for i = 1 to 500
    refresh
 next i
 ```  
-and click Run to see the result immediately.
+and click Run to see the result immediately. (you can copy/paste the program into the demo linked above too...)
 
 ![The bubbles program typed into the BASIC256 editor in a browser tab, with its result in the Graphics Output pane on the right: hundreds of overlapping translucent circles in random colours and sizes filling the canvas](Basic256_in_Browser.png)
 
