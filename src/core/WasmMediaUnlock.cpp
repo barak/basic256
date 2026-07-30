@@ -108,11 +108,30 @@ EM_JS(void, wasmMediaUnlockInstall, (), {
     var primeSpeech = function() {
         try {
             var synth = window.speechSynthesis;
-            if (!synth || Module.__b256SpeechPrimed) return;
-            Module.__b256SpeechPrimed = true;
+            if (!synth) { Module.__b256SpeechPrimed = "ok"; return; }   // nothing to prime
+            if (Module.__b256SpeechPrimed) return;   // "ok" = done, true = in flight
             if (synth.getVoices) synth.getVoices();
-            var u = new SpeechSynthesisUtterance(" ");
+            // Not "" and not " ": a whitespace-only utterance can be discarded
+            // without ever being spoken, which grants no activation at all.
+            var u = new SpeechSynthesisUtterance(".");
             u.volume = 0;
+            // Confirm rather than assume. The previous version latched the flag
+            // before speak() and never looked again, so a primer that iOS threw
+            // away (it drops a speak() it does not consider user-activated) left
+            // us believing speech was unlocked for the rest of the session and
+            // every later SAY was silent. Only the engine reporting back counts;
+            // otherwise the next gesture tries again, up to a bounded number of
+            // attempts so a long typing session cannot queue primers for ever.
+            Module.__b256SpeechTries = (Module.__b256SpeechTries || 0) + 1;
+            if (Module.__b256SpeechTries > 12) { Module.__b256SpeechPrimed = "ok"; return; }
+            Module.__b256SpeechPrimed = true;
+            var settle = function() { Module.__b256SpeechPrimed = "ok"; };
+            u.onstart = settle;
+            u.onend = settle;
+            u.onerror = function() { Module.__b256SpeechPrimed = false; };
+            setTimeout(function() {
+                if (Module.__b256SpeechPrimed !== "ok") Module.__b256SpeechPrimed = false;
+            }, 2000);
             synth.speak(u);
         } catch (e) {}
     };
@@ -125,11 +144,15 @@ EM_JS(void, wasmMediaUnlockInstall, (), {
         }
         primeSession();
         primeSpeech();
-        // Stay subscribed until the context is genuinely running -- iOS can
-        // ignore a gesture that arrives while the page is still coming up, and
-        // resume() is asynchronous, so the first attempt often is not the one
-        // that takes. Once it is running, stop paying the per-event cost.
-        if (ctx && ctx.state === "running") {
+        // Stay subscribed until the context is genuinely running AND the
+        // synthesizer has answered for itself -- iOS can ignore a gesture that
+        // arrives while the page is still coming up, and resume() is
+        // asynchronous, so the first attempt often is not the one that takes.
+        // Audio alone is not the test: speech has its own activation, and
+        // unsubscribing on the audio state used to leave it permanently
+        // unprimed if the first tap only got the AudioContext going. Once both
+        // are settled, stop paying the per-event cost.
+        if (ctx && ctx.state === "running" && Module.__b256SpeechPrimed === "ok") {
             for (var i = 0; i < EVENTS.length; i++) {
                 window.removeEventListener(EVENTS[i], unlock, true);
             }

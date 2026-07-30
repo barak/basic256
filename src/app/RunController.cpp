@@ -173,16 +173,41 @@ EM_JS(void, wasmSay, (const char* utf8), {
         }, 250);
     };
 
+    // The voice list loads asynchronously: on a cold page getVoices() is []
+    // until the engine fires voiceschanged, and an utterance handed to speak()
+    // during that window is accepted and then silently produces no sound at
+    // all -- no onend, no onerror. That is why SAY worked only once the page
+    // had been reloaded: the second load found the list already warm. Wait for
+    // it, but never longer than 1.5s, so a browser that reports no voices ever
+    // (and may still speak with an engine default) is not blocked by this.
+    var withVoices = function(go) {
+        var have = 0;
+        try { have = synth.getVoices ? synth.getVoices().length : 1; } catch (e) { have = 1; }
+        if (have > 0) { go(); return; }
+        var ran = false;
+        var once = function() { if (ran) return; ran = true; go(); };
+        try { synth.addEventListener("voiceschanged", once); } catch (e) {}
+        setTimeout(once, 1500);
+    };
+
     // Do not cancel and speak in the same turn -- a long-standing WebKit bug
     // leaves the queue wedged and the new utterance then reports nothing ever.
     // Only cancel when there is genuinely something to stop, and let it settle
     // first. (The previous unconditional synth.cancel() immediately before
     // speak() ran into this on every single SAY.)
-    if (synth.speaking || synth.pending) {
+    //
+    // On WebKit do not cancel at all. WasmMediaUnlock speaks a silent primer
+    // from the first gesture, and on a cold page that primer is exactly the
+    // utterance the empty voice list swallows -- it then sits in the queue as
+    // pending, so this branch was taken on the FIRST SAY of every run,
+    // cancelled it, and wedged the queue as the comment above describes.
+    // Queueing behind it instead is safe: SAY is serialized by the
+    // interpreter, so the primer is the only thing that can be ahead of us.
+    if (!isWebKit && (synth.speaking || synth.pending)) {
         synth.cancel();
-        setTimeout(speakNow, 120);
+        withVoices(function() { setTimeout(speakNow, 120); });
     } else {
-        speakNow();
+        withVoices(speakNow);
     }
 });
 
