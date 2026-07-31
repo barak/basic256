@@ -48,6 +48,7 @@
 #include "WasmSettings.h"
 #include "WasmLaunch.h"
 #include "MediaPath.h"
+#include "WasmMediaUnlock.h"
 
 
 //Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin);
@@ -206,6 +207,12 @@ int main(int argc, char *argv[]) {
     // main thread: `location` in a worker refers to the worker script, and the
     // interpreter -- which is what asks -- runs on one.
     MediaPath::init();
+
+    // Arm the audio/speech unlock on the first interaction with the page. Must
+    // be installed before any program can run: iOS only starts an AudioContext
+    // or accepts a speechSynthesis utterance from inside a gesture handler, and
+    // by the time SOUND or SAY executes there is no gesture left to use.
+    WasmMediaUnlock::install();
 #endif
 
 #if defined(WIN32) && !defined(WIN32PORTABLE)

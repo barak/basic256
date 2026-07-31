@@ -22,12 +22,7 @@
 
 #include <functional>
 
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
 #include <QUrl>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
 
 
 
@@ -126,6 +121,11 @@ public:
 	QAction *main_toolbar_visible_act;
 	QAction *outwin_toolbar_visible_act;
 	QAction *graphwin_toolbar_visible_act;
+    QMenu *viewmenu_theme;
+    QActionGroup *viewmenu_theme_group;
+    QAction *viewmenu_theme_system;
+    QAction *viewmenu_theme_light;
+    QAction *viewmenu_theme_dark;
     QMenu * viewmenu_zoom;
     QActionGroup *viewmenu_zoom_group;
     QAction *viewmenu_zoom_1_4;
@@ -174,7 +174,7 @@ public slots:
   void updateWindowTitle(BasicEdit *);
   void newProgram();
   void updateEditorButtons();
-  void checkForUpdate(void);
+  void showReleasesPage(void);
 
 private:
 	BasicDock * outwin_dock;
@@ -188,7 +188,6 @@ private:
     
 	// SEE GUISTATE* Constants
 	void configureGuiState();
-    bool autoCheckForUpdate;
     bool guiFullScreen;
 	
 	void loadCustomizations();
@@ -208,9 +207,6 @@ private:
     bool quitConfirmed;
     QFileSystemWatcher *fileSystemWatcher;
 
-    QNetworkRequest request;
-    QNetworkAccessManager *manager;
-
 	// void pointer to the run controller
 	// can't specify type because of circular reference
 	//void *rcvoidpointer;		
@@ -223,6 +219,9 @@ private slots:
     void about();
     void openRecent();
     void dialogFontSelect();
+    void themeGroupActionEvent(QAction*);
+    // Repaint every editor tab and the output pane from the current theme.
+    void applyEditorTheme();
     void activeEditorPrint();
     void activeEditorSaveProgram();
     void activeEditorSaveAsProgram();
@@ -247,8 +246,6 @@ private slots:
     void saveAll();
     void updateBreakPointsAction();
     void zoomGroupActionEvent(QAction*);
-
-    void sourceforgeReplyFinished(QNetworkReply* reply);
 };
 
 #endif

@@ -108,6 +108,11 @@ call section("Binary Operations and Type Conversions")
 ###################################################
 include "testsuite_binaryop_include.kbs"
 
+###################################################
+call section("64 bit Whole Numbers")
+###################################################
+include "testsuite_int64_include.kbs"
+
 # "Variable and Stack Types Tests" (testsuite_types_include.kbs) is
 # deliberately NOT included here. It intentionally reads unassigned
 # variables (`typeof(newvar)`, `assigned(newvar)`) to verify they report

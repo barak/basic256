@@ -76,6 +76,8 @@ class BasicEdit : public QPlainTextEdit, public ViewWidgetIFace
 		void beautifyProgram();
 		void slotWhitespace(bool);
 		void slotWrap(bool);
+		// Repaint the pane, its gutter and its highlighting from EditorTheme.
+		void applyTheme();
         void highlightCurrentLine();
 		int  indentSelection();
 		void unindentSelection();

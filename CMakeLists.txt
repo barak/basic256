@@ -70,6 +70,7 @@ set(SOURCES_CORE
     src/core/Variables.cpp
     src/core/WasmAudioSink.cpp
     src/core/WasmLaunch.cpp
+    src/core/WasmMediaUnlock.cpp
     src/core/WasmSettings.cpp
 )
 
@@ -95,6 +96,7 @@ set(HEADERS_CORE
     src/core/Version.h
     src/core/WasmAudioSink.h
     src/core/WasmLaunch.h
+    src/core/WasmMediaUnlock.h
     src/core/WasmSettings.h
     src/core/WordCodes.h
 )
@@ -108,6 +110,7 @@ set(SOURCES_GUI
     src/gui/BasicOutput.cpp
     src/gui/BasicWidget.cpp
     src/gui/EditSyntaxHighlighter.cpp
+    src/gui/EditorTheme.cpp
     src/gui/LineNumberArea.cpp
     src/gui/MainWindow.cpp
     src/gui/PreferencesWin.cpp
@@ -124,6 +127,7 @@ set(HEADERS_GUI
     src/gui/BasicOutput.h
     src/gui/BasicWidget.h
     src/gui/EditSyntaxHighlighter.h
+    src/gui/EditorTheme.h
     src/gui/LineNumberArea.h
     src/gui/MainWindow.h
     src/gui/PreferencesWin.h

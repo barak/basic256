@@ -73,7 +73,7 @@ int Convert::getBool(DataElement *d) {
 }
 
 int Convert::getInt(DataElement *d) {
-	long l=getLong(d);
+	qint64 l=getLong(d);
 	if (l<INT_MIN||l>INT_MAX) {
 		e = ERROR_INTEGERRANGE;
 		l = 0;
@@ -96,7 +96,7 @@ qint64 Convert::getLong(DataElement *d) {
 		} else if (d->type == T_STRING) {
 			if (d->stringval.length()!=0) {
 				bool ok;
-				i = d->stringval.toLong(&ok);
+				i = d->stringval.toLongLong(&ok);
 				if(!ok) {
 					i = 0;
 					e = ERROR_NUMBERCONV;

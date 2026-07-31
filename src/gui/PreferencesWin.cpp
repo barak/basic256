@@ -138,17 +138,13 @@ PreferencesWin::PreferencesWin (QWidget * parent, bool showAdvanced)
 	usertabwidget = new QWidget(this);
 	usertabwidget->setLayout(usertablayout);
 	r=0;
-	// Startup - restore last windows position on start or check for update
+	// Startup - restore last windows position on start
 	r++;
 	startuplabel = new QLabel(tr("Startup"),this);
 	usertablayout->addWidget(startuplabel,r,1,1,1);
 	windowsrestorecheckbox = new QCheckBox(tr("Restore last windows position on start"),this);
 	windowsrestorecheckbox->setChecked(settings.value(SETTINGSWINDOWSRESTORE, SETTINGSWINDOWSRESTOREDEFAULT).toBool());
 	usertablayout->addWidget(windowsrestorecheckbox,r,2,1,1);
-	r++;
-	checkupdatecheckbox = new QCheckBox(tr("Check for an update on start"),this);
-	checkupdatecheckbox->setChecked(settings.value(SETTINGSCHECKFORUPDATE, SETTINGSCHECKFORUPDATEDEFAULT).toBool());
-	usertablayout->addWidget(checkupdatecheckbox,r,2,1,2);
 	//
 	r++;
 	{
@@ -596,7 +592,6 @@ void PreferencesWin::clickSaveButton() {
 		settings.setValue(SETTINGSFLOATTAIL, floattailcheckbox->isChecked());
 		settings.setValue(SETTINGSFLOATLOCALE, floatlocalecheckbox->isChecked());
 		settings.setValue(SETTINGSWINDOWSRESTORE, windowsrestorecheckbox->isChecked());
-		settings.setValue(SETTINGSCHECKFORUPDATE, checkupdatecheckbox->isChecked());
 
 		// *******************************************************************************************
 		// sound settings

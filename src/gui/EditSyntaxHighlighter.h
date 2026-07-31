@@ -29,6 +29,9 @@ class EditSyntaxHighlighter : public QSyntaxHighlighter
 public:
     EditSyntaxHighlighter(QTextDocument *parent = 0);
 
+    // Rebuild every rule from the current EditorTheme and repaint.
+    void applyTheme();
+
 protected:
     virtual void highlightBlock(const QString &text);
 

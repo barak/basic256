@@ -18,6 +18,9 @@
 
 #include <QPainter>
 #include <QTextCursor>
+#include <QTextBlock>
+#include <QList>
+#include <QPair>
 #include <QMutex>
 #include <QClipboard>
 #include <QMimeData>
@@ -35,6 +38,7 @@
 
 #include "Settings.h"
 #include "BasicOutput.h"
+#include "EditorTheme.h"
 #include "BasicKeyboard.h"
 
 extern QMutex *mymutex;
@@ -47,18 +51,11 @@ BasicOutput::BasicOutput( ) : QTextEdit () {
 	setFocusPolicy(Qt::StrongFocus);
 	setAcceptRichText(false);
 	setUndoRedoEnabled(false);
-	// Pin the output pane to a fixed light scheme regardless of the OS colour
-	// scheme. Text is emitted with hardcoded colours (default Qt::black) and no
-	// background is ever set, so on Qt 6.5+ under a dark desktop theme the
-	// widget's Base role turns near-black and black-on-black text disappears.
-	// A stylesheet reliably overrides both the style and the OS scheme.
-	setStyleSheet(
-		"QTextEdit{"
-		"  background-color:#ffffff;"
-		"  color:#000000;"
-		"  selection-background-color:#c0d8f0;"
-		"  selection-color:#000000;"
-		"}");
+	// Paint the output pane from EditorTheme rather than leaving it to the OS
+	// colour scheme. Text is emitted with an explicit colour and no background
+	// is ever set, so on Qt 6.5+ under a dark desktop theme the widget's Base
+	// role turns near-black and the text disappears into it.
+	setStyleSheet(EditorTheme::current().paneStyleSheet("QTextEdit"));
 	gettingInput = false;
 	saveLastPosition();
 
@@ -263,8 +260,42 @@ void BasicOutput::slotWrap(bool checked) {
 	}
 }
 
+void BasicOutput::applyTheme() {
+	setStyleSheet(EditorTheme::current().paneStyleSheet("QTextEdit"));
+
+	// Text already on screen keeps the colour it was written with, so output
+	// from before the switch would stay dark on a dark page. Repaint only the
+	// runs written in the other theme's normal colour; error lines have their
+	// own colour and are left as they are. Ranges are collected first because
+	// merging a format invalidates the fragment iterators.
+	const QColor normal = EditorTheme::current().outputText;
+	QList<QPair<int,int> > ranges;
+	for (QTextBlock b = document()->begin(); b.isValid(); b = b.next()) {
+		for (QTextBlock::iterator it = b.begin(); !it.atEnd(); ++it) {
+			const QTextFragment f = it.fragment();
+			if (!f.isValid()) continue;
+			const QColor c = f.charFormat().foreground().color();
+			if (c != EditorTheme::light().outputText && c != EditorTheme::dark().outputText) continue;
+			if (c == normal) continue;
+			ranges.append(qMakePair(f.position(), f.length()));
+		}
+	}
+
+	QTextCharFormat fmt;
+	fmt.setForeground(normal);
+	for (int i = 0; i < ranges.size(); i++) {
+		QTextCursor cur(document());
+		cur.setPosition(ranges.at(i).first);
+		cur.setPosition(ranges.at(i).first + ranges.at(i).second, QTextCursor::KeepAnchor);
+		cur.mergeCharFormat(fmt);
+	}
+
+	// Anything printed from here on uses the new normal colour.
+	setTextColor(normal);
+}
+
 void BasicOutput::outputText(QString text) {
-	outputText(text, Qt::black);
+	outputText(text, EditorTheme::current().outputText);
 }
 
 void BasicOutput::outputText(QString text, QColor color) {

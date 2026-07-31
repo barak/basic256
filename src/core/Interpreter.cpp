@@ -40,6 +40,7 @@
 #include <QTime>
 #include <QMutex>
 #include <QWaitCondition>
+#include <QDeadlineTimer>
 #include <QCoreApplication>
 #include <QDir>
 
@@ -1077,6 +1078,9 @@ Interpreter::run() {
 	// main run loop
 	isError=false;
 	downloader = new BasicDownloader(error);
+#ifdef Q_OS_WASM
+	wasmSoundResources.clear();
+#endif
 	mediaplayer_id_legacy = 0;
 	//link sound system to error mechanism
 	sound->error = &error;
@@ -3603,16 +3607,62 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					
 					if (DataElement::getType(e) == T_STRING) {
 						// a single string
+						QString playsource = e->stringval;
+#ifdef Q_OS_WASM
+						// A file or URL handed straight to SOUND/SOUNDPLAY/SOUNDPLAYER
+						// must not reach SoundSystem::playSound()'s QMediaPlayer
+						// branches in the browser: they construct a QAudioOutput, which
+						// resolves the default audio device, which never returns on
+						// WASM (see the Sound.cpp note on QMediaDevices) -- and because
+						// playSound() is a queued slot that spin is on the MAIN thread,
+						// so the whole module dies with no output and no working Stop.
+						// Turn the source into a "sound:" resource here instead, on the
+						// interpreter thread where blocking is legal, so playback goes
+						// through WasmAudioSink/decodeAudioData like every other sound.
+						if(opcode!=OP_SOUNDLOAD && !playsource.startsWith("sound:") && !playsource.startsWith("beep:")){
+							QString id = QString("sound:") + playsource;
+							if(!wasmSoundResources.contains(id)){
+								QByteArray arr;
+								bool got = false;
+								if(QFileInfo(playsource).exists()){
+									QFile file(playsource);
+									if(file.open(QIODevice::ReadOnly)){
+										arr = file.readAll();
+										file.close();
+										got = true;
+									}
+								}else if(MediaPath::isFetchable(playsource)){
+									downloader->download(MediaPath::downloadUrl(playsource));
+									arr = downloader->data();
+									got = !arr.isEmpty();
+								}
+								if(!got){
+									// BasicDownloader raises its own ERROR_DOWNLOAD on a
+									// failed fetch -- don't stack a second error on top.
+									if(!error->pending()) error->q(ERROR_SOUNDFILE);
+									if(opcode==OP_SOUNDPLAYER) stack->pushInt(0);
+									delete e;
+									break;
+								}
+								mymutex->lock();
+								emit(loadSoundFromArray(id, &arr));
+								waitCond->wait(mymutex);
+								mymutex->unlock();
+								wasmSoundResources.insert(id);
+							}
+							playsource = id;
+						}
+#endif
 						if(opcode==OP_SOUND || opcode==OP_SOUNDPLAY){
 							mymutex->lock();
-							emit(playSound(e->stringval, false));
+							emit(playSound(playsource, false));
 							waitCond->wait(mymutex);
 							int id = sound->soundID;
 							mymutex->unlock();
 							if(opcode==OP_SOUND) sound->wait(id);
 						}else if(opcode==OP_SOUNDPLAYER){
 							mymutex->lock();
-							emit(playSound(e->stringval, true));
+							emit(playSound(playsource, true));
 							waitCond->wait(mymutex);
 							int id = sound->soundID;
 							mymutex->unlock();
@@ -3991,9 +4041,22 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_SAY: {
 					QString text = stack->popQString();
+					// Bound the wait. speakWords() normally wakes us -- via the
+					// desktop TTS loop, or via basic256SayFinished() from the
+					// browser's onend/onerror -- but a speech engine can accept an
+					// utterance and then report absolutely nothing: iOS/iPadOS
+					// WebKit does exactly that whenever the utterance was queued
+					// without a live user activation, and this was the only wait in
+					// the interpreter with no safety net, so the program hung for
+					// good. Budget from the text length -- speech runs at roughly
+					// 10 characters/second, so 150ms each leaves 50% headroom and
+					// a genuinely long sentence is never cut short.
+					qint64 sayBudgetMs = 2000 + 150LL * (qint64)text.length();
+					if(sayBudgetMs < 5000) sayBudgetMs = 5000;
+					if(sayBudgetMs > 300000) sayBudgetMs = 300000;
 					mymutex->lock();
 					emit(speakWords(text));
-					waitCond->wait(mymutex);
+					waitCond->wait(mymutex, QDeadlineTimer(sayBudgetMs));
 					mymutex->unlock();
 				}
 				break;
@@ -4837,8 +4900,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						case T_INT:
 							{
 								bool ok;
-								long i=0;
-								i = inputString.toLong(&ok);
+								qint64 i=0;
+								i = inputString.toLongLong(&ok);
 								if (!ok) {
 									error->q(ERROR_NUMBERCONV);
 								}
@@ -4873,8 +4936,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 							{
 								// standard input should try to convert string to a number if it can.
 								bool ok;
-								long i;
-								i = inputString.toLong(&ok);
+								qint64 i;
+								i = inputString.toLongLong(&ok);
 								if (ok) {
 									stack->pushLong(i);
 								} else {
@@ -6103,7 +6166,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				// The standard says: "If the value of the right operand is negative or is greater than
 				// or equal to the width of the promoted left operand, the behavior is undefined."
 					int n = stack->popInt();
-					unsigned long a = stack->popLong();
+					quint64 a = (quint64)stack->popLong();
 					if(n>=0){
 						if(n>=((int)sizeof(a))*8){
 							stack->pushInt(0);
@@ -6128,7 +6191,7 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				// The standard says: "If the value of the right operand is negative or is greater than
 				// or equal to the width of the promoted left operand, the behavior is undefined."
 					int n = stack->popInt();
-					unsigned long a = stack->popLong();
+					quint64 a = (quint64)stack->popLong();
 					if(n>=0){
 						if(n>=((int)sizeof(a))*8){
 							stack->pushInt(0);
@@ -7596,6 +7659,13 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 							error->q(ERROR_IMAGERESOURCE);
 						}
 					}else if(id.startsWith("sound:") || id.startsWith("beep:")){
+#ifdef Q_OS_WASM
+						// Forget any auto-registration of this id, so a later
+						// SOUND/SOUNDPLAY of the same file or URL fetches and
+						// re-registers it instead of playing a resource that is
+						// no longer loaded.
+						wasmSoundResources.remove(id);
+#endif
 						if(!sound->unloadSound(id)){
 							error->q(ERROR_SOUNDRESOURCE);
 						}

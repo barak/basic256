@@ -55,6 +55,8 @@ class BasicOutput : public QTextEdit, public ViewWidgetIFace
 		void updatePasteButton();
 		void slotClear();
 		void slotWrap(bool);
+		// Repaint the pane and any text already in it from EditorTheme.
+		void applyTheme();
 
 			
 	signals:

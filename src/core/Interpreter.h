@@ -25,6 +25,7 @@
 #include <QThread>
 #include <QFile>
 #include <QDir>
+#include <QSet>
 #include <QTime>
 #include <QElapsedTimer>
 #include <QRegularExpression>
@@ -272,6 +273,14 @@ class Interpreter : public QThread
 		BasicKeyboard *basicKeyboard;	// not owned -- passed in at construction
 		Sleeper *sleeper;
 		BasicDownloader *downloader;
+#ifdef Q_OS_WASM
+		// "sound:" resource ids this run has already registered for a file or
+		// URL passed straight to SOUND/SOUNDPLAY/SOUNDPLAYER, so replaying the
+		// same track in a loop does not re-download it. Interpreter-thread only
+		// -- deliberately not a peek at SoundSystem::loadedsounds, which lives
+		// on the main thread. Cleared at the start of every run().
+		QSet<QString> wasmSoundResources;
+#endif
 		//int optype(int op);
 		QString opname(int);
 		void waitForGraphics();

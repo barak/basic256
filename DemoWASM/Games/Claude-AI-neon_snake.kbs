@@ -1,0 +1,546 @@
+# ======================================================================
+#  NEON SNAKE  --  an arcade demo entirely made by Claude A.I.
+#   a BASIC256 experiment to see how good Claude A.I. is in BASIC256
+#
+#  * dark-blue synthwave field 
+#  * glowing robot neon snake (bright cyan-white head)
+#  * pulsing PCB + a blip when eaten
+#  * run into the wals or yourself and the snake detonates into a
+#    neon particle system, then "SYSTEM CRASH"
+#
+#  Controls : Arrow keys or WASD to steer
+#             SPACE to respawn after a crash
+#             Q     to quit
+#
+#           (requires keyboard, so not iPad compatible)
+#
+# =====================================================================
+# ---- shared state ---------------------------------------------------
+# In BASIC256 every subroutine/function variable is LOCAL by
+# default -- anything shared across them must be declared global
+# once, up front, before it is used.
+global CELL, COLS, ROWS, OFFY, W, H, NP, BURST
+global sx, sy, px, py, pvx, pvy, plife, pr, pg, pb
+global snakelen, dx, dy, nextdx, nextdy, score, state, ax, ay, t, plifemax
+global pcur, detidx, detnext
+global AZERTY, kUp, kDown, kLeft, kRight, kQuit
+
+# ---- configuration --------------------------------------------------
+CELL = 24                    # pixel size of one grid cell
+COLS = 25                    # grid width  (cells)
+ROWS = 25                    # grid height (cells)
+OFFY = 60                    # top HUD band height
+W    = COLS * CELL           # 600
+H    = OFFY + ROWS * CELL    # 660
+NP   = 120                   # particle pool (bursts overlap during the cascade)
+BURST = 14                   # particles emitted per detonating segment
+
+# ---- keyboard layout switch -----------------------------------------
+# false = QWERTY  ->  steer with  W A S D  (quit = Q)
+# true  = AZERTY  ->  steer with  Z Q S D  (quit = Esc, since Q = left)
+AZERTY = true
+
+kDown  = 83                  # S  -- same key on both layouts
+kRight = 68                  # D  -- same key on both layouts
+if AZERTY then
+   kUp   = 90                # Z
+   kLeft = 81                # Q
+   kQuit = 16777216          # Esc (Q is taken by "left" on AZERTY)
+else
+   kUp   = 87                # W
+   kLeft = 65                # A
+   kQuit = 81                # Q
+end if
+
+graphsize W, H
+fastgraphics
+
+# ---- snake storage (head is index 0) --------------------------------
+MAXLEN = COLS * ROWS
+dim sx(MAXLEN)
+dim sy(MAXLEN)
+
+# ---- particle storage -----------------------------------------------
+dim px(NP)
+dim py(NP)
+dim pvx(NP)
+dim pvy(NP)
+dim plife(NP)
+dim pr(NP)
+dim pg(NP)
+dim pb(NP)
+
+# ---- global animation clock -----------------------------------------
+t = 0.0
+
+call resetgame()
+
+# =====================================================================
+#  MAIN LOOP
+# =====================================================================
+while true
+
+   t = t + 0.05
+
+   k = key
+   call handlekey(k)
+
+   if state = 0 then call updateplay()
+   if state = 1 then call updateexplode()
+
+   # ---- render ----------------------------------------------------
+   call drawbackground()
+   call drawgrid()
+   call drawframe()
+
+   if state = 0 then
+      call drawapple()
+      call drawsnakefrom(0)
+   end if
+   if state = 1 then
+      call drawsnakefrom(detidx)
+      call drawparticles()
+   end if
+   if state = 2 then
+      call drawparticles()
+      call drawgameover()
+   end if
+
+   call drawhud()
+   refresh
+
+   # ---- pace ------------------------------------------------------
+   if state = 0 then pause 0.085
+   if state <> 0 then pause 0.03
+
+end while
+
+# =====================================================================
+#  GAME LOGIC
+# =====================================================================
+
+subroutine resetgame()
+   snakelen = 4
+   startx = 8
+   starty = int(ROWS / 2)
+   for i = 0 to snakelen - 1
+      sx[i] = startx - i
+      sy[i] = starty
+   next i
+   dx = 1
+   dy = 0
+   nextdx = 1
+   nextdy = 0
+   score = 0
+   state = 0
+   pcur = 0
+   detidx = 0
+   plifemax = 1.25
+   call placeapple()
+end subroutine
+
+subroutine placeapple()
+   ok = false
+   while ok = false
+      ax = int(rand * COLS)
+      ay = int(rand * ROWS)
+      if not onsnake(ax, ay) then ok = true
+   end while
+end subroutine
+
+function onsnake(gx, gy)
+   hit = false
+   for i = 0 to snakelen - 1
+      if sx[i] = gx and sy[i] = gy then hit = true
+   next i
+   return hit
+end function
+
+subroutine handlekey(kc)
+   if state = 2 then
+      if kc = 32 then call resetgame()                        # SPACE -> respawn
+      if kc = kQuit or kc = 16777216 then end                 # quit
+   else
+      if kc = 16777235 or kc = kUp then call trydir(0, -1)    # up
+      if kc = 16777237 or kc = kDown then call trydir(0, 1)   # down
+      if kc = 16777234 or kc = kLeft then call trydir(-1, 0)  # left
+      if kc = 16777236 or kc = kRight then call trydir(1, 0)  # right
+      if kc = kQuit or kc = 16777216 then end                 # quit
+   end if
+end subroutine
+
+subroutine trydir(ndx, ndy)
+   # reject a direct 180-degree reversal
+   if not (ndx = -dx and ndy = -dy) then
+      nextdx = ndx
+      nextdy = ndy
+   end if
+end subroutine
+
+subroutine updateplay()
+   dx = nextdx
+   dy = nextdy
+
+   # new head cell -- walls are solid now (no wrap)
+   hx = sx[0] + dx
+   hy = sy[0] + dy
+
+   # wall collision -> detonate
+   if hx < 0 or hx >= COLS or hy < 0 or hy >= ROWS then
+      call startdeath()
+   else
+      ate = false
+      if hx = ax and hy = ay then ate = true
+
+      # self-collision: the tail cell is vacating this tick
+      # (unless we are growing), so exclude it when not eating
+      lastidx = snakelen - 1
+      if not ate then lastidx = snakelen - 2
+      hit = false
+      for i = 1 to lastidx
+         if sx[i] = hx and sy[i] = hy then hit = true
+      next i
+
+      if hit then
+         call startdeath()
+      else
+         growto = snakelen
+         if ate then growto = snakelen + 1
+         for i = growto - 1 to 1 step -1
+            sx[i] = sx[i - 1]
+            sy[i] = sy[i - 1]
+         next i
+         sx[0] = hx
+         sy[0] = hy
+         snakelen = growto
+
+         if ate then
+            score = score + 1
+            sound {988, 45, 1319, 55}          # crisp two-note blip
+            call placeapple()
+         end if
+      end if
+   end if
+end subroutine
+
+# begin the death cascade: segments detonate head -> tail, 200ms apart
+subroutine startdeath()
+   detidx = 0
+   detnext = msec                             # detonate the head at once
+   state = 1
+end subroutine
+
+# emit one burst of particles at (cx,cy) into the ring pool
+subroutine spawnburst(cx, cy)
+   for b = 0 to BURST - 1
+      ang = rand * 2 * pi
+      spd = 1.2 + rand * 6.5
+      pvx[pcur]   = cos(ang) * spd
+      pvy[pcur]   = sin(ang) * spd - 1.6       # slight upward bias
+      px[pcur]    = cx + rand * 6 - 3
+      py[pcur]    = cy + rand * 6 - 3
+      plife[pcur] = 0.55 + rand * 0.7
+      pick = int(rand * 3)                     # circuit-spark palette
+      if pick = 0 then
+         pr[pcur] = 150                         # electric cyan-white
+         pg[pcur] = 255
+         pb[pcur] = 240
+      end if
+      if pick = 1 then
+         pr[pcur] = 80                          # PCB green
+         pg[pcur] = 220
+         pb[pcur] = 120
+      end if
+      if pick = 2 then
+         pr[pcur] = 255                         # hot orange ember
+         pg[pcur] = 150
+         pb[pcur] = 40
+      end if
+      pcur = (pcur + 1) % NP                    # ring cursor recycles oldest
+   next b
+end subroutine
+
+subroutine updateexplode()
+   # advance the detonation wave using the real millisecond clock,
+   # so the 200ms spacing holds regardless of frame draw time
+   if detidx < snakelen and msec >= detnext then
+      cx = sx[detidx] * CELL + CELL / 2
+      cy = OFFY + sy[detidx] * CELL + CELL / 2
+      call spawnburst(cx, cy)
+      sound {330, 28, 180, 40}                  # short cascading zap
+      detidx = detidx + 1
+      detnext = detnext + 200                   # next segment in 0.2s
+   end if
+
+   # advance all live particles
+   anyalive = false
+   for i = 0 to NP - 1
+      if plife[i] > 0 then
+         anyalive = true
+         px[i]    = px[i] + pvx[i]
+         py[i]    = py[i] + pvy[i]
+         pvy[i]   = pvy[i] + 0.22               # gravity
+         pvx[i]   = pvx[i] * 0.985              # drag
+         pvy[i]   = pvy[i] * 0.985
+         plife[i] = plife[i] - 0.045
+      end if
+   next i
+
+   # done once the whole snake has blown and the sparks have died
+   if detidx >= snakelen and not anyalive then state = 2
+end subroutine
+
+# =====================================================================
+#  RENDERING
+# =====================================================================
+
+subroutine drawbackground()
+   # near-black base
+   color rgb(6, 5, 16)
+   rect 0, 0, W, H
+   # HUD band, a hair lighter
+   color rgb(13, 11, 28)
+   rect 0, 0, W, OFFY
+
+   # horizontal wash: magenta bleeding in from the left edge,
+   # blue from the right, dark through the middle -- built from
+   # opaque vertical strips (cheap, needs no per-pixel alpha)
+   NB = 48
+   for i = 0 to NB - 1
+      xx = int(W * i / NB)
+      bw = int(W / NB) + 1
+      f  = i / (NB - 1)                     # 0 = left .. 1 = right
+      edge = abs(f - 0.5) * 2               # 0 = centre .. 1 = edges
+      edge = edge ^ 2.2                     # steep falloff -> dark core
+      rr = int(6  + (170 + (55  - 170) * f) * edge * 0.55)
+      gg = int(5  + (30  + (95  - 30 ) * f) * edge * 0.55)
+      bb = int(16 + (135 + (240 - 135) * f) * edge * 0.55)
+      color rgb(rr, gg, bb)
+      rect xx, OFFY, bw, H - OFFY
+   next i
+end subroutine
+
+subroutine drawgrid()
+   # thin, dark neon lines carrying the same magenta->blue
+   # gradient as the field; a bright<->dim breathing pulse
+   pls = 0.75 + 0.55 * sin(msec * pi / 500)    # ~0.2 .. 1.3 over ~1s
+   ca = int(52 * pls)                       	# bright core alpha
+   ga = int(16 * pls)                       	# faint halo alpha
+
+   # vertical lines -- one gradient colour each (varies by x)
+   for c = 0 to COLS
+      xx = c * CELL
+      f  = c / COLS
+      rr = int(230 + (60  - 230) * f)
+      gg = int(45  + (120 - 45 ) * f)
+      bb = int(170 + (255 - 170) * f)
+      penwidth 3
+      color rgb(rr, gg, bb, ga)
+      line xx, OFFY, xx, H
+      penwidth 1
+      color rgb(rr, gg, bb, ca)
+      line xx, OFFY, xx, H
+   next c
+
+   # horizontal lines -- the gradient runs along their length,
+   # so a single dim halo underlay plus a few bright segments
+   NSEG = 6
+   for r = 0 to ROWS
+      yy = OFFY + r * CELL
+      penwidth 3
+      color rgb(140, 70, 175, ga)
+      line 0, yy, W, yy
+      penwidth 1
+      for s = 0 to NSEG - 1
+         x1 = int(W * s / NSEG)
+         x2 = int(W * (s + 1) / NSEG)
+         f  = (s + 0.5) / NSEG
+         rr = int(230 + (60  - 230) * f)
+         gg = int(45  + (120 - 45 ) * f)
+         bb = int(170 + (255 - 170) * f)
+         color rgb(rr, gg, bb, ca)
+         line x1, yy, x2, yy
+      next s
+   next r
+   penwidth 1
+end subroutine
+
+# bright neon frame around the play-field (echoes the reference):
+# left + bottom magenta, top + right blue
+subroutine drawframe()
+   fx0 = 1
+   fy0 = OFFY + 1
+   fx1 = W - 2
+   fy1 = H - 2
+   call glowedge(fx0, fy0, fx0, fy1, 235, 45, 165)    # left   magenta
+   call glowedge(fx0, fy1, fx1, fy1, 235, 45, 165)    # bottom magenta
+   call glowedge(fx0, fy0, fx1, fy0, 70, 140, 255)    # top    blue
+   call glowedge(fx1, fy0, fx1, fy1, 70, 140, 255)    # right  blue
+end subroutine
+
+# three-pass edge glow: wide+dim -> mid -> bright thin core
+subroutine glowedge(x1, y1, x2, y2, r, g, b)
+   penwidth 7
+   color rgb(r, g, b, 18)
+   line x1, y1, x2, y2
+   penwidth 4
+   color rgb(r, g, b, 45)
+   line x1, y1, x2, y2
+   penwidth 2
+   color rgb(r, g, b, 175)
+   line x1, y1, x2, y2
+   penwidth 1
+end subroutine
+
+subroutine drawapple()
+   cx = ax * CELL + CELL / 2
+   cy = OFFY + ay * CELL + CELL / 2
+   pulse = 0.5 + 0.5 * sin(t * 5.0)
+   gsz = CELL * 0.32 + pulse * CELL * 0.06     # pulsating half-size
+
+   color rgb(60, 200, 120, int(35 + 70 * pulse))   # breathing glow
+   circle cx, cy, gsz * 2.2
+
+   color rgb(22, 95, 55)                       # green solder-mask board
+   rect cx - gsz, cy - gsz, gsz * 2, gsz * 2
+   color rgb(45, 150, 90)                       # lighter board border
+   rect cx - gsz, cy - gsz, gsz * 2, 2
+   rect cx - gsz, cy + gsz - 2, gsz * 2, 2
+   rect cx - gsz, cy - gsz, 2, gsz * 2
+   rect cx + gsz - 2, cy - gsz, 2, gsz * 2
+
+   color rgb(205, 170, 90, 200)                 # copper trace between pads
+   penwidth 2
+   line cx - gsz * 0.45, cy - gsz * 0.45, cx + gsz * 0.45, cy + gsz * 0.45
+   penwidth 1
+   color rgb(220, 185, 100)                     # tinned copper pads
+   circle cx - gsz * 0.45, cy - gsz * 0.45, CELL * 0.06
+   circle cx + gsz * 0.45, cy + gsz * 0.45, CELL * 0.06
+end subroutine
+
+# --- the snake as a dark PCB trace: copper links, pads & vias ---
+# draws segments s0..tail; gradient runs cyan (head) -> dark blue (tail)
+subroutine drawsnakefrom(s0)
+   den = snakelen - 1
+   if den < 1 then den = 1
+
+   # 1) traces linking adjacent surviving segments
+   for i = s0 to snakelen - 2
+      if abs(sx[i] - sx[i + 1]) <= 1 and abs(sy[i] - sy[i + 1]) <= 1 then
+         gf = i / den
+         ax1 = sx[i]     * CELL + CELL / 2
+         ay1 = OFFY + sy[i]     * CELL + CELL / 2
+         ax2 = sx[i + 1] * CELL + CELL / 2
+         ay2 = OFFY + sy[i + 1] * CELL + CELL / 2
+         penwidth 6
+         color rgb(int(30 + (14 - 30) * gf), int(120 + (40 - 120) * gf), int(150 + (110 - 150) * gf), 200)
+         line ax1, ay1, ax2, ay2
+         penwidth 2
+         color rgb(int(90 + (40 - 90) * gf), int(210 + (90 - 210) * gf), int(235 + (170 - 235) * gf), 190)
+         line ax1, ay1, ax2, ay2
+      end if
+   next i
+   penwidth 1
+
+   # 2) nodes: tail-first so the head component lands on top
+   for i = snakelen - 1 to s0 step -1
+      cx = sx[i] * CELL + CELL / 2
+      cy = OFFY + sy[i] * CELL + CELL / 2
+      if i = 0 then
+         call drawhead(cx, cy)
+      else
+         call drawpad(cx, cy, i / den)
+      end if
+   next i
+end subroutine
+
+# a solder pad with a plated via hole; gf: 0 = cyan .. 1 = dark blue
+subroutine drawpad(cx, cy, gf)
+   er = int(70 + (22 - 70) * gf)               # bright edge colour
+   eg = int(210 + (55 - 210) * gf)
+   eb = int(235 + (135 - 235) * gf)
+   color rgb(er, eg, eb, 24)                    # faint glow
+   circle cx, cy, CELL * 0.5
+   hw = CELL * 0.40
+   color rgb(er, eg, eb)                         # bright pad edge
+   rect cx - hw, cy - hw, hw * 2, hw * 2
+   hw = CELL * 0.28
+   color rgb(int(er * 0.30), int(eg * 0.30), int(eb * 0.42))   # dark solder mask
+   rect cx - hw, cy - hw, hw * 2, hw * 2
+   color rgb(170, 220, 235, 220)                 # tinned via ring
+   circle cx, cy, CELL * 0.13
+   color rgb(int(er * 0.30), int(eg * 0.30), int(eb * 0.42))   # via hole
+   circle cx, cy, CELL * 0.05
+end subroutine
+
+# the head as a small mechanical IC with a status LED
+subroutine drawhead(cx, cy)
+   color rgb(80, 235, 255, 48)                 # cyan glow
+   circle cx, cy, CELL * 0.62
+   color rgb(150, 165, 175)                    # pins (ticks L & R)
+   for j = -1 to 1
+      py0 = cy + j * CELL * 0.24
+      rect cx - CELL * 0.58, py0 - 1, CELL * 0.18, 3
+      rect cx + CELL * 0.40, py0 - 1, CELL * 0.18, 3
+   next j
+   hw = CELL * 0.46                            # cyan chip outline
+   color rgb(45, 130, 150)
+   rect cx - hw, cy - hw, hw * 2, hw * 2
+   hw = CELL * 0.40                            # dark IC package
+   color rgb(18, 26, 34)
+   rect cx - hw, cy - hw, hw * 2, hw * 2
+   color rgb(120, 245, 255, 90)                # LED glow
+   circle cx, cy, CELL * 0.24
+   color rgb(150, 255, 250)                    # status LED
+   circle cx, cy, CELL * 0.13
+end subroutine
+
+subroutine drawparticles()
+   for i = 0 to NP - 1
+      if plife[i] > 0 then
+         # ^ gives a nicer non-linear fade than plain linear
+         a = int(((plife[i] / plifemax) ^ 1.4) * 255)
+         if a > 255 then a = 255
+         if a <= 0 then a = 0
+         sz = plife[i] * 5 + 1
+         color rgb(pr[i], pg[i], pb[i], int(a / 3))
+         circle px[i], py[i], sz * 2
+         color rgb(pr[i], pg[i], pb[i], a)
+         circle px[i], py[i], sz
+      end if
+   next i
+end subroutine
+
+subroutine drawhud()
+   font "Arial", 22, 75
+   color rgb(235, 45, 165, 210)              # magenta shadow
+   text 21, 16, "NEON  SNAKE"
+   color rgb(90, 175, 255, 255)              # blue
+   text 20, 15, "NEON  SNAKE"
+
+   font "Arial", 18, 50
+   color rgb(120, 225, 200, 220)
+   text W - 155, 18, "SCORE  " + string(score)
+end subroutine
+
+subroutine drawgameover()
+   color rgb(6, 5, 16, 155)                   # dim the field
+   rect 0, OFFY, W, H - OFFY
+
+   font "Arial", 40, 75
+   tx = (W - textwidth("SYSTEM CRASH")) / 2    # true centre for this font
+   ty = H / 2 - 60
+   color rgb(235, 45, 165, 90)
+   text tx - 2, ty - 2, "SYSTEM CRASH"         # offset shadow
+   color rgb(120, 220, 255, 255)
+   text tx, ty, "SYSTEM CRASH"
+
+   # the two info lines share the title's left x
+   font "Arial", 18, 50
+   qk$ = "Q"
+   if AZERTY then qk$ = "ESC"
+   color rgb(150, 235, 210, 235)
+   text tx, H / 2 + 4, "FINAL SCORE  " + string(score)
+   color rgb(235, 90, 175, 235)
+   text tx, H / 2 + 42, "SPACE to respawn      " + qk$ + " to quit"
+end subroutine

@@ -1,5 +1,5 @@
 #Just messing about with a fake chatbot....
-editvisible 1
+editvisible 0
 graphvisible 0
 outputvisible 1
 global no
@@ -87,26 +87,6 @@ pause 2
 sound 500*(2.5), 50
 print "Machine identity set"
 pause 3
-print "Do you want the chatbot to have a voice? (y/n)"
-print "You: ";
-input string voice
-if voice ="Y" or voice ="y" or voice="yes" or voice = "Yes" then 
-  speak=1
-else
-  if voice ="N" or voice ="n" or voice="no" or voice = "No" then 
-    speak=0
-  else
-    print "Admin:  I'll assume that gibberish is a yes..."
-    speak=1
-  endif  
-endif
-if speak then
-  sound 500*(2.5), 50
-  print "Voice selection (John/Lucy/Robot):";
-  pause 0.7
-  print "Robot"
-endif
-pause 2
 sound 500*(2.5), 50
 print "Initializing persona: Check"
 pause 2
@@ -126,6 +106,31 @@ print " "
 print "Transferring control to A.I."
 print " "
 pause 3
+# The voice question comes LAST, immediately before the A.I. speaks its first
+# line. In a browser on iPad, Safari only accepts a SAY that arrives while a
+# user interaction is still live; asked at the top of this boot sequence, the
+# answer was some 15 seconds of pauses away from the first spoken line and
+# every utterance was silently dropped. Answering here IS that interaction,
+# and once one utterance has been spoken the rest of the conversation follows.
+print "Do you want the chatbot to have a voice? (y/n)"
+print "You: ";
+input string voice
+if voice ="Y" or voice ="y" or voice="yes" or voice = "Yes" then
+  speak=1
+else
+  if voice ="N" or voice ="n" or voice="no" or voice = "No" then
+    speak=0
+  else
+    print "Admin:  I'll assume that gibberish is a yes..."
+    speak=1
+  endif
+endif
+if speak then
+  sound 500*(2.5), 50
+  print "Voice selection (John/Lucy/Robot):";
+  pause 0.7
+  print "Robot"
+endif
 end subroutine
 ##############################################################
 #A.I. is alive

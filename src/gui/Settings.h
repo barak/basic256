@@ -81,8 +81,6 @@
     // startup
     #define SETTINGSWINDOWSRESTORE "Startup/Restore"
     #define SETTINGSWINDOWSRESTOREDEFAULT true
-    #define SETTINGSCHECKFORUPDATE "Startup/CheckForUpdate"
-    #define SETTINGSCHECKFORUPDATEDEFAULT true
 
 	// documentation window
 	#define SETTINGSDOCSIZE "Doc/Size"
@@ -162,6 +160,11 @@
     // Graphics window zoom
     #define SETTINGSZOOM "View/Zoom"
     #define SETTINGSZOOMDEFAULT 1.0
+
+    // Edit and Text Output colour theme. Values are EditorTheme::Mode:
+    // 0 = follow the desktop, 1 = light, 2 = dark. Do not renumber.
+    #define SETTINGSTHEME "View/Theme"
+    #define SETTINGSTHEMEDEFAULT 0
 
 
 

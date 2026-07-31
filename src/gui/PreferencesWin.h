@@ -123,7 +123,6 @@ private:
 	QSlider *debugspeedslider;
 	QCheckBox *windowsrestorecheckbox;
 	QLabel *startuplabel;
-	QCheckBox *checkupdatecheckbox;
 
 	// sound tab
 	QWidget * soundtabwidget;

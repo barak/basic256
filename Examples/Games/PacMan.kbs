@@ -1,8 +1,9 @@
-# Manuel Nogueira Santos - Feb 2015
-# PacMan
+# Original by Manuel Nogueira Santos - Feb 2015
+# Updated by UglyMike 2026
+# Rudimentary PacMan 
 levels=1
 fastgraphics
-graphsize 600,600
+graphsize 600,400
 clg
 dim board$ (16,levels)
 dim area$ (16,30)
@@ -27,49 +28,68 @@ board$ [12,0]="H*HHH*H*HHH*HHH*H*HHH*H       "
 board$ [13,0]="H*HHH*H*HHH*HHH*H*HHH*H       "
 board$ [14,0]="H*********************H       "
 board$ [15,0]="HHHHHHHHHHHHHHHHHHHHHHH       "
-font "courier" ,25,200
-
-# To put the board in a 2D array easier to handle
-font "Arial" , 15,10
+# 50 FPS Timing Constant (1000ms / 50 frames = 20ms per frame)
+frameTime = 1000 / 50
+# Global Running Score initialization (persists across all lives)
+Score = 0
+# Put the playfield board into a 2D array (Columns 0 to 22 only, leaving right side for UI)
 for row = 0 to 15
-	for collum = 0 to 29
+	for collum = 0 to 22
 		area$ [row,collum]= mid( board$ [row,0],collum+1,1)
 	next collum
 next row
-
-# Main loop
+# Main life loop
 for life = 3 to 0 step- 1
-	# Drawing the board
+	# Drawing the board layout & Legend Text
 	color black
-	rect 0,0,600,405
+	rect 0,0,600,600
+	font "courier" ,20,200
+	# Render gameplay map
 	for y = 0 to 15
-		for x = 0 to 29
-			if area$[y,x]= "H" then color white
-			if area$[y,x]= "*" then color Yellow
-			if area$[y,x]= "@" then color red
-			text x*20,y*25,area$[y,x]
+		for x = 0 to 22
+			if area$[y,x]= "H" then 
+				color darkgrey
+				rect x*20+1,y*25+1,18,24
+			else 
+			  if area$[y,x]= "*" then 
+				color Yellow
+				text x*20,y*25,area$[y,x]
+			  else 
+			    if area$[y,x]= "@" then 
+				  color red
+				  text x*20,y*25,area$[y,x]
+				endif
+			  endif	  
+			end if
 		next x
 	next y
-
+	# Render Right Panel UI & Legends
+	color white
+	text 470,25,"Score"
+	color red
+	text 470,100,"@"
+	color white
+	text 500,100,"5P"
+	color yellow
+	text 470,150,"*"
+	color white
+	text 500,150,"1P"
+	text 470,225,"Lifes"
 	if life = 0 then
 		color green
-		font "Arial" ,50,100
-		Text 50,50,"GAME OVER"
+		font "Aril" ,50,100
+		Text 75,150,"GAME OVER"
 		refresh
 		end
 	end if
-
-
-	# initial variables for packman
+	# Initial variables for pacman
 	xspeed = 1
 	yspeed = 0
 	xpac = 220
 	ypac = 125
-	mouth=0
-	Score = 0
+	mouth = 0
 	dead = false
-
-	# initial positions for monsters
+	# Initial positions for monsters
 	monstersname$[0]="Blue"
 	monsterx[0]=190
 	monstery[0]=240
@@ -90,46 +110,49 @@ for life = 3 to 0 step- 1
 	monstery[3]=240
 	monsterxspeed[3]=-1
 	monsteryspeed[3]=0
-
-
-	# Action loop
+	# Action gameplay loop
 	do
+		# Start 50 FPS timing check
+		frameStart = msec
 		gosub packman
 		gosub monsters
+		# Update and draw score + lives counters on right sidebar
+		color black
+		rect 470,50,100,30
+		rect 470,250,100,30
+		color white
+		font "courier" ,20,200
+		text 470,50,Score
+		text 470,250,life
 		refresh
-		pause .01
-		
-		# Dynamic canvas scan for win condition
+		# Dynamic scan to check if all dots (@ and *) are cleared from grid
 		win = true
 		for r = 0 to 15
-			for c = 0 to 29
+			for c = 0 to 22
 				if area$[r,c] = "*" or area$[r,c] = "@" then win = false
 			next c
 		next r
-		
-		# If no dots or energizers remain, trigger immediate green win screen
+		# Trigger winning display regardless of remaining lives
 		if win = true then
 			color green
-			font "Arial" ,50,100
-			Text 50,50,"YOU WON"
+			font "Aril" ,50,100
+			Text 75,150,"YOU WON"
 			refresh
 			end
 		end if
+		# Enforce 50 FPS rate limit
+		while (msec - frameStart) < frameTime
+			# Wait remaining frame time
+		end while
 	until dead = true
 next life
-
-
-
 monsters:
 for n = 0 to 3
-
 	# Erases monster for next frame
 	color black
 	rect monsterx[n]-10,monstery[n]-10,21,21
-
 	# Changing monster direction
-	if (monsterx[n]+10)%20 =0 and (monstery[n]+10)%25=0 then
-
+	if (monsterx[n]+10)%20 = 0 and (monstery[n]+10)%25 = 0 then
 		xcell=int((monsterx[n])/20)
 		ycell=int(monstery[n]/25)
 		self$ = area$[ycell,xcell]
@@ -137,9 +160,8 @@ for n = 0 to 3
 		righ$ = area$[ycell,xcell+1]
 		up$ = area$[ycell-1,xcell]
 		down$ = area$[ycell+1,xcell]
-
 		flag=false
-		# when the monster is going right
+		# Going right
 		if monsterxspeed[n]=1 then
 			if up$<>"H" and int(rand*2)>0 and flag = false then
 				monsteryspeed[n]=-1
@@ -156,11 +178,12 @@ for n = 0 to 3
 				monsterxspeed[n]=-1
 				flag=true
 			end if
+			font "courier" ,20,200
 			if lef$= "*" then color Yellow
 			if lef$= "@" then color red
 			if lef$= "*" or lef$= "@" then text (xcell-1)*20,ycell*25,lef$
 		end if
-		# when the monster is going left
+		# Going left
 		if monsterxspeed[n]=-1 then
 			if up$<>"H" and int(rand*2)>0 and flag = false then
 				monsteryspeed[n]=-1
@@ -177,11 +200,12 @@ for n = 0 to 3
 				monsterxspeed[n]=1
 				flag=true
 			end if
+			font "courier" ,20,200
 			if righ$= "*" then color Yellow
 			if righ$= "@" then color red
 			if righ$= "*" or righ$= "@" then text (xcell+1)*20,ycell*25,righ$
 		end if
-		# when the monster is going up
+		# Going up
 		if monsteryspeed[n]=-1 then
 			if lef$<>"H" and int(rand*2)>0 and flag = false then
 				monsteryspeed[n]=0
@@ -198,11 +222,12 @@ for n = 0 to 3
 				monsterxspeed[n]=0
 				flag=true
 			end if
+			font "courier" ,20,200
 			if down$= "*" then color Yellow
 			if down$= "@" then color red
 			if down$= "*" or down$= "@" then text xcell*20,(ycell+1)*25,down$
 		end if
-		# when the monster is going down
+		# Going down
 		if monsteryspeed[n]=1 then
 			if lef$<>"H" and int(rand*2)>0 and flag = false then
 				monsteryspeed[n]=0
@@ -219,28 +244,25 @@ for n = 0 to 3
 				monsterxspeed[n]=0
 				flag = true
 			end if
+			font "courier" ,20,200
 			if up$= "*" then color Yellow
 			if up$= "@" then color red
 			if up$= "*" or up$= "@" then text xcell*20,(ycell-1)*25,up$
 		end if
 	end if
-
-
-	# Shift from left to right of the board
+	# Shift from left to right of board
 	IF monsterx[n] = 15 THEN monsterx[n] = 435
 	IF monsterx[n] = 440 THEN monsterx[n] = 15
-
 	monsterx[n]=monsterx[n]+monsterxspeed[n]
 	monstery[n]=monstery[n]+monsteryspeed[n]
-
-	# Drawing the monsters
+	# Drawing monsters
 	if n = 0 then color Blue
 	if n = 1 then color Orange
 	if n = 2 then color Yellow
 	if n = 3 then color Purple
 	Circle monsterx[n],monstery[n],10
 	rect monsterx[n]-10,monstery[n],21,11
-	# Monsters eyes and mouth
+	# Eyes and mouth
 	color white
 	Circle monsterx[n]-3,monstery[n]-4,4
 	Circle monsterx[n]+3,monstery[n]-4,4
@@ -248,71 +270,66 @@ for n = 0 to 3
 	Circle monsterx[n]-3+monsterxspeed[n]*2,monstery[n]+monsteryspeed[n]*2-4,2
 	Circle monsterx[n]+3+monsterxspeed[n]*2,monstery[n]-4+monsteryspeed[n]*2,2
 	rect monsterx[n]-4,monstery[n]+4,8,3
-
-	# Pac dies
+	# Pacman death detection
 	if abs(monsterx[n] - (xpac+10))<2 and abs(monstery[n]-(ypac+15))<2 then
 		dead = true
 		sound 1000,1000
 	end if
 next n
-
 return
-
-
 packman:
-# Erases pacman for next frame (With 1px padding to avoid trailing edge artifacts)
+# Erases pacman completely before moving
 color black
-rect xpac-1,ypac,22,30
-
-# Identifies the cells around pacman
-if xpac/20 =int(xpac/20) and ypac/25=int(ypac/25)then
-xcell=int((xpac)/20)
-ycell=int(ypac/25)
-self$ = area$[ycell,xcell]
-lef$ = area$[ycell,xcell-1]
-righ$ = area$[ycell,xcell+1]
-up$ = area$[ycell-1,xcell]
-down$ = area$[ycell+1,xcell]
-# Key controls
-z = key
-if z = 16777235 and up$<>"H" then
-	yspeed = -1
-	xspeed = 0
+rect xpac-1,ypac,22,26
+# Identifies cells around pacman
+if xpac/20 = int(xpac/20) and ypac/25 = int(ypac/25) then
+	xcell=int((xpac)/20)
+	ycell=int(ypac/25)
+	self$ = area$[ycell,xcell]
+	lef$ = area$[ycell,xcell-1]
+	righ$ = area$[ycell,xcell+1]
+	up$ = area$[ycell-1,xcell]
+	down$ = area$[ycell+1,xcell]
+	# Key controls
+	z = key
+	if z = 16777235 and up$<>"H" then
+		yspeed = -1
+		xspeed = 0
+	end if
+	if z = 16777237 and down$<>"H" then
+		yspeed = 1
+		xspeed = 0
+	end if
+	if z = 16777234 and lef$<>"H" then
+		xspeed = -1
+		yspeed = 0
+	end if
+	if z = 16777236 and righ$<>"H" then
+		xspeed = 1
+		yspeed = 0
+	end if
+	# Wall collision stopping
+	if up$="H" and yspeed=-1 then yspeed=0
+	if down$="H" and yspeed=1 then yspeed=0
+	if lef$="H" and xspeed=-1 then xspeed=0
+	if righ$="H" and xspeed=1 then xspeed=0
+	# Points handling
+	if self$="*" then
+		area$[ycell,xcell]=" "
+		Score = Score+1
+	end if
+	if self$="@" then
+		area$[ycell,xcell]=" "
+		Score = Score+5
+	end if
 end if
-if z = 16777237 and down$<>"H" then
-	yspeed = 1
-	xspeed = 0
-end if
-if z = 16777234 and lef$<>"H" then
-	xspeed = -1
-	yspeed = 0
-end if
-if z = 16777236 and righ$<>"H" then
-	xspeed = 1
-	yspeed = 0
-end if
-# to stop when crashing the wall
-if up$="H" and yspeed=-1 then yspeed=0
-if down$="H" and yspeed=1 then yspeed=0
-if lef$="H" and xspeed=-1 then xspeed=0
-if righ$="H" and xspeed=1 then xspeed=0
-# adding points
-if self$="*" then
-	area$[ycell,xcell]=" "
-	Score = Score+1
-end if
-if self$="@" then
-	area$[ycell,xcell]=" "
-	Score = Score+5
-end if
-end if
-# transportation left to right
+# Tunnel transportation
 IF xpac = 10 THEN xpac = 435
 IF xpac = 440 THEN xpac = 20
-# changing position
+# Position updates
 xpac = xpac+xspeed
 ypac = ypac+yspeed
-# Drawing packman
+# Drawing pacman
 color white
 if xspeed = 1 then direc=1.57
 if xspeed = -1 then direc=-1.57
@@ -320,12 +337,4 @@ if yspeed = 1 then direc= 3.14
 if yspeed = -1 then direc= 0
 if yspeed+xspeed<>0 then mouth=mouth+.2
 pie xpac,ypac+5,20,20,direc+sin (mouth),6.28-2*sin (mouth)
-
-# Writing scores and lifes
-color black
-rect 520,60,100,30
-rect 520,260,100,30
-color white
-text 520,60,Score
-text 520,260,life
 return

@@ -44,10 +44,16 @@ EM_JS(void, wasmAudioSinkSetEndedCallback, (int fnPtr), {
 EM_JS(void, wasmAudioSinkCreate, (int nodeId), {
     if (!Module.__wasmAudio) Module.__wasmAudio = { ctx: null, nodes: new Map() };
     var w = Module.__wasmAudio;
-    if (!w.ctx) {
-        var AC = window.AudioContext || window.webkitAudioContext;
-        w.ctx = new AC();
+    // Helpers are installed independently of ctx creation: WasmMediaUnlock may
+    // have already built the AudioContext inside a user-gesture handler (iOS
+    // will not start one anywhere else), and gating these on `!w.ctx` would
+    // then leave w.startFrom undefined for the rest of the run.
+    if (!w.startFrom) {
         w.startFrom = function(entry, offsetSeconds) {
+            // Safari suspends the context on tab-switch and refuses to start one
+            // created outside a gesture; a resume() here is cheap and recovers
+            // playback the moment the page is interactive again.
+            if (w.ctx.state !== "running") { w.ctx.resume(); }
             if (entry.source) {
                 entry.source.onended = null;
                 try { entry.source.stop(); } catch (e) {}
@@ -88,7 +94,16 @@ EM_JS(void, wasmAudioSinkCreate, (int nodeId), {
             return entry.baseOffset;
         };
     }
-    if (w.ctx.state === "suspended") { w.ctx.resume(); }
+    if (!w.ctx) {
+        // webkitAudioContext is the only spelling on iOS Safari before 14.5.
+        // Reached bare (not via `window.`) so this still resolves if a sink is
+        // ever constructed off the main thread, where `window` does not exist.
+        var AC = (typeof AudioContext !== "undefined") ? AudioContext :
+                 ((typeof webkitAudioContext !== "undefined") ? webkitAudioContext : null);
+        if (!AC) return;
+        w.ctx = new AC();
+    }
+    if (w.ctx.state !== "running") { w.ctx.resume(); }
     var gain = w.ctx.createGain();
     gain.connect(w.ctx.destination);
     w.nodes.set(nodeId, { id: nodeId, gain: gain, buffer: null, source: null, startedAt: 0, baseOffset: 0, playing: false });
