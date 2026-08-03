@@ -42,6 +42,14 @@
  !include "x64.nsh"
 
  Function .onInit
+     ; $PLUGINSDIR is the one directory the installer can count on existing
+     ; on the machine it runs on.  NSD_SetImage LoadImage()s its argument at
+     ; run time, so the welcome bitmap has to be unpacked to a real path
+     ; first -- the old resources\images\... argument named a path in the
+     ; source tree, which exists on no user's machine, so the welcome page
+     ; had always come up with no picture on it at all.
+     InitPluginsDir
+     File /oname=$PLUGINSDIR\welcome.bmp "resources\images\basic256.bmp"
      ${IfNot} ${RunningX64}
          MessageBox MB_OK "This installer requires 64-bit Windows."
          Abort
@@ -60,14 +68,18 @@
 
  	 ${NSD_CreateBitmap} 10 10 128 128 ""
  	 Pop $customImage
- 	 ${NSD_SetImage} $customImage resources\images\basic256.bmp $customImageHandle	; LoadImage'd at its native size and clipped, never scaled -- so the .bmp is exactly the 128x128 of the control above, on the dialog face colour
+ 	 ${NSD_SetImage} $customImage $PLUGINSDIR\welcome.bmp $customImageHandle	; drawn at its native size and clipped, never scaled, so the .bmp is exactly the 128x128 of the control above, on the dialog face colour
 
- 	 ${NSD_CreateLabel} 152 12 -10 32 "BASIC256 ${VERSION} (${VERSIONDATE})"
+ 	 ${NSD_CreateLabel} 152 12 -162 32 "BASIC256 ${VERSION} (${VERSIONDATE})"
  	 Pop $customLabel0
- 	 ${NSD_CreateLabel} 152 46 -10 110 "This installer will load BASIC256.  Previous versions will be overwritten and any saved files in the program folder may or may not be preserved."
+ 	 ${NSD_CreateLabel} 152 46 -162 110 "This installer will load BASIC256.  Previous versions will be overwritten and any saved files in the program folder may or may not be preserved."
  	 Pop $customLabel1
 
  	 nsDialogs::Show
+ FunctionEnd
+
+ Function customPageLeave
+ 	 ${NSD_FreeImage} $customImageHandle
  FunctionEnd
 
 
@@ -93,7 +105,7 @@
 
  ;   Pages
 
- Page custom customPage "" ": BASIC256 Welcome"
+ Page custom customPage customPageLeave ": BASIC256 Welcome"
  Page license
  LicenseData "license.txt"
  Page components
