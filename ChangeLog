@@ -9,7 +9,7 @@
 	* Examples: PacMan has been reworked -- a fixed 50 frames a second, a score that carries across lives, and the playfield narrowed so the score and legend have a panel of their own. A new game, Claude-AI-neon_snake, has been added.
 	* Documentation: the ELLIPSE and SETGRAPH statements and the GETARRAYBASE function, none of which had ever been documented, now have pages on the Docusaurus website, and the optional LET keyword in front of an assignment is described on the Variables page.
 	* Documentation: the bit shift operators (<< and >>) and the compound assignments &= and ;= are now documented, and the order of operations tables have been corrected to match what the interpreter actually does.
-	* The program has a new logo. It is used for the icon of the program itself on every platform -- Windows, macOS, Linux and the browser tab -- and on the welcome page of the Windows installer and the loading screen of the browser version. The icons are drawn on a transparent background, so they sit properly on a dark taskbar or Dock instead of in a white square.
+	* The program has a new logo. It is used for the icon of the program itself on every platform -- Windows, macOS, Linux and the browser tab -- on the welcome page of the Windows installer, in the Help/About BASIC-256 box in place of the desktop's generic information icon, and on the loading screen of the browser version. The icons are drawn on a transparent background, so they sit properly on a dark taskbar or Dock instead of in a white square.
 
 2026-07-26 M. Vilain <uglymike17@gmail.com>  
 	* The project has now moved to Beta2 state, meaning it runs, but issues might still lie dormant in both program and documentation

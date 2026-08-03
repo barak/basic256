@@ -24,6 +24,9 @@ BasicIcons::BasicIcons()
 
     //create icons
     basic256Icon.addFile(":icons/basic256.png",QSize(64, 64));
+    // The About dialog draws this one at 96 and a HiDPI taskbar asks for more
+    // than 64 too -- without a bigger source both would be upscaling.
+    basic256Icon.addFile(":icons/basic256_256.png",QSize(256, 256));
 
     saveIcon.addFile(":icons/16x16/save.png",QSize(16, 16));
     saveIcon.addFile(":icons/22x22/save.png",QSize(22, 22));

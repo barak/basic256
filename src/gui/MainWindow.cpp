@@ -32,6 +32,7 @@
 #include <QtWidgets/QDialog>
 #include <QtWidgets/QLabel>
 #include <QtGui/QFontDatabase>
+#include <QtGui/QPixmap>
 #include <QtGui/QFontInfo>
 #include <QtGui/QFontMetrics>
 #include <QtGui/QShortcut>
@@ -766,7 +767,14 @@ void MainWindow::about() {
     msgBox->setAttribute(Qt::WA_DeleteOnClose);
     msgBox->setWindowTitle(title);
     msgBox->setText(message);
-    msgBox->setIcon(QMessageBox::Information);
+    // The program's own logo rather than the desktop's generic information
+    // icon.  Asked for at the dialog's device pixel ratio and then told what
+    // that ratio is, so it is drawn at 96 logical pixels but sharp on a HiDPI
+    // screen -- QIcon::pixmap(int,int) always hands back a ratio-1 pixmap.
+    const qreal dpr = msgBox->devicePixelRatioF();
+    QPixmap logo = basicIcons->basic256Icon.pixmap(QSize(96, 96) * dpr);
+    logo.setDevicePixelRatio(dpr);
+    msgBox->setIconPixmap(logo);
     msgBox->setStandardButtons(QMessageBox::Ok);
     // open() forces window-modal, which unlike exec()'s old application-modal
     // default doesn't disable the main window's native title bar on Windows --

@@ -11,6 +11,9 @@ Derived
     resources/icons/basic256.png        Qt resource :icons/basic256.png -- window,
                                         taskbar and About-dialog title-bar icon,
                                         and the AppImage/.desktop icon
+    resources/icons/basic256_256.png    the same icon at 256, so the About dialog
+                                        and a HiDPI taskbar have something to
+                                        scale down from rather than up
     wasm-deploy/favicon.png             browser favicon for the web IDE
     wasm-deploy/logo.png                splash image on the WASM loading screen
     resources/basic256.icns             macOS bundle icon
@@ -215,6 +218,7 @@ def main():
     write_ico(logo, out("resources", "images", "logo_300x300.ico"))
     write_ico(logo, out("resources", "icons", "basic256.ico"))
     write_png(scaled(logo, 64), out("resources", "icons", "basic256.png"))
+    write_png(scaled(logo, 256), out("resources", "icons", "basic256_256.png"))
     write_png(scaled(logo, 64), out("wasm-deploy", "favicon.png"))
     write_png(scaled(logo, 300), out("wasm-deploy", "logo.png"))
     write_icns(logo, out("resources", "basic256.icns"))
