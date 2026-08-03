@@ -58,13 +58,13 @@
  	 	 Abort
  	 ${EndIf}
 
- 	 ${NSD_CreateBitmap} 0 0 100% 100% ""
+ 	 ${NSD_CreateBitmap} 10 10 128 128 ""
  	 Pop $customImage
- 	 ${NSD_SetImage} $customImage resources\images\basic256.bmp $customImageHandle
+ 	 ${NSD_SetImage} $customImage resources\images\basic256.bmp $customImageHandle	; LoadImage'd at its native size and clipped, never scaled -- so the .bmp is exactly the 128x128 of the control above, on the dialog face colour
 
- 	 ${NSD_CreateLabel} 50 0 80% 10% "BASIC256 ${VERSION} (${VERSIONDATE})"
+ 	 ${NSD_CreateLabel} 152 12 -10 32 "BASIC256 ${VERSION} (${VERSIONDATE})"
  	 Pop $customLabel0
- 	 ${NSD_CreateLabel} 0 50 100% 80% "This installer will load BASIC256.  Previous versions will be overwritten and any saved files in the program folder may or may not be preserved."
+ 	 ${NSD_CreateLabel} 152 46 -10 110 "This installer will load BASIC256.  Previous versions will be overwritten and any saved files in the program folder may or may not be preserved."
  	 Pop $customLabel1
 
  	 nsDialogs::Show

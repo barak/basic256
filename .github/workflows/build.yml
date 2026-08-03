@@ -367,6 +367,8 @@ jobs:
         cp wasm-deploy/index.html public/index.html
         cp wasm-deploy/coi-serviceworker.min.js public/coi-serviceworker.min.js
         cp wasm-deploy/favicon.png public/favicon.png
+        # Splash image on the loading screen, in place of Qt's own qtlogo.svg.
+        cp wasm-deploy/logo.png public/logo.png
         # Assets that bundled example programs load at runtime. In the browser
         # a relative path in imageload/soundload is fetched over HTTP relative
         # to the page (MediaPath::downloadUrl), never read from the :/examples
