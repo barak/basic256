@@ -44,6 +44,7 @@
 #include "Settings.h"
 #include "Version.h"
 #include "MainWindow.h"
+#include "MenuIndicatorStyle.h"
 #include "BasicEdit.h"
 #include "WasmSettings.h"
 #include "WasmLaunch.h"
@@ -155,6 +156,12 @@ int main(int argc, char *argv[]) {
     QLoggingCategory::setFilterRules(QStringLiteral("qt.multimedia.ffmpeg.info=false"));
 
     QApplication qapp(argc, argv);
+
+    // Every checkable menu item gets a check box (or a radio button, inside an
+    // exclusive group) drawn in its left column, on or off. Wraps whichever
+    // style the platform would have used, so nothing else changes appearance.
+    // Must be set before the first menu is built.
+    QApplication::setStyle(new MenuIndicatorStyle);
 
 #ifdef Q_OS_WIN
     // Qt 5 reads QApplication::font() from SPI_GETICONTITLELOGFONT (icon

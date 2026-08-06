@@ -113,6 +113,7 @@ set(SOURCES_GUI
     src/gui/EditorTheme.cpp
     src/gui/LineNumberArea.cpp
     src/gui/MainWindow.cpp
+    src/gui/MenuIndicatorStyle.cpp
     src/gui/PreferencesWin.cpp
     src/gui/ReplaceWin.cpp
     src/gui/VariableWin.cpp
@@ -130,6 +131,7 @@ set(HEADERS_GUI
     src/gui/EditorTheme.h
     src/gui/LineNumberArea.h
     src/gui/MainWindow.h
+    src/gui/MenuIndicatorStyle.h
     src/gui/PreferencesWin.h
     src/gui/ReplaceWin.h
     src/gui/Settings.h
