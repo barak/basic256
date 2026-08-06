@@ -49,7 +49,7 @@ dt = PI / 400
 r = PI * 2 / 235
 fps =0
 time =0
-counter = 0
+counter = -1
 return
 
 Draw:
