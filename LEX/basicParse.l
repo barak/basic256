@@ -396,6 +396,7 @@ lower [Ll][Oo][Ww][Ee][Rr]
 ltrim [Ll][Tt][Rr][Ii][Mm]
 maintoolbarvisible [Mm][Aa][Ii][Nn][Tt][Oo][Oo][Ll][Bb][Aa][Rr][Vv][Ii][Ss][Ii][Bb][Ll][Ee]
 map [Mm][Aa][Pp]
+maximize [Mm][Aa][Xx][Ii][Mm][Ii][Zz][Ee]
 md5 [Mm][Dd][5]
 mid [Mm][Ii][Dd]
 midx [Mm][Ii][Dd][Xx]
@@ -1081,6 +1082,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {line}						{ count(); return B256LINE; }
 {maintoolbarvisible}		{ count(); return B256MAINTOOLBARVISIBLE; }
 {map}						{ count(); return B256MAP; }
+{maximize}					{ count(); return B256MAXIMIZE; }
 {netclose}					{ count(); return B256NETCLOSE; }
 {netclose}":"				{ count(); unputcolon(); return B256NETCLOSE; }
 {netconnect}				{ count(); return B256NETCONNECT; }

@@ -222,6 +222,7 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "ltrim"								//ltrim
 			<< "maintoolbarvisible"
 			<< "map"
+			<< "maximize"
 			<< "md5"								//md5
 			<< "mid"								//mid
 			<< "midx"								//midx
