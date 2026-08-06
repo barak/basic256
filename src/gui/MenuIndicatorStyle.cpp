@@ -15,11 +15,62 @@
 
 #include "MenuIndicatorStyle.h"
 
+#include <QAction>
+#include <QMenu>
 #include <QPainter>
 #include <QPaintDevice>
 #include <QPixmap>
 #include <QPixmapCache>
 #include <QStyleOption>
+
+bool MenuIndicatorStyle::menuHasCheckableItem(const QWidget *widget) {
+	const QMenu *menu = qobject_cast<const QMenu *>(widget);
+	if (!menu) return false;
+	const QList<QAction *> actions = menu->actions();
+	for (const QAction *action : actions) {
+		if (action->isCheckable()) return true;
+	}
+	return false;
+}
+
+int MenuIndicatorStyle::indicatorBox(const QStyleOptionMenuItem &item, const QWidget *widget) const {
+
+	const bool exclusive = (item.checkType == QStyleOptionMenuItem::Exclusive);
+
+	int box = proxy()->pixelMetric(exclusive ? PM_ExclusiveIndicatorWidth : PM_IndicatorWidth,
+								   &item, widget);
+	return capToSlot(box, item, widget);
+}
+
+int MenuIndicatorStyle::indicatorColumn(const QStyleOptionMenuItem &item, const QWidget *widget) const {
+
+	// Widest of the two indicators, so every entry in a menu is measured
+	// against the same column whether it holds a check box, a radio button or
+	// nothing at all -- otherwise the text of a radio item and the text of a
+	// check item in one menu would start at different places.
+	int box = qMax(proxy()->pixelMetric(PM_IndicatorWidth, &item, widget),
+				   proxy()->pixelMetric(PM_ExclusiveIndicatorWidth, &item, widget));
+	box = capToSlot(box, item, widget);
+
+	// Half a box of clear space to the right of the indicator.
+	return box + box / 2;
+}
+
+int MenuIndicatorStyle::capToSlot(int box, const QStyleOptionMenuItem &item, const QWidget *widget) const {
+
+	const int iconSize = proxy()->pixelMetric(PM_SmallIconSize, &item, widget);
+	if (box <= 0) box = iconSize;
+
+	// The pixmap is the box plus half a box of empty space (see indicatorIcon),
+	// and the whole thing has to stay inside an icon slot or QIcon scales it
+	// down and the box comes out blurred. That caps the box at two thirds of
+	// the slot -- a little smaller than the indicator the style draws in a
+	// dialog, which is the price of it sitting clear of the text.
+	const int maxBox = (iconSize * 2) / 3;
+	if (maxBox > 0 && box > maxBox) box = maxBox;
+
+	return box > 0 ? box : 0;
+}
 
 void MenuIndicatorStyle::drawControl(ControlElement element, const QStyleOption *option,
 									 QPainter *painter, const QWidget *widget) const {
@@ -27,19 +78,32 @@ void MenuIndicatorStyle::drawControl(ControlElement element, const QStyleOption 
 	if (element == CE_MenuItem) {
 		const QStyleOptionMenuItem *item = qstyleoption_cast<const QStyleOptionMenuItem *>(option);
 		if (item && item->menuItemType == QStyleOptionMenuItem::Normal
-				 && item->checkType != QStyleOptionMenuItem::NotCheckable) {
-
-			qreal dpr = 1.0;
-			if (painter && painter->device()) dpr = painter->device()->devicePixelRatioF();
+				 && menuHasCheckableItem(widget)) {
 
 			QStyleOptionMenuItem indicated(*item);
-			indicated.icon = indicatorIcon(*item, widget, dpr);
-			// The pixmap now carries the state, so hand the base style what
-			// looks like an ordinary item: styles that tick a checked item, or
-			// that draw a box of their own for an icon-less one, would
-			// otherwise paint a second indicator over ours.
-			indicated.checkType = QStyleOptionMenuItem::NotCheckable;
-			indicated.checked = false;
+
+			// A menu of nothing but checkable, icon-less entries -- View/Theme,
+			// View/Graphics Window Zoom, the open programs in Window -- reports
+			// maxIconWidth as 0, so the base style starts the text at the left
+			// edge and an injected pixmap lands on top of it. Claim the column
+			// the indicator needs; sizeFromContents() widens the menu to match.
+			// Every entry of such a menu is given the same column, including
+			// the plain commands, so their text stays in one line down the menu.
+			const int column = indicatorColumn(*item, widget);
+			if (column > indicated.maxIconWidth) indicated.maxIconWidth = column;
+
+			if (item->checkType != QStyleOptionMenuItem::NotCheckable) {
+				qreal dpr = 1.0;
+				if (painter && painter->device()) dpr = painter->device()->devicePixelRatioF();
+
+				indicated.icon = indicatorIcon(*item, widget, dpr);
+				// The pixmap now carries the state, so hand the base style what
+				// looks like an ordinary item: styles that tick a checked item,
+				// or that draw a box of their own for an icon-less one, would
+				// otherwise paint a second indicator over ours.
+				indicated.checkType = QStyleOptionMenuItem::NotCheckable;
+				indicated.checked = false;
+			}
 
 			QProxyStyle::drawControl(element, &indicated, painter, widget);
 			return;
@@ -49,25 +113,41 @@ void MenuIndicatorStyle::drawControl(ControlElement element, const QStyleOption 
 	QProxyStyle::drawControl(element, option, painter, widget);
 }
 
+QSize MenuIndicatorStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
+										   const QSize &contentsSize, const QWidget *widget) const {
+
+	QSize size = QProxyStyle::sizeFromContents(type, option, contentsSize, widget);
+
+	if (type == CT_MenuItem) {
+		const QStyleOptionMenuItem *item = qstyleoption_cast<const QStyleOptionMenuItem *>(option);
+		if (item && item->menuItemType == QStyleOptionMenuItem::Normal
+				 && menuHasCheckableItem(widget)) {
+			// Matches the column drawControl() claims. Without this the item is
+			// measured for the icon column it actually has -- none, in the
+			// menus that need this most -- and the text is drawn into space the
+			// menu never reserved, so it runs into the right-hand edge.
+			const int column = indicatorColumn(*item, widget);
+			if (column > item->maxIconWidth) size.rwidth() += column - item->maxIconWidth;
+		}
+	}
+
+	return size;
+}
+
 QIcon MenuIndicatorStyle::indicatorIcon(const QStyleOptionMenuItem &item, const QWidget *widget,
 										qreal devicePixelRatio) const {
 
 	const bool exclusive = (item.checkType == QStyleOptionMenuItem::Exclusive);
 
-	// Never larger than an icon slot: the base style scales an oversized icon
-	// down to PM_SmallIconSize, and a smooth-scaled box looks blurred next to
-	// the crisp ones the same style paints in dialogs.
-	const int iconSize = proxy()->pixelMetric(PM_SmallIconSize, &item, widget);
-	int size = proxy()->pixelMetric(exclusive ? PM_ExclusiveIndicatorWidth : PM_IndicatorWidth,
-									&item, widget);
-	if (size <= 0) size = iconSize;
-	if (iconSize > 0 && size > iconSize) size = iconSize;
-	if (size <= 0) return QIcon();
+	const int box = indicatorBox(item, widget);
+	if (box <= 0) return QIcon();
+	const int column = indicatorColumn(item, widget);
 
 	// The palette key covers a switch between the light and dark colour scheme,
 	// which repaints the menus with different indicator colours.
 	const QString key = QStringLiteral("basic256-menuindicator-")
-			+ QString::number(size) + QLatin1Char('-')
+			+ QString::number(box) + QLatin1Char('-')
+			+ QString::number(column) + QLatin1Char('-')
 			+ QString::number(qRound(devicePixelRatio * 100)) + QLatin1Char('-')
 			+ QLatin1Char(exclusive ? 'r' : 'c')
 			+ QLatin1Char(item.checked ? '1' : '0') + QLatin1Char('-')
@@ -75,13 +155,17 @@ QIcon MenuIndicatorStyle::indicatorIcon(const QStyleOptionMenuItem &item, const 
 
 	QPixmap pixmap;
 	if (!QPixmapCache::find(key, &pixmap)) {
-		pixmap = QPixmap(QSize(size, size) * devicePixelRatio);
+		// As wide as the column, with the box against its left edge: the base
+		// style centres a pixmap in the space it is given, so the empty
+		// right-hand part carries the box itself half its own width to the left
+		// of centre, away from the text that follows.
+		pixmap = QPixmap(QSize(column, box) * devicePixelRatio);
 		pixmap.setDevicePixelRatio(devicePixelRatio);
 		pixmap.fill(Qt::transparent);
 
 		QPainter pixmapPainter(&pixmap);
 		QStyleOptionButton indicator;
-		indicator.rect = QRect(0, 0, size, size);
+		indicator.rect = QRect(0, 0, box, box);
 		indicator.palette = item.palette;
 		indicator.fontMetrics = item.fontMetrics;
 		// Always drawn as enabled. A disabled item is dimmed by the base style

@@ -44,8 +44,16 @@ class MenuIndicatorStyle : public QProxyStyle
 public:
 	void drawControl(ControlElement element, const QStyleOption *option,
 					 QPainter *painter, const QWidget *widget) const override;
+	QSize sizeFromContents(ContentsType type, const QStyleOption *option,
+						   const QSize &contentsSize, const QWidget *widget) const override;
 
 private:
+	static bool menuHasCheckableItem(const QWidget *widget);
+	// Side of the square box, and the width of the column it is drawn in --
+	// half a box wider, so the box sits left of the text rather than under it.
+	int indicatorBox(const QStyleOptionMenuItem &item, const QWidget *widget) const;
+	int indicatorColumn(const QStyleOptionMenuItem &item, const QWidget *widget) const;
+	int capToSlot(int box, const QStyleOptionMenuItem &item, const QWidget *widget) const;
 	QIcon indicatorIcon(const QStyleOptionMenuItem &item, const QWidget *widget,
 						qreal devicePixelRatio) const;
 };
