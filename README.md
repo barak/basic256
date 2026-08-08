@@ -6,6 +6,12 @@
 
 > **BASIC256 is a classic BASIC programming language designed to make learning programming fun through graphics, animation, sound and experimentation.**
 
+<p align="center">
+  <img src="resources/icons/basic256_256.png" width="192" height="192" alt="The BASIC256 logo: the words BASIC and 256 in white block letters on a rounded green square with a thick black outline">
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="BitBuddy_Hello.png" height="192" alt="BitBuddy, the BASIC256 mascot: a friendly white and green robot with a smiling screen for a face, headphones, a green cape and 256 on its chest, waving hello">
+</p>
+
 This project is the actively maintained continuation of the original BASIC256, bringing the educational environment to Windows, Linux, macOS and the Web while preserving compatibility with existing BASIC256 programs. It also has an extensive documentation site, https://doc.basic256.org, accessible from the application's Help → Online Help menu.  
 
 ## Why use BASIC256?

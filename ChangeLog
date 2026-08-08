@@ -5,6 +5,7 @@
 	* A program can now maximise the IDE window itself with the new MAXIMIZE statement. MAXIMIZE 1 does exactly what the window's maximise button does and MAXIMIZE 0 what the restore button does, and the result is remembered for the next start just as it is when you press those buttons yourself. A program started with -f fills the screen without being maximised, so MAXIMIZE 0 has nothing to restore there and does nothing.
 	* The browser version has moved to an address of its own, https://run.basic256.org/basic256. The links in the README that open a program with ?run= and pick a window layout with &mode= now use it.
 	* Docking the Graphics window back into the IDE after it has been floated no longer drags its floating size in with it. The pane comes back sized to the graphics canvas -- 500 wide for the usual 500x500, wider or taller if the program called GRAPHSIZE or the view is zoomed -- and never takes more than half the IDE window, whether it is docked at the side or above or below the Edit window.
+	* The program has a new mascot, BitBuddy. He'll pop up here and there (README.md, doc.basic256.org, Discord,...). He exists in different poses. The images are drawn on a transparent background, so they sit properly on a dark or light theme.
 
 2026-08-01 M. Vilain <uglymike17@gmail.com>  
 	* The project has now moved to Beta3 state, meaning it runs, but issues might still lie dormant in both program and documentation
