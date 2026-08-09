@@ -230,17 +230,23 @@ it manually from:$\nhttps://aka.ms/vs/17/release/vc_redist.x64.exe"
  SectionEnd
 
  ;   Examples (can be disabled by the user)
+ ;   /x "Basic256" keeps this off the staging folder package_windows.ps1
+ ;   builds for the zip. "File /r <name>" does not copy just .\<name>: it
+ ;   searches every subdirectory for a directory of that name and copies
+ ;   each one under its own relative path, so the Examples staged at
+ ;   Basic256\Examples used to land a second time in $INSTDIR\Basic256.
  Section "Example Programs"
      SectionIn 1
      SetOutPath $INSTDIR
-     File /r /x ".svn" Examples
+     File /r /x ".svn" /x "Basic256" Examples
  SectionEnd
 
  ;   Test Suite (can be disabled by the user)
+ ;   Excludes the staging folder for the same reason as Examples above.
  Section "Test Suite"
      SectionIn 1
      SetOutPath $INSTDIR
-     File /r /x ".svn" TestSuite
+     File /r /x ".svn" /x "Basic256" TestSuite
  SectionEnd
 
  ;---------------------------------
