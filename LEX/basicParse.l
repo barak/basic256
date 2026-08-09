@@ -1346,6 +1346,21 @@ mod							{ count(); return B256MOD; }
 			yyin = fopen( str, "r" );
 		}
 	}
+#ifdef __EMSCRIPTEN__
+	if (!yyin) {
+		// Browser build: there is no executable folder to be next to. Modules/
+		// is baked into the virtual filesystem at a fixed /Modules by the
+		// --embed-file link option (CMakeLists.txt, EMSCRIPTEN block), so look
+		// there by absolute path rather than trusting what applicationDirPath()
+		// reports under Emscripten. Keeps "include \"math.kbs\"" meaning the
+		// same thing in the browser as it does on the desktop.
+		char str[512];
+		int pathlen = snprintf(str, sizeof(str), "/Modules/%s", filename);
+		if (pathlen >= 0 && (size_t) pathlen < sizeof(str)) {
+			yyin = fopen( str, "r" );
+		}
+	}
+#endif
 	if ( ! yyin ) {
 			BEGIN(INITIAL);
 			free(filename);
