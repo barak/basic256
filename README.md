@@ -43,7 +43,7 @@ This project is the actively maintained continuation of the original BASIC256, b
 Thanks to Qt for WebAssembly, BASIC256 runs directly in your browser — the full
 editor and interpreter, with no install needed.
 
-**Live demo:** https://run.basic256.org/basic256
+**Live demo:** https://run.basic256.org
 
 You will be greeted with an interface like the following image. The interface automatically adapts to both light and dark system themes. The View menu item allows you to show/hide windows and/or toolbars among other things. You can type a program such as 
 ```basic
@@ -91,14 +91,14 @@ Then `&mode=` chooses the window layout. These mirror the command-line switches:
 So a plain link opens the IDE with the program loaded and running — you can see
 it, stop it and edit it:
 
-**https://run.basic256.org/basic256/?run=BubbleUniverse_variations**
+**https://run.basic256.org/?run=BubbleUniverse_variations**
 
 ![The Bubble Universe demo running in the browser IDE: its source in the editor on the left, the program's "A cool looking animated demo style program in Basic256" line in Text Output, and a dense multicoloured sphere of plotted points in Graphics Output](Basic256-Web.png)
 
 Add `&mode=graph` and you get just the canvas, with no menus or toolbars — the
 form to use when embedding a demo in a page:
 
-**https://run.basic256.org/basic256/?run=Mandelbrot-256&mode=graph**
+**https://run.basic256.org/?run=Mandelbrot-256&mode=graph**
 
 ![The Mandelbrot-256 demo in graphics-only mode: no BASIC256 menus or toolbars, just the program's own window with a colour-banded Mandelbrot set on the left and its Mandel/Julia/Orbits/Zoom/Colors option tabs on the right](Basic256-Web_GraphicsOnly.png)
 
