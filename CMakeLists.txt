@@ -113,6 +113,7 @@ set(SOURCES_GUI
     src/gui/EditorTheme.cpp
     src/gui/LineNumberArea.cpp
     src/gui/MainWindow.cpp
+    src/gui/MenuIndicatorStyle.cpp
     src/gui/PreferencesWin.cpp
     src/gui/ReplaceWin.cpp
     src/gui/VariableWin.cpp
@@ -130,6 +131,7 @@ set(HEADERS_GUI
     src/gui/EditorTheme.h
     src/gui/LineNumberArea.h
     src/gui/MainWindow.h
+    src/gui/MenuIndicatorStyle.h
     src/gui/PreferencesWin.h
     src/gui/ReplaceWin.h
     src/gui/Settings.h
@@ -373,8 +375,18 @@ if(EMSCRIPTEN)
     target_link_options(basic256 PRIVATE
         "SHELL:--pre-js ${CMAKE_CURRENT_SOURCE_DIR}/wasm-deploy/idbfs.js"
         -lidbfs.js)
+
+    # Bake the module library into the virtual filesystem at /Modules so
+    # INCLUDE finds it (basicParse.l looks there explicitly when built with
+    # Emscripten). --embed-file, not --preload-file: the library is a few KB,
+    # so embedding costs almost nothing and avoids a basic256.data file that
+    # assemble_wasm_site.sh would have to copy and the page would have to
+    # fetch before a program could compile.
+    target_link_options(basic256 PRIVATE
+        "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/Modules@/Modules")
+
     set_target_properties(basic256 PROPERTIES
-        LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/wasm-deploy/idbfs.js")
+        LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/wasm-deploy/idbfs.js;${CMAKE_CURRENT_SOURCE_DIR}/Modules/math.kbs")
 endif()
 
 if(DEFINED ENV{GITHUB_HEAD_REF} AND NOT "$ENV{GITHUB_HEAD_REF}" STREQUAL "")

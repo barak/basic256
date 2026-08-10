@@ -1,0 +1,680 @@
+# ==========================================================================
+#  BASIC-256 SPRITE SHOWCASE
+#  A tour of the eight SPRITE* statements, plus the sprite functions that
+#  read a sprite back (position, size, scale, rotation, opacity, collision).
+#
+#    Make a sprite ......... spritedim, spriteload, spriteslice, spritepoly
+#    Place & move .......... spriteplace, spritemove
+#    Show & hide ........... spriteshow, spritehide
+#    Read a sprite ......... spritex, spritey, spritew, spriteh,
+#                            sprites, spriter, spriteo, spritev, spritecollide
+#
+#  The mascot is BIBOT.  "bibot.png" is served alongside the page, so this
+#  browser copy always uses the real picture; the drawn stand-in below is
+#  what the desktop copy falls back to when the file is missing.
+#
+#  Window is 800 x 600.  Every step waits for you to press Enter in the
+#  text area, so you can read as you go.  Animated steps run for a few
+#  seconds first, then wait.
+# ==========================================================================
+
+global GW, GH, PICFILE, HAVEPIC
+GW = 800 : GH = 600
+PICFILE = "bibot.png"
+graphsize GW, GH
+fastgraphics
+
+# exists() asks the local filesystem, which in the browser is the virtual one
+# the module was linked with - bibot.png is not in it. It is served next to the
+# page instead, where spriteload fetches it over HTTP, so the answer exists()
+# gives here is always no and always wrong. Assume the picture, the way the
+# image demo does.
+HAVEPIC = true
+
+call banner("BASIC-256 Sprite Showcase")
+
+if HAVEPIC = false then
+	print "  NOTE: '" + PICFILE + "' was not found next to this program."
+	print "  The demo will use a drawn stand-in robot instead. Drop the file"
+	print "  in this folder (or edit PICFILE) to see the real mascot."
+end if
+
+do
+	call showmenu()
+	input "  Select 1-12: ", sel$
+	choice = int(sel$)
+
+	begin case
+		case choice = 1  : call demoBasics()
+		case choice = 2  : call demoPlace()
+		case choice = 3  : call demoMove()
+		case choice = 4  : call demoScale()
+		case choice = 5  : call demoRotate()
+		case choice = 6  : call demoOpacity()
+		case choice = 7  : call demoShowHide()
+		case choice = 8  : call demoSlice()
+		case choice = 9  : call demoPoly()
+		case choice = 10 : call demoCollide()
+		case choice = 11 : call demoFlock()
+		case choice = 12 : print "Goodbye!"
+			else         : print "  Please choose a number from 1 to 12."
+	end case
+until choice = 12
+
+# clean up: release every sprite the demo created
+spritedim 0
+end
+
+
+# --------------------------------------------------------------------------
+#  MENU + SCREEN HELPERS  (all sized for the 800 x 600 window)
+# --------------------------------------------------------------------------
+subroutine showmenu()
+	print
+	print "==================== SPRITE MENU ===================="
+	print "  Make a sprite"
+	print "    1.  spritedim / spriteload / spriteshow - the basics"
+	print "  Place & move"
+	print "    2.  spriteplace       - put it somewhere (x,y is the CENTRE)"
+	print "    3.  spritemove        - nudge it by a delta (a bouncing run)"
+	print "  Transform while placing (extra spriteplace arguments)"
+	print "    4.  spriteplace scale     - grow and shrink"
+	print "    5.  spriteplace rotation  - spin (radians)"
+	print "    6.  spriteplace opacity   - fade + a ghost trail"
+	print "  Show & hide"
+	print "    7.  spriteshow / spritehide  - blink (spritev reports state)"
+	print "  Build sprites from other things"
+	print "    8.  spriteslice       - cut sprites out of the screen"
+	print "    9.  spritepoly        - sprites from polygon point arrays"
+	print "  Read a sprite back"
+	print "   10.  spritecollide + spritex/y/w/h  - box vs pixel-perfect"
+	print "  Everything at once"
+	print "   11.  A flock of bibots (move + rotate + fade + collide)"
+	print "   12.  Quit"
+	print "====================================================="
+end subroutine
+
+subroutine banner(t$)
+	clg
+	color rgb(20, 24, 40)
+	rect 0, 0, GW, GH
+	color rgb(120, 220, 130)
+	font "Sans", 26, 100
+	text 28, 34, t$
+	color rgb(150, 160, 190)
+	font "Sans", 13, 50
+	text 30, 92,  "A tour of the eight SPRITE* statements, drawn on this screen."
+	text 30, 116, "Each step waits for Enter in the text area - read as you go."
+	text 30, 156, "Mascot file: " + PICFILE + "   (a small PNG, next to this program)"
+	if HAVEPIC then
+		text 30, 180, "Found it - the real bibot will be used."
+	else
+		text 30, 180, "Not found - a drawn stand-in robot will be used."
+	end if
+	refresh
+end subroutine
+
+# Clear to a dark frame with a title bar.
+# Layout: title band y 0..48, drawing area y 56..536, caption strip y 536..600.
+subroutine frame(title$)
+	clg
+	color rgb(18, 20, 34)
+	rect 0, 0, GW, GH
+	color rgb(120, 220, 130)
+	font "Sans", 18, 100
+	text 20, 14, title$
+	color rgb(40, 44, 66)
+	line 16, 48, GW - 16, 48
+	refresh
+end subroutine
+
+# Two-line caption in a strip along the bottom (64 px tall)
+subroutine caption(a$, b$)
+	color rgb(18, 20, 34)
+	rect 0, GH - 64, GW, 64
+	color rgb(40, 44, 66)
+	line 16, GH - 64, GW - 16, GH - 64
+	color rgb(160, 210, 120)
+	font "Sans", 14, 100
+	text 20, GH - 56, a$
+	color rgb(150, 160, 190)
+	font "Sans", 12, 50
+	text 20, GH - 32, b$
+	refresh
+end subroutine
+
+# Wait for the user so they can read the current step
+subroutine waitgo()
+	input "  [Enter] = next step... ", zz$
+end subroutine
+
+# Load bibot into sprite n. If the file is missing, DRAW a stand-in robot
+# onto the graphics buffer and slice it into the sprite - so the demo still
+# runs, and demonstrates spriteslice as a happy side effect.
+subroutine makebibot(n)
+	if HAVEPIC then
+		spriteload n, PICFILE
+	else
+		call drawrobot()                  # draws the stand-in at (0,0) in a 110x122 box
+		spriteslice n, 0, 0, 110, 122     # (a later frame() wipes the scratch drawing)
+	end if
+end subroutine
+
+# Draw the stand-in robot at (0,0) into a 110x122 scratch box on the buffer.
+# Used when bibot.png is missing.
+subroutine drawrobot()
+	color clear                           # transparent so the slice keeps alpha
+	rect 0, 0, 110, 122
+	# body
+	color rgb(45, 160, 75)
+	rect 30, 55, 46, 55
+	color rgb(235, 240, 235)
+	circle 53, 82, 15
+	color rgb(45, 160, 75)
+	font "Sans", 13, 100
+	text 40, 74, "256"
+	# head
+	color rgb(235, 240, 235)
+	rect 22, 12, 62, 42
+	color rgb(30, 40, 30)
+	rect 30, 20, 46, 26
+	color rgb(120, 220, 130)
+	circle 44, 33, 4
+	circle 62, 33, 4
+	# antenna + legs
+	color rgb(45, 160, 75)
+	line 53, 12, 53, 2
+	circle 53, 2, 3
+	rect 34, 108, 10, 12
+	rect 62, 108, 10, 12
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  1. spritedim / spriteload / spriteshow  - the three-step basics
+# --------------------------------------------------------------------------
+subroutine demoBasics()
+	spritedim 1                          # allocate 1 sprite: number 0
+	call makebibot(0)                    # give sprite 0 a picture
+
+	call frame("1. spritedim / spriteload / spriteshow")
+	print
+	print "  Three steps make a sprite appear:"
+	print "    spritedim 1          reserves sprite slots (here just #0)"
+	print "    spriteload 0, file$  loads a picture into slot 0"
+	print "    spriteshow 0         makes it visible"
+	print "  A brand-new sprite is invisible and parked at 0,0 until you"
+	print "  place and show it."
+
+	call caption("spritedim 1 : spriteload 0, file$", "Loaded, but nothing shows yet - a sprite starts hidden at (0,0).")
+	refresh
+	call waitgo()
+
+	call caption("spriteplace 0, 400, 300 : spriteshow 0", "Placed at the centre of the window and made visible. There it is.")
+	spriteplace 0, 400, 300
+	spriteshow 0
+	refresh
+	call waitgo()
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  2. spriteplace  - absolute position; (x,y) is the CENTRE of the sprite
+# --------------------------------------------------------------------------
+subroutine demoPlace()
+	spritedim 1
+	call makebibot(0)
+
+	call frame("2. spriteplace - (x,y) is the sprite's CENTRE")
+	print
+	print "  spriteplace n, x, y  jumps a sprite to an absolute spot."
+	print "  The point you give is the MIDDLE of the sprite, not a corner -"
+	print "  so a sprite placed at (0,0) is half off the top-left edge."
+
+	spriteshow 0                         # shown, but not drawn until the first place+refresh
+
+	# Draw a small crosshair grid of target points, then land the sprite on each
+	px = 150
+	for steps = 1 to 5
+		py = 120 + (steps - 1) * 90
+		# marker
+		color rgb(90, 100, 140)
+		line px - 8, py, px + 8, py
+		line px, py - 8, px, py + 8
+		color rgb(120, 220, 130)
+		font "Sans", 12, 50
+		text px + 14, py - 8, "(" + px + "," + py + ")"
+		spriteplace 0, px, py
+		refresh
+		call caption("spriteplace 0, " + px + ", " + py, "The centre of bibot sits exactly on the crosshair.")
+		pause 0.6
+		px = px + 130
+	next steps
+	call waitgo()
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  3. spritemove  - relative motion; a classic wall-bounce run
+# --------------------------------------------------------------------------
+subroutine demoMove()
+	spritedim 1
+	call makebibot(0)
+	spriteplace 0, 400, 300
+
+	call frame("3. spritemove - move by a DELTA, not to a point")
+	print
+	print "  spritemove n, dx, dy  adds dx,dy to the current position"
+	print "  (spriteplace jumps to an absolute point; spritemove is relative)."
+	print "  Below, bibot keeps its velocity and we just flip dx or dy when"
+	print "  its edge meets a wall - the whole bounce is one spritemove call."
+	call caption("spritemove 0, dx, dy", "Relative steps every frame; walls flip the sign of dx / dy.")
+
+	hw = spritew(0) / 2                  # half width  (original image size)
+	hh = spriteh(0) / 2                  # half height
+	dx = 4.5 : dy = 3.0
+	spriteshow 0
+	t0 = msec
+	while msec - t0 < 9000
+		# reflect off the drawing-area walls (y 60..532)
+		if spritex(0) - hw <= 4   and dx < 0 then dx = -dx
+		if spritex(0) + hw >= GW-4 and dx > 0 then dx = -dx
+		if spritey(0) - hh <= 60   and dy < 0 then dy = -dy
+		if spritey(0) + hh >= 532  and dy > 0 then dy = -dy
+		spritemove 0, dx, dy
+		refresh
+		pause 0.01
+	end while
+	call waitgo()
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  4. spriteplace scale  - the 4th argument scales the sprite
+# --------------------------------------------------------------------------
+subroutine demoScale()
+	spritedim 1
+	call makebibot(0)
+	spriteplace 0, 400, 300
+
+	call frame("4. spriteplace scale - the 4th argument resizes")
+	print
+	print "  spriteplace n, x, y, scale"
+	print "  1.0 is natural size, 0.5 is half, 2.0 is double. The sprite"
+	print "  scales about its own centre, so it stays put while it breathes."
+	call caption("spriteplace 0, 400, 300, scale", "Pulsing from small to large and back with a single scale value.")
+	spriteshow 0
+
+	t0 = msec
+	while msec - t0 < 7000
+		ph = (msec - t0) / 1000.0
+		sc = 1.4 + 1.0 * sin(ph * 2)     # 0.4 .. 2.4
+		spriteplace 0, 400, 300, sc
+		refresh
+		color rgb(18,20,34) : rect 20, 500, 300, 24
+		font "Sans", 14, 50
+		color rgb(160, 210, 120) : text 20, 500, "sprites(0) = " + int(sc * 100) / 100.0
+		refresh
+		pause 0.01
+	end while
+	call waitgo()
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  5. spriteplace rotation  - the 5th argument spins (radians)
+# --------------------------------------------------------------------------
+subroutine demoRotate()
+	spritedim 1
+	call makebibot(0)
+	spriteplace 0, 400, 300
+
+	call frame("5. spriteplace rotation - the 5th argument spins")
+	print
+	print "  spriteplace n, x, y, scale, angle"
+	print "  The angle is in RADIANS (2*pi is a full turn). You must give a"
+	print "  scale before the angle - use 1 for natural size."
+	call caption("spriteplace 0, 400, 300, 1, angle", "One full turn every couple of seconds; angle read back with spriter().")
+	spriteshow 0
+
+	t0 = msec
+	while msec - t0 < 8000
+		ang = (msec - t0) / 1000.0 * 3.14159
+		spriteplace 0, 400, 300, 1, ang
+		refresh
+		color rgb(18,20,34) : rect 20, 500, 320, 24
+		color rgb(160, 210, 120) : font "Sans", 14, 50
+		text 20, 500, "spriter(0) = " + int(spriter(0) * 100) / 100.0 + " rad"
+		refresh
+		pause 0.01
+	end while
+	call waitgo()
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  6. spriteplace opacity  - the 6th argument fades (0..1)
+# --------------------------------------------------------------------------
+subroutine demoOpacity()
+	spritedim 6                          # one lead sprite + 5 trail ghosts
+	for i = 0 to 5
+		call makebibot(i)
+	next i
+
+	call frame("6. spriteplace opacity - the 6th argument fades")
+	print
+	print "  spriteplace n, x, y, scale, angle, opacity"
+	print "  Opacity runs 0 (invisible) to 1 (solid). Here five faint copies"
+	print "  trail the leader at fixed opacities to make a motion ghost."
+	call caption("spriteplace n, x, y, 1, 0, opacity", "Same picture at opacity 1.0 down to ~0.15 - a five-step ghost trail.")
+
+	for i = 0 to 5                       # placing does not reveal a sprite; show them
+		spriteshow i
+	next i
+
+	t0 = msec
+	while msec - t0 < 9000
+		ph = (msec - t0) / 1000.0
+		# trail ghosts, dimmest and furthest behind first
+		for g = 5 to 1 step -1
+			gx = 400 + 250 * cos(ph - g * 0.18)
+			gy = 300 + 150 * sin((ph - g * 0.18) * 1.3)
+			op = 0.15 + (5 - g) * 0.12
+			spriteplace g, gx, gy, 1, 0, op
+		next g
+		# solid leader on top
+		lx = 400 + 250 * cos(ph)
+		ly = 300 + 150 * sin(ph * 1.3)
+		spriteplace 0, lx, ly, 1, 0, 1
+		refresh
+		pause 0.01
+	end while
+	call waitgo()
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  7. spriteshow / spritehide  - toggle visibility; spritev reports it
+# --------------------------------------------------------------------------
+subroutine demoShowHide()
+	spritedim 1
+	call makebibot(0)
+	spriteplace 0, 400, 290
+
+	call frame("7. spriteshow / spritehide - blink on and off")
+	print
+	print "  spriteshow n  and  spritehide n  turn a sprite on and off"
+	print "  without losing it - its picture, place and transform all stay."
+	print "  spritev(n) returns 1 when the sprite is visible, 0 when hidden."
+	call caption("spriteshow 0 / spritehide 0", "Toggling visibility; the state below comes straight from spritev(0).")
+	spriteshow 0
+
+	t0 = msec
+	last = -1
+	while msec - t0 < 8000
+		on = int((msec - t0) / 500) mod 2 = 0
+		if on then
+			spriteshow 0
+		else
+			spritehide 0
+		end if
+		if spritev(0) <> last then
+			last = spritev(0)
+			color rgb(18,20,34) : rect 20, 500, 360, 24
+			color rgb(160, 210, 120) : font "Sans", 14, 50
+			if spritev(0) = 1 then
+				text 20, 500, "spritev(0) = 1   (visible)"
+			else
+				text 20, 500, "spritev(0) = 0   (hidden)"
+			end if
+		end if
+		refresh
+		pause 0.02
+	end while
+	spriteshow 0
+	refresh
+	call waitgo()
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  8. spriteslice  - cut sprites straight out of the graphics screen
+# --------------------------------------------------------------------------
+subroutine demoSlice()
+	spritedim 4
+	dim dx(4)
+	dim dy(4)
+
+	call frame("8. spriteslice - cut sprites out of what you drew")
+	print
+	print "  spriteslice n, x, y, w, h  grabs a w x h rectangle of the"
+	print "  CURRENT screen and turns it into sprite n (alpha is kept, so"
+	print "  'color clear' holes stay see-through). Great for hand-drawn"
+	print "  sprites and for sprite-sheets."
+
+	# draw four little emblems, each in its own 70x70 cell, then slice them
+	color rgb(60, 130, 240)
+	circle 90, 150, 26
+	color clear
+	rect 78, 138, 24, 24                 # square hole
+	color rgb(70, 200, 110)
+	circle 240, 150, 26
+	color clear
+	circle 240, 150, 12                  # ring
+	color rgb(230, 90, 90)
+	circle 390, 150, 26
+	color rgb(240, 210, 70)
+	rect 514, 124, 52, 52
+	color clear
+	poly {540, 128, 520, 172, 560, 172}  # triangle bite
+
+	refresh
+	call caption("spriteslice n, x, y, w, h", "Four emblems drawn above; each 52-ish px box becomes a sprite.")
+	pause 1.2
+
+	spriteslice 0, 64, 124, 52, 52
+	spriteslice 1, 214, 124, 52, 52
+	spriteslice 2, 364, 124, 52, 52
+	spriteslice 3, 514, 124, 52, 52
+
+	# fresh backdrop, then set the four sliced sprites loose
+	call frame("8. spriteslice - the four cut-outs, now bouncing")
+	call caption("spriteslice made 4 sprites", "The same pixels are now independent sprites drifting around.")
+	for i = 0 to 3
+		spriteplace i, 150 + i * 160, 300
+		spriteshow i
+		dx[i] = rand * 5 - 2.5
+		dy[i] = rand * 4 - 2
+	next i
+
+	t0 = msec
+	while msec - t0 < 8000
+		for i = 0 to 3
+			hw = spritew(i) / 2 : hh = spriteh(i) / 2
+			if spritex(i) - hw <= 4   and dx[i] < 0 then dx[i] = -dx[i]
+			if spritex(i) + hw >= GW-4 and dx[i] > 0 then dx[i] = -dx[i]
+			if spritey(i) - hh <= 60   and dy[i] < 0 then dy[i] = -dy[i]
+			if spritey(i) + hh >= 532  and dy[i] > 0 then dy[i] = -dy[i]
+			spritemove i, dx[i], dy[i]
+		next i
+		refresh
+		pause 0.01
+	end while
+	call waitgo()
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  9. spritepoly  - make a sprite from an array of polygon points
+# --------------------------------------------------------------------------
+subroutine demoPoly()
+	spritedim 4
+
+	call frame("9. spritepoly - sprites from polygon point arrays")
+	print
+	print "  spritepoly n, points[]  builds a sprite by filling a polygon"
+	print "  with the current color. Points are x,y,x,y,... (at least three"
+	print "  points). Keep the smallest x and y at 0 and the sprite is sized"
+	print "  to fit. These are true vector cut-outs - they rotate crisply."
+
+	# each shape uses coordinates whose minimum is (0,0)
+	color rgb(120, 220, 130)
+	spritepoly 0, {0,0, 70,0, 35,64}                        # triangle
+	color rgb(240, 200, 80)
+	spritepoly 1, {35,0, 70,45, 35,90, 0,45}                # diamond
+	color rgb(90, 170, 240)
+	spritepoly 2, {0,22, 34,22, 34,0, 68,34, 34,68, 34,46, 0,46}   # arrow
+	color rgb(235, 110, 120)
+	spritepoly 3, {35,0, 45,25, 70,25, 50,42, 58,68, 35,52, 12,68, 20,42, 0,25, 25,25}  # 5-point star
+
+	call caption("spritepoly n, {x,y, x,y, ...}", "Triangle, diamond, arrow and star - each is a filled polygon sprite.")
+	for i = 0 to 3
+		spriteplace i, 170 + i * 155, 300
+		spriteshow i
+	next i
+	refresh
+	pause 1.0
+
+	# spin them all in place
+	t0 = msec
+	while msec - t0 < 8000
+		ang = (msec - t0) / 1000.0
+		for i = 0 to 3
+			spriteplace i, 170 + i * 155, 300, 1, ang * (1 + i * 0.4)
+		next i
+		refresh
+		pause 0.01
+	end while
+	call waitgo()
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  10. spritecollide + spritex/y/w/h  - box vs pixel-perfect overlap
+# --------------------------------------------------------------------------
+subroutine demoCollide()
+	spritedim 2
+	call makebibot(0)
+	call makebibot(1)
+
+	call frame("10. spritecollide - bounding-box vs pixel-perfect")
+	print
+	print "  spritecollide(a, b)        true when the bounding BOXES overlap"
+	print "  spritecollide(a, b, true)  true only when opaque PIXELS overlap"
+	print
+	print "  Because bibot has transparent corners, the boxes can touch while"
+	print "  the actual robots do not - watch the two readouts differ."
+	print "  Sizes and centres come from spritew/h and spritex/y."
+
+	# sprite 0 glides left-right across a stationary sprite 1
+	spriteplace 1, 400, 300
+	spriteshow 0
+	spriteshow 1
+	t0 = msec
+	while msec - t0 < 11000
+		ph = (msec - t0) / 1000.0
+		x0 = 400 + 220 * cos(ph)
+		spriteplace 0, x0, 300
+
+		box = spritecollide(0, 1)              # bounding-box test
+		pix = spritecollide(0, 1, true)        # pixel-perfect test
+
+		# readout panel
+		color rgb(18, 20, 34) : rect 20, 470, 500, 60
+		color rgb(150, 160, 190) : font "Sans", 12, 50
+		text 20, 470, "spritex(0)=" + int(spritex(0)) + "  spritey(0)=" + int(spritey(0)) + "   spritew(0)=" + spritew(0) + " spriteh(0)=" + spriteh(0)
+		font "Sans", 14, 100
+		if box then
+			color rgb(240, 200, 80)
+		else
+			color rgb(90, 100, 140)
+		end if
+		text 20, 492, "spritecollide(0,1) = " + box
+		if pix then
+			color rgb(235, 110, 120)
+		else
+			color rgb(90, 100, 140)
+		end if
+		text 300, 492, "pixel-perfect = " + pix
+		refresh
+		pause 0.01
+	end while
+
+	call caption("spritecollide(a,b) vs spritecollide(a,b,true)", "Box overlap turns on earlier; pixel-perfect waits for real contact.")
+	call waitgo()
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  11. Finale  - a flock using move + rotate + fade + collide together
+# --------------------------------------------------------------------------
+subroutine demoFlock()
+	n = 8
+	spritedim n
+	dim sx(n) : dim sy(n) : dim vx(n) : dim vy(n) : dim sr(n)
+	for i = 0 to n - 1
+		call makebibot(i)
+		sx[i] = 100 + rand * (GW - 200)
+		sy[i] = 100 + rand * (GH - 220)
+		vx[i] = rand * 6 - 3
+		vy[i] = rand * 6 - 3
+		sr[i] = rand * 0.06 - 0.03
+		spriteplace i, sx[i], sy[i], 0.7
+	next i
+
+	call frame("11. Finale - a flock of bibots")
+	print
+	print "  Everything together: each bibot moves (spritemove-style deltas),"
+	print "  slowly rotates (spriteplace angle), and any two that collide"
+	print "  (spritecollide, pixel-perfect) trade velocities and bounce apart."
+	call caption("move + rotate + collide, all 8 sprites", "Bouncing off walls and each other for a few seconds.")
+	for i = 0 to n - 1
+		spriteshow i
+	next i
+
+	t0 = msec
+	while msec - t0 < 12000
+		# integrate motion + walls
+		for i = 0 to n - 1
+			sx[i] = sx[i] + vx[i]
+			sy[i] = sy[i] + vy[i]
+			hw = spritew(i) * 0.7 / 2 : hh = spriteh(i) * 0.7 / 2
+			if sx[i] - hw <= 2   and vx[i] < 0 then vx[i] = -vx[i]
+			if sx[i] + hw >= GW-2 and vx[i] > 0 then vx[i] = -vx[i]
+			if sy[i] - hh <= 58   and vy[i] < 0 then vy[i] = -vy[i]
+			if sy[i] + hh >= 534  and vy[i] > 0 then vy[i] = -vy[i]
+			ang = (msec - t0) / 1000.0 * (sr[i] * 20)
+			spriteplace i, sx[i], sy[i], 0.7, ang
+		next i
+		# pairwise collisions. Only respond when the two are actually
+		# CLOSING IN (relative velocity points toward each other). Swapping
+		# every frame they overlap makes them trade velocities back and forth
+		# and stick together - the closing-in test lets them separate cleanly.
+		for i = 0 to n - 2
+			for j = i + 1 to n - 1
+				if spritecollide(i, j, true) then
+					rx = sx[j] - sx[i] : ry = sy[j] - sy[i]
+					rvx = vx[j] - vx[i] : rvy = vy[j] - vy[i]
+					if rx * rvx + ry * rvy < 0 then      # moving together, not apart
+						tmp = vx[i] : vx[i] = vx[j] : vx[j] = tmp
+						tmp = vy[i] : vy[i] = vy[j] : vy[j] = tmp
+					end if
+				end if
+			next j
+		next i
+		refresh
+		pause 0.01
+	end while
+	call waitgo()
+	print "  Done - that's all eight sprite statements."
+end subroutine

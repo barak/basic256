@@ -322,17 +322,23 @@ jobs:
       run: |
         bash .github/scripts/build_WASM.sh
 
+    # The artifact is the finished site, not the raw build output: unzip it,
+    # serve the directory, and you get the custom shell, the favicon and the
+    # example assets exactly as Pages would publish them. Assembling here
+    # rather than in pages-deploy is what makes a WASM change testable from a
+    # branch build instead of only after it reaches main.
+    - name: Assemble site
+      run: |
+        bash .github/scripts/assemble_wasm_site.sh public
+
     - name: Upload WASM artifact
       uses: actions/upload-artifact@v5
       with:
         name: BASIC256-WASM
         if-no-files-found: error
-        path: |
-          build-wasm/basic256.html
-          build-wasm/basic256.js
-          build-wasm/basic256.wasm
-          build-wasm/qtloader.js
-          build-wasm/qtlogo.svg
+        # .nojekyll would be dropped otherwise -- v4 and later skip dotfiles.
+        include-hidden-files: true
+        path: public
 
   pages-deploy:
     # Phase 6: publish the wasm build to GitHub Pages. Gated on the
@@ -354,37 +360,17 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    # The artifact already is the site -- .github/scripts/assemble_wasm_site.sh
+    # built it in the wasm job, so there is one definition of what gets
+    # published and the artifact you can download is the same thing.
     - name: Download WASM artifact
       uses: actions/download-artifact@v4.3.0
       with:
         name: BASIC256-WASM
         path: public
 
-    - name: Assemble Pages site
-      run: |
-        set -euo pipefail
-        # Qt's own generated basic256.html is discarded in favor of the
-        # vendored custom shell (wasm-deploy/index.html) -- see that file's
-        # header comment for why (QTBUG-109959: Qt's
-        # CMake build doesn't reliably let you supply a custom shell file,
-        # so we replace its output post-build instead of fighting the
-        # build system for it).
-        rm -f public/basic256.html
-        cp wasm-deploy/index.html public/index.html
-        cp wasm-deploy/coi-serviceworker.min.js public/coi-serviceworker.min.js
-        cp wasm-deploy/favicon.png public/favicon.png
-        # Assets that bundled example programs load at runtime. In the browser
-        # a relative path in imageload/soundload is fetched over HTTP relative
-        # to the page (MediaPath::downloadUrl), never read from the :/examples
-        # resource -- the qrc only ever supplies .kbs source. So anything an
-        # example opens by name has to sit next to index.html.
-        cp wasm-deploy/lady.png public/lady.png                          # Image/ImageStatementDemo.kbs
-        cp wasm-deploy/jim_saying_numbers.mp3 public/jim_saying_numbers.mp3
-        # GitHub Pages runs deployed sites through Jekyll by default, which
-        # ignores/mangles files and directories starting with an underscore
-        # -- .nojekyll disables that processing.
-        touch public/.nojekyll
-        ls -la public
+    - name: Show what is being published
+      run: ls -la public
 
     - name: Upload Pages artifact
       uses: actions/upload-pages-artifact@v5

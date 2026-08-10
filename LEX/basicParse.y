@@ -690,6 +690,7 @@
 %token B256LTRIM
 %token B256MAINTOOLBARVISIBLE
 %token B256MAP
+%token B256MAXIMIZE
 %token B256MD5
 %token B256MID
 %token B256MIDX
@@ -2468,6 +2469,7 @@ statement:
 	| linestmt
 	| maintoolbarvisiblestmt
 	| mapstmt
+	| maximizestmt
 	| netclosestmt
 	| netconnectstmt
 	| netlistenstmt
@@ -4230,6 +4232,12 @@ graphtoolbarvisiblestmt:
 outputtoolbarvisiblestmt:
 			B256OUTPUTTOOLBARVISIBLE expr {
 				addOp(OP_OUTPUTTOOLBARVISIBLE);
+			}
+			;
+
+maximizestmt:
+			B256MAXIMIZE expr {
+				addOp(OP_MAXIMIZE);
 			}
 			;
 			

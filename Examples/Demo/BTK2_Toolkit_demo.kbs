@@ -262,6 +262,10 @@ return
 Radio:
    color grey
    rect 10,35,490,260
+   color black
+   font "Tahoma",10,100
+   text 30, 250, "* This only works correctly if TTF Wingdings is installed."
+   text 30, 265, "    Else you just get letters K, J, M, L and N"
    feeling_elements=5: feeling_locx=70: feeling_locy_top=100 :feeling_locy_bot=200: feeling_active=0
    radio$={"Normal", "Happy!", "Angry!", "Sad...", "Actually, not all that good"}
    call grouper(50, 70, 220, 150, "How are you today?")

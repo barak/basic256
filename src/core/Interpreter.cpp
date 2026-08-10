@@ -306,6 +306,7 @@ QString Interpreter::opname(int op) {
 	case OP_LTRIM : return QString("OP_LTRIM");
 	case OP_MAINTOOLBARVISIBLE : return QString("OP_MAINTOOLBARVISIBLE");
 	case OP_MAP_DIM : return QString("OP_MAP_DIM");
+	case OP_MAXIMIZE : return QString("OP_MAXIMIZE");
 	case OP_MD5 : return QString("OP_MD5");
 	case OP_MID : return QString("OP_MID");
 	case OP_MIDX : return QString("OP_MIDX");
@@ -6414,6 +6415,16 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				{
 					int show = stack->popInt();
 					emit(mainWindowsVisible(5,show!=0));
+				}
+				break;
+
+				case OP_MAXIMIZE:
+				{
+					// Not a window of its own but the state of the IDE window
+					// that holds them all, so it rides the same signal with a
+					// selector of its own rather than getting a second one.
+					int maximize = stack->popInt();
+					emit(mainWindowsVisible(6,maximize!=0));
 				}
 				break;
 

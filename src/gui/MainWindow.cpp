@@ -31,7 +31,9 @@
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QDialog>
 #include <QtWidgets/QLabel>
+#include <QtWidgets/QScrollBar>
 #include <QtGui/QFontDatabase>
+#include <QtGui/QPixmap>
 #include <QtGui/QFontInfo>
 #include <QtGui/QFontMetrics>
 #include <QtGui/QShortcut>
@@ -47,6 +49,7 @@
 #include <utility>
 #endif
 
+#include <QEvent>
 #include <QScreen>
 #include <QStyleHints>
 #include <QTimer>
@@ -476,6 +479,10 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f, QString localestring
 
 	QObject::connect(graphwin_toolbar_visible_act, SIGNAL(toggled(bool)), graphwin_widget, SLOT(slotShowToolBar(const bool)));
 	QObject::connect(graphwin_visible_act, SIGNAL(triggered(bool)), graphwin_dock, SLOT(setVisible(bool)));
+    // Both signals fire on a redock (dockLocationChanged also covers a drag
+    // straight from one docked area to another); clamping twice is harmless.
+    QObject::connect(graphwin_dock, SIGNAL(topLevelChanged(bool)), this, SLOT(graphDockMoved()));
+    QObject::connect(graphwin_dock, SIGNAL(dockLocationChanged(Qt::DockWidgetArea)), this, SLOT(graphDockMoved()));
 
 	QObject::connect(main_toolbar_visible_act, SIGNAL(toggled(bool)), main_toolbar, SLOT(setVisible(bool)));
 
@@ -692,6 +699,86 @@ void MainWindow::saveCustomizations() {
     settings.setValue(SETTINGSZOOM, QString::number(graphwin->getZoom()));
 }
 
+void MainWindow::changeEvent(QEvent *e) {
+    QMainWindow::changeEvent(e);
+    // The maximized geometry has not been applied yet when this fires, so
+    // width() here is still the windowed width. Do the arithmetic once the
+    // layout has settled.
+    if (e->type() == QEvent::WindowStateChange && isMaximized())
+        QTimer::singleShot(0, this, &MainWindow::clampEditorWidth);
+}
+
+void MainWindow::clampEditorWidth() {
+    // Maximized, QMainWindow hands every extra pixel to the central widget (the
+    // editor tabs) and leaves the docks at the width they had when windowed, so
+    // the editor ends up enormous next to a graphics pane that never grew. Deal
+    // the surplus back the other way: the editor keeps at most two thirds.
+    if (!isMaximized()) return;
+    // Single-output modes swap the central widget out for the graph or text
+    // pane; there is no editor to clamp then.
+    if (centralWidget() != editwintabs || !editwintabs->isVisible()) return;
+    if (!graphwin_dock->isVisible() || graphwin_dock->isFloating()) return;
+    if (dockWidgetArea(graphwin_dock) != Qt::RightDockWidgetArea) return;
+
+    int budget = width();
+    if (varwin_dock->isVisible() && !varwin_dock->isFloating())
+        budget -= varwin_dock->width();
+    int rightWidth = budget - (budget * 2) / 3;
+    // Only ever give the graphics side more room, never take it away from a
+    // user who has already dragged the divider further left than this.
+    if (rightWidth <= graphwin_dock->width()) return;
+
+    // Both right-hand docks share one column, so they have to be resized
+    // together or Qt splits the difference between the two requests.
+    QList<QDockWidget *> docks;
+    QList<int> sizes;
+    docks << graphwin_dock;
+    sizes << rightWidth;
+    if (outwin_dock->isVisible() && !outwin_dock->isFloating() &&
+        dockWidgetArea(outwin_dock) == Qt::RightDockWidgetArea) {
+        docks << outwin_dock;
+        sizes << rightWidth;
+    }
+    resizeDocks(docks, sizes, Qt::Horizontal);
+}
+
+void MainWindow::graphDockMoved() {
+    // Qt has only just re-parented the dock: its area is set but the layout
+    // that gives it a size runs after this returns, and would overwrite
+    // anything set here.
+    QTimer::singleShot(0, this, &MainWindow::clampGraphDock);
+}
+
+void MainWindow::clampGraphDock() {
+    // A floating graphics window can be dragged to any size the desktop
+    // allows. Docking it again brings that size with it, which on a windowed
+    // IDE leaves nothing for the editor. Size the pane to its canvas instead,
+    // and never take more than half the window whatever the canvas measures.
+    if (graphwin_dock->isFloating() || !graphwin_dock->isVisible()) return;
+
+    QSize canvas = graphwin->size();     // gwidth x gheight, scaled by the zoom
+    Qt::DockWidgetArea area = dockWidgetArea(graphwin_dock);
+
+    if (area == Qt::RightDockWidgetArea || area == Qt::LeftDockWidgetArea) {
+        // Room for the scroll bar the canvas would otherwise hide behind.
+        int chromeW = graph_scroll->verticalScrollBar()->sizeHint().width();
+        resizeDocks(QList<QDockWidget *>() << graphwin_dock,
+                    QList<int>() << qMin(canvas.width() + chromeW, width() / 2),
+                    Qt::Horizontal);
+    } else if (area == Qt::TopDockWidgetArea || area == Qt::BottomDockWidgetArea) {
+        // graph_scroll sits inside graphwin_widget under the pane's toolbar,
+        // so the height difference between the two is that toolbar.
+        int chromeH = graphwin_widget->height() - graph_scroll->height();
+        resizeDocks(QList<QDockWidget *>() << graphwin_dock,
+                    QList<int>() << qMin(canvas.height() + chromeH, height() / 2),
+                    Qt::Vertical);
+    }
+
+    // Docking back into the right-hand column while maximized: the two-thirds
+    // rule applies to the result.
+    clampEditorWidth();
+}
+
 void MainWindow::resizeToFitGraph(int canvasW, int canvasH) {
     // -f wins: re-assert fullscreen instead of shrinking to the canvas size.
     // configureGuiState()'s setGeometry(avail) call (at construction time, before
@@ -766,7 +853,14 @@ void MainWindow::about() {
     msgBox->setAttribute(Qt::WA_DeleteOnClose);
     msgBox->setWindowTitle(title);
     msgBox->setText(message);
-    msgBox->setIcon(QMessageBox::Information);
+    // The program's own logo rather than the desktop's generic information
+    // icon.  Asked for at the dialog's device pixel ratio and then told what
+    // that ratio is, so it is drawn at 96 logical pixels but sharp on a HiDPI
+    // screen -- QIcon::pixmap(int,int) always hands back a ratio-1 pixmap.
+    const qreal dpr = msgBox->devicePixelRatioF();
+    QPixmap logo = basicIcons->basic256Icon.pixmap(QSize(96, 96) * dpr);
+    logo.setDevicePixelRatio(dpr);
+    msgBox->setIconPixmap(logo);
     msgBox->setStandardButtons(QMessageBox::Ok);
     // open() forces window-modal, which unlike exec()'s old application-modal
     // default doesn't disable the main window's native title bar on Windows --

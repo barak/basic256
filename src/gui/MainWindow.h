@@ -58,6 +58,7 @@ public:
 	void ifGuiStateRun();
     void ifGuiStateClose(bool ok);
 	void closeEvent(QCloseEvent *);
+    void changeEvent(QEvent *);
     void setRunState(int);
     void dropEvent(QDropEvent *event);
     void dragEnterEvent(QDragEnterEvent *event);
@@ -192,6 +193,8 @@ private:
 	
 	void loadCustomizations();
 	void saveCustomizations();
+    void clampEditorWidth();
+    void clampGraphDock();
     void finishCloseAllPrograms(bool doit, std::function<void(bool)> onDone);
     BasicEdit* newEditor(QString title);
     int untitledNumber;
@@ -246,6 +249,7 @@ private slots:
     void saveAll();
     void updateBreakPointsAction();
     void zoomGroupActionEvent(QAction*);
+    void graphDockMoved();
 };
 
 #endif

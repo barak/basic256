@@ -42,6 +42,14 @@
  !include "x64.nsh"
 
  Function .onInit
+     ; $PLUGINSDIR is the one directory the installer can count on existing
+     ; on the machine it runs on.  NSD_SetImage LoadImage()s its argument at
+     ; run time, so the welcome bitmap has to be unpacked to a real path
+     ; first -- the old resources\images\... argument named a path in the
+     ; source tree, which exists on no user's machine, so the welcome page
+     ; had always come up with no picture on it at all.
+     InitPluginsDir
+     File /oname=$PLUGINSDIR\welcome.bmp "resources\images\basic256.bmp"
      ${IfNot} ${RunningX64}
          MessageBox MB_OK "This installer requires 64-bit Windows."
          Abort
@@ -58,16 +66,20 @@
  	 	 Abort
  	 ${EndIf}
 
- 	 ${NSD_CreateBitmap} 0 0 100% 100% ""
+ 	 ${NSD_CreateBitmap} 10 10 128 128 ""
  	 Pop $customImage
- 	 ${NSD_SetImage} $customImage resources\images\basic256.bmp $customImageHandle
+ 	 ${NSD_SetImage} $customImage $PLUGINSDIR\welcome.bmp $customImageHandle	; drawn at its native size and clipped, never scaled, so the .bmp is exactly the 128x128 of the control above, on the dialog face colour
 
- 	 ${NSD_CreateLabel} 50 0 80% 10% "BASIC256 ${VERSION} (${VERSIONDATE})"
+ 	 ${NSD_CreateLabel} 152 12 -162 32 "BASIC256 ${VERSION} (${VERSIONDATE})"
  	 Pop $customLabel0
- 	 ${NSD_CreateLabel} 0 50 100% 80% "This installer will load BASIC256.  Previous versions will be overwritten and any saved files in the program folder may or may not be preserved."
+ 	 ${NSD_CreateLabel} 152 46 -162 110 "This installer will load BASIC256.  Previous versions will be overwritten and any saved files in the program folder may or may not be preserved."
  	 Pop $customLabel1
 
  	 nsDialogs::Show
+ FunctionEnd
+
+ Function customPageLeave
+ 	 ${NSD_FreeImage} $customImageHandle
  FunctionEnd
 
 
@@ -93,7 +105,7 @@
 
  ;   Pages
 
- Page custom customPage "" ": BASIC256 Welcome"
+ Page custom customPage customPageLeave ": BASIC256 Welcome"
  Page license
  LicenseData "license.txt"
  Page components
@@ -218,17 +230,23 @@ it manually from:$\nhttps://aka.ms/vs/17/release/vc_redist.x64.exe"
  SectionEnd
 
  ;   Examples (can be disabled by the user)
+ ;   /x "Basic256" keeps this off the staging folder package_windows.ps1
+ ;   builds for the zip. "File /r <name>" does not copy just .\<name>: it
+ ;   searches every subdirectory for a directory of that name and copies
+ ;   each one under its own relative path, so the Examples staged at
+ ;   Basic256\Examples used to land a second time in $INSTDIR\Basic256.
  Section "Example Programs"
      SectionIn 1
      SetOutPath $INSTDIR
-     File /r /x ".svn" Examples
+     File /r /x ".svn" /x "Basic256" Examples
  SectionEnd
 
  ;   Test Suite (can be disabled by the user)
+ ;   Excludes the staging folder for the same reason as Examples above.
  Section "Test Suite"
      SectionIn 1
      SetOutPath $INSTDIR
-     File /r /x ".svn" TestSuite
+     File /r /x ".svn" /x "Basic256" TestSuite
  SectionEnd
 
  ;---------------------------------

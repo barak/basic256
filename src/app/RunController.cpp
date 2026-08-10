@@ -791,7 +791,22 @@ RunController::mainWindowsVisible(int w, bool v) {
 		mainwin->outwin_toolbar_visible_act->setChecked(v);
 		mainwin->outwin_toolbar_visible_act->triggered(v);
 	}
-    
+	if (w==6) {
+		// MAXIMIZE: exactly what the window's own maximize and restore buttons
+		// do, so the state is saved with the geometry like any other. -f fills
+		// the work area with setGeometry() and leaves the window in the normal
+		// state, so MAXIMIZE 0 there finds nothing to restore and does nothing.
+		// Both calls would also show a window that is hidden, so --silent --
+		// where the window is built but deliberately never shown -- is skipped.
+		if (mainwin->isVisible()) {
+			if (v) {
+				mainwin->showMaximized();
+			} else {
+				mainwin->showNormal();
+			}
+		}
+	}
+
 }
 
 /*

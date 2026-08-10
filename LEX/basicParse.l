@@ -396,6 +396,7 @@ lower [Ll][Oo][Ww][Ee][Rr]
 ltrim [Ll][Tt][Rr][Ii][Mm]
 maintoolbarvisible [Mm][Aa][Ii][Nn][Tt][Oo][Oo][Ll][Bb][Aa][Rr][Vv][Ii][Ss][Ii][Bb][Ll][Ee]
 map [Mm][Aa][Pp]
+maximize [Mm][Aa][Xx][Ii][Mm][Ii][Zz][Ee]
 md5 [Mm][Dd][5]
 mid [Mm][Ii][Dd]
 midx [Mm][Ii][Dd][Xx]
@@ -1081,6 +1082,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {line}						{ count(); return B256LINE; }
 {maintoolbarvisible}		{ count(); return B256MAINTOOLBARVISIBLE; }
 {map}						{ count(); return B256MAP; }
+{maximize}					{ count(); return B256MAXIMIZE; }
 {netclose}					{ count(); return B256NETCLOSE; }
 {netclose}":"				{ count(); unputcolon(); return B256NETCLOSE; }
 {netconnect}				{ count(); return B256NETCONNECT; }
@@ -1344,6 +1346,21 @@ mod							{ count(); return B256MOD; }
 			yyin = fopen( str, "r" );
 		}
 	}
+#ifdef __EMSCRIPTEN__
+	if (!yyin) {
+		// Browser build: there is no executable folder to be next to. Modules/
+		// is baked into the virtual filesystem at a fixed /Modules by the
+		// --embed-file link option (CMakeLists.txt, EMSCRIPTEN block), so look
+		// there by absolute path rather than trusting what applicationDirPath()
+		// reports under Emscripten. Keeps "include \"math.kbs\"" meaning the
+		// same thing in the browser as it does on the desktop.
+		char str[512];
+		int pathlen = snprintf(str, sizeof(str), "/Modules/%s", filename);
+		if (pathlen >= 0 && (size_t) pathlen < sizeof(str)) {
+			yyin = fopen( str, "r" );
+		}
+	}
+#endif
 	if ( ! yyin ) {
 			BEGIN(INITIAL);
 			free(filename);

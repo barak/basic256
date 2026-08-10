@@ -6,6 +6,12 @@
 
 > **BASIC256 is a classic BASIC programming language designed to make learning programming fun through graphics, animation, sound and experimentation.**
 
+<p align="center">
+  <img src="resources/icons/basic256_256.png" width="192" height="192" alt="The BASIC256 logo: the words BASIC and 256 in white block letters on a rounded green square with a thick black outline">
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="BitBot_Hello.png" height="192" alt="BitBot, the BASIC256 mascot: a friendly white and green robot with a smiling screen for a face, headphones, a green cape and 256 on its chest, waving hello">
+</p>
+
 This project is the actively maintained continuation of the original BASIC256, bringing the educational environment to Windows, Linux, macOS and the Web while preserving compatibility with existing BASIC256 programs. It also has an extensive documentation site, https://doc.basic256.org, accessible from the application's Help → Online Help menu.  
 
 ## Why use BASIC256?
@@ -37,7 +43,7 @@ This project is the actively maintained continuation of the original BASIC256, b
 Thanks to Qt for WebAssembly, BASIC256 runs directly in your browser — the full
 editor and interpreter, with no install needed.
 
-**Live demo:** https://uglymike17.github.io/basic256/
+**Live demo:** https://run.basic256.org/basic256
 
 You will be greeted with an interface like the following image. The interface automatically adapts to both light and dark system themes. The View menu item allows you to show/hide windows and/or toolbars among other things. You can type a program such as 
 ```basic
@@ -85,14 +91,14 @@ Then `&mode=` chooses the window layout. These mirror the command-line switches:
 So a plain link opens the IDE with the program loaded and running — you can see
 it, stop it and edit it:
 
-**https://uglymike17.github.io/basic256/?run=BubbleUniverse_variations**
+**https://run.basic256.org/basic256/?run=BubbleUniverse_variations**
 
 ![The Bubble Universe demo running in the browser IDE: its source in the editor on the left, the program's "A cool looking animated demo style program in Basic256" line in Text Output, and a dense multicoloured sphere of plotted points in Graphics Output](Basic256-Web.png)
 
 Add `&mode=graph` and you get just the canvas, with no menus or toolbars — the
 form to use when embedding a demo in a page:
 
-**https://uglymike17.github.io/basic256/?run=Mandelbrot-256&mode=graph**
+**https://run.basic256.org/basic256/?run=Mandelbrot-256&mode=graph**
 
 ![The Mandelbrot-256 demo in graphics-only mode: no BASIC256 menus or toolbars, just the program's own window with a colour-banded Mandelbrot set on the left and its Mandel/Julia/Orbits/Zoom/Colors option tabs on the right](Basic256-Web_GraphicsOnly.png)
 
@@ -326,4 +332,4 @@ Two components keep their own, compatible licenses: `src/core/md5.cpp` / `md5.h`
 
 ## About the maintainer
 
-I'm first and foremost a BASIC256 fan (see https://uglymike.static.domains/) rather than a professional developer. This project is maintained with the help of AI assistants (ChatGPT, Claude, Google's Gemini and Perplexity, all on free accounts) — proof of what the modern toolchain makes possible for a determined hobbyist. Contributions for fleshing out the translated documentation or other aspects of the project would be greatly appreciated.
+I'm first and foremost a BASIC256 fan (see https://uglymike.static.domains/) rather than a professional developer. This project is maintained with the help of AI assistants (ChatGPT, Claude, Google's Gemini and Perplexity, all on free accounts) — proof of what the modern toolchain makes possible for a determined hobbyist. Additionally, as I never dabbled in sound, images or sprites, I let Claude create the xxxxStatementDemo.kbs examples for these.   Contributions for fleshing out the translated documentation or other aspects of the project would be greatly appreciated.
