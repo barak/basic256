@@ -56,6 +56,38 @@ int MenuIndicatorStyle::indicatorColumn(const QStyleOptionMenuItem &item, const 
 	return box + box / 2;
 }
 
+int MenuIndicatorStyle::naturalBox(const QStyleOptionMenuItem &item, const QWidget *widget) const {
+
+	const bool exclusive = (item.checkType == QStyleOptionMenuItem::Exclusive);
+
+	int box = proxy()->pixelMetric(exclusive ? PM_ExclusiveIndicatorWidth : PM_IndicatorWidth,
+								   &item, widget);
+	if (box <= 0) box = proxy()->pixelMetric(PM_SmallIconSize, &item, widget);
+	return box > 0 ? box : 0;
+}
+
+void MenuIndicatorStyle::drawIndicator(const QStyleOptionMenuItem &item, const QWidget *widget,
+									   const QRect &rect, QPainter *painter) const {
+
+	Q_UNUSED(widget);
+
+	const bool exclusive = (item.checkType == QStyleOptionMenuItem::Exclusive);
+
+	QStyleOptionButton indicator;
+	indicator.rect = rect;
+	indicator.palette = item.palette;
+	indicator.fontMetrics = item.fontMetrics;
+	// Always drawn as enabled. A disabled item is dimmed by the base style
+	// when it renders the icon (QIcon::Disabled); dimming it twice would
+	// leave the box nearly invisible.
+	indicator.state = State_Enabled | (item.checked ? State_On : State_Off);
+	// No widget is passed: this is a check box being drawn, not the menu,
+	// and a style that reads hover or animation state off the widget would
+	// be reading it from the wrong one.
+	proxy()->drawPrimitive(exclusive ? PE_IndicatorRadioButton : PE_IndicatorCheckBox,
+						   &indicator, painter, nullptr);
+}
+
 int MenuIndicatorStyle::capToSlot(int box, const QStyleOptionMenuItem &item, const QWidget *widget) const {
 
 	const int iconSize = proxy()->pixelMetric(PM_SmallIconSize, &item, widget);
@@ -142,12 +174,17 @@ QIcon MenuIndicatorStyle::indicatorIcon(const QStyleOptionMenuItem &item, const 
 	const int box = indicatorBox(item, widget);
 	if (box <= 0) return QIcon();
 	const int column = indicatorColumn(item, widget);
+	// What the style would draw if the slot cap were not in the way. Part of
+	// the cache key: two different naturals can cap to the same box, and they
+	// do not produce the same pixmap.
+	const int natural = naturalBox(item, widget);
 
 	// The palette key covers a switch between the light and dark colour scheme,
 	// which repaints the menus with different indicator colours.
 	const QString key = QStringLiteral("basic256-menuindicator-")
 			+ QString::number(box) + QLatin1Char('-')
 			+ QString::number(column) + QLatin1Char('-')
+			+ QString::number(natural) + QLatin1Char('-')
 			+ QString::number(qRound(devicePixelRatio * 100)) + QLatin1Char('-')
 			+ QLatin1Char(exclusive ? 'r' : 'c')
 			+ QLatin1Char(item.checked ? '1' : '0') + QLatin1Char('-')
@@ -164,19 +201,34 @@ QIcon MenuIndicatorStyle::indicatorIcon(const QStyleOptionMenuItem &item, const 
 		pixmap.fill(Qt::transparent);
 
 		QPainter pixmapPainter(&pixmap);
-		QStyleOptionButton indicator;
-		indicator.rect = QRect(0, 0, box, box);
-		indicator.palette = item.palette;
-		indicator.fontMetrics = item.fontMetrics;
-		// Always drawn as enabled. A disabled item is dimmed by the base style
-		// when it renders the icon (QIcon::Disabled); dimming it twice would
-		// leave the box nearly invisible.
-		indicator.state = State_Enabled | (item.checked ? State_On : State_Off);
-		// No widget is passed: this is a check box being drawn, not the menu,
-		// and a style that reads hover or animation state off the widget would
-		// be reading it from the wrong one.
-		proxy()->drawPrimitive(exclusive ? PE_IndicatorRadioButton : PE_IndicatorCheckBox,
-							   &indicator, &pixmapPainter, nullptr);
+		if (natural > box) {
+			// The style wants more room than the slot allows, and not every
+			// style treats the rect it is handed as a limit: the Windows radio
+			// button is drawn at its own size about the centre of that rect, so
+			// a box smaller than it wants overflows the pixmap and the ring
+			// comes out clipped -- as a bracket, since the box sits against the
+			// pixmap's left edge. Give the style the size it asked for on a
+			// surface that size, then scale the result into the slot. Costs a
+			// little sharpness on the platforms that need it, and cannot
+			// misplace the indicator whatever the style does inside its rect.
+			QPixmap full(QSize(natural, natural) * devicePixelRatio);
+			full.setDevicePixelRatio(devicePixelRatio);
+			full.fill(Qt::transparent);
+
+			QPainter fullPainter(&full);
+			drawIndicator(item, widget, QRect(0, 0, natural, natural), &fullPainter);
+			fullPainter.end();
+
+			QPixmap fitted = full.scaled(QSize(box, box) * devicePixelRatio,
+										 Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+			fitted.setDevicePixelRatio(devicePixelRatio);
+			pixmapPainter.drawPixmap(0, 0, fitted);
+		} else {
+			// The indicator already fits. Drawn straight into the slot, exactly
+			// as before, so the platforms this renders correctly on today are
+			// left pixel for pixel alone.
+			drawIndicator(item, widget, QRect(0, 0, box, box), &pixmapPainter);
+		}
 		pixmapPainter.end();
 
 		QPixmapCache::insert(key, pixmap);

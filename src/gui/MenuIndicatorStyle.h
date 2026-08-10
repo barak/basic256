@@ -54,6 +54,10 @@ private:
 	int indicatorBox(const QStyleOptionMenuItem &item, const QWidget *widget) const;
 	int indicatorColumn(const QStyleOptionMenuItem &item, const QWidget *widget) const;
 	int capToSlot(int box, const QStyleOptionMenuItem &item, const QWidget *widget) const;
+	// The size the style itself wants for the indicator, before the slot cap.
+	int naturalBox(const QStyleOptionMenuItem &item, const QWidget *widget) const;
+	void drawIndicator(const QStyleOptionMenuItem &item, const QWidget *widget,
+					   const QRect &rect, QPainter *painter) const;
 	QIcon indicatorIcon(const QStyleOptionMenuItem &item, const QWidget *widget,
 						qreal devicePixelRatio) const;
 };
