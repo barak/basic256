@@ -332,4 +332,4 @@ Two components keep their own, compatible licenses: `src/core/md5.cpp` / `md5.h`
 
 ## About the maintainer
 
-I'm first and foremost a BASIC256 fan (see https://uglymike.static.domains/) rather than a professional developer. This project is maintained with the help of AI assistants (ChatGPT, Claude, Google's Gemini and Perplexity, all on free accounts) — proof of what the modern toolchain makes possible for a determined hobbyist. Contributions for fleshing out the translated documentation or other aspects of the project would be greatly appreciated.
+I'm first and foremost a BASIC256 fan (see https://uglymike.static.domains/) rather than a professional developer. This project is maintained with the help of AI assistants (ChatGPT, Claude, Google's Gemini and Perplexity, all on free accounts) — proof of what the modern toolchain makes possible for a determined hobbyist. Additionally, as I never dabbled in sound, images or sprites, I let Claude create the xxxxStatementDemo.kbs examples for these.   Contributions for fleshing out the translated documentation or other aspects of the project would be greatly appreciated.
