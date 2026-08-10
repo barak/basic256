@@ -7,6 +7,7 @@
 	* Docking the Graphics window back into the IDE after it has been floated no longer drags its floating size in with it. The pane comes back sized to the graphics canvas -- 500 wide for the usual 500x500, wider or taller if the program called GRAPHSIZE or the view is zoomed -- and never takes more than half the IDE window, whether it is docked at the side or above or below the Edit window.
 	* Browser (WASM): INCLUDE now finds the bundled module library, so a program running in the browser can say include "math.kbs" exactly as it does on the desktop. The library is built into the page, so there is nothing to download or install first.
 	* The Windows installer no longer puts an extra Basic256 folder in the installation directory holding a second copy of the Examples and the TestSuite. The BASIC256-Windows.zip download never had this.
+	* A new Example program, SpriteStatementDemo.kbs, has been added in the Examples/Sprites directory. It is a menu-driven tour of all eight SPRITE statements and of the functions that read a sprite back -- position, size, scale, rotation, opacity, visibility and collision -- with a step for each and a closing flock of mascots that puts them together. It is in the browser version's File/Open Example list too.
 	* The program has a new mascot, BitBot. He'll pop up here and there (README.md, doc.basic256.org, Discord,...). He exists in different poses. The images are drawn on a transparent background, so they sit properly on a dark or light theme.
 
 2026-08-01 M. Vilain <uglymike17@gmail.com>  
