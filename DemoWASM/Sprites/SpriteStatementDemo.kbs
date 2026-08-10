@@ -9,9 +9,9 @@
 #    Read a sprite ......... spritex, spritey, spritew, spriteh,
 #                            sprites, spriter, spriteo, spritev, spritecollide
 #
-#  The mascot is BIBOT.  Put "bibot.png" (a small, ~107x120 PNG) next to
-#  this program.  If it is missing the demo draws a stand-in robot instead,
-#  so every step still runs.
+#  The mascot is BIBOT.  "bibot.png" is served alongside the page, so this
+#  browser copy always uses the real picture; the drawn stand-in below is
+#  what the desktop copy falls back to when the file is missing.
 #
 #  Window is 800 x 600.  Every step waits for you to press Enter in the
 #  text area, so you can read as you go.  Animated steps run for a few
@@ -24,7 +24,12 @@ PICFILE = "bibot.png"
 graphsize GW, GH
 fastgraphics
 
-HAVEPIC = exists(PICFILE)
+# exists() asks the local filesystem, which in the browser is the virtual one
+# the module was linked with - bibot.png is not in it. It is served next to the
+# page instead, where spriteload fetches it over HTTP, so the answer exists()
+# gives here is always no and always wrong. Assume the picture, the way the
+# image demo does.
+HAVEPIC = true
 
 call banner("BASIC-256 Sprite Showcase")
 

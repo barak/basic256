@@ -40,6 +40,7 @@ cp wasm-deploy/logo.png                 "$OUT/logo.png"
 # the qrc only ever supplies .kbs source. So anything an example opens by name
 # has to sit next to index.html.
 cp wasm-deploy/lady.png               "$OUT/lady.png"   # Image/ImageStatementDemo.kbs
+cp wasm-deploy/bibot.png              "$OUT/bibot.png"  # Sprites/SpriteStatementDemo.kbs
 cp wasm-deploy/jim_saying_numbers.mp3 "$OUT/jim_saying_numbers.mp3"
 
 # GitHub Pages runs deployed sites through Jekyll by default, which

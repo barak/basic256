@@ -74,5 +74,6 @@
         <file>Sound_Speech/AIChatbot.kbs</file>
         <file>Sound_Speech/SoundStatementDemo.kbs</file>
         <file>Sound_Speech/TwinkleTwinkle.kbs</file>
+        <file>Sprites/SpriteStatementDemo.kbs</file>
     </qresource>
 </RCC>
