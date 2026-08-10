@@ -409,12 +409,15 @@ endif()
 # Branches are named like "v2.1.Alpha04Qt6" -- strip the leading "v" to get
 # the "2.1.Alpha04Qt6" version string. Anything that doesn't look like a
 # version branch (main, a detached-HEAD SHA, git not found, ...) shows the
-# rolling pre-release name below: main is the branch the public builds come
-# from, and until 2.1 ships it should read as a beta, not as a final
-# "2.1.0" (PROJECT_VERSION stays numeric for bundle metadata).
-# build_installer_Windows.ps1 parses this exact set() line so the installer
-# label cannot drift from the About box; keep the two in lockstep.
-set(BASIC256_MAIN_DISPLAY_VERSION "2.1.beta3")
+# name below: main is the branch the public builds come from, and it now
+# carries released 2.1.0, so it reads as the release and no longer as a
+# beta. Spelled out rather than written as "${PROJECT_VERSION}", which
+# happens to hold the same 2.1.0: build_installer_Windows.ps1 recovers this
+# value by regex over the file, so it has to be a literal string here or the
+# installer would be labelled with the unexpanded variable name.
+# That script parses this exact set() line so the installer label cannot
+# drift from the About box; keep the two in lockstep.
+set(BASIC256_MAIN_DISPLAY_VERSION "2.1.0")
 if(BASIC256_BUILD_BRANCH MATCHES "^[vV][0-9]")
     string(REGEX REPLACE "^[vV]" "" BASIC256_BUILD_VERSION "${BASIC256_BUILD_BRANCH}")
 else()
