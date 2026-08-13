@@ -1135,7 +1135,7 @@ void MainWindow::setRunState(int state) {
     debugact->setEnabled(userCanInteractWithGUI && isEditorWindowActive);
     stepact->setEnabled(state==RUNSTATEDEBUG || state==RUNSTATERUNDEBUG);
     bpact->setEnabled(state==RUNSTATEDEBUG);
-    stopact->setEnabled(state!=RUNSTATESTOP && state!=RUNSTATESTOPING);
+    stopact->setEnabled(state!=RUNSTATESTOP && state!=RUNSTATESTOPPING);
     clearbreakpointsact->setEnabled(state!=RUNSTATERUN && isEditorWindowActive);
 
     // Clear command for toolbars
@@ -1146,7 +1146,7 @@ void MainWindow::setRunState(int state) {
 	if (runState==RUNSTATESTOP) statusBar()->showMessage(tr("Ready"));
 	if (runState==RUNSTATERUN) statusBar()->showMessage(tr("Running"));
 	if (runState==RUNSTATEDEBUG) statusBar()->showMessage(tr("Debug"));
-	if (runState==RUNSTATESTOPING) statusBar()->showMessage(tr("Stoping"));
+	if (runState==RUNSTATESTOPPING) statusBar()->showMessage(tr("Stopping"));
 	if (runState==RUNSTATERUNDEBUG) statusBar()->showMessage(tr("Running in Debug"));
 	
 
