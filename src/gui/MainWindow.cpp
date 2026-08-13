@@ -842,7 +842,7 @@ void MainWindow::about() {
 	message += QObject::tr("version ") + "<b>" + VERSION + "</b>" + QObject::tr(" - built with QT ") + "<b>" + QT_VERSION_STR + "</b>" +
             "<br>" + QObject::tr("Locale Name: ") + "<b>" + locale->name() + "</b> "+ QObject::tr("Decimal Point: ") + "<b>'" + (usefloatlocale?locale->decimalPoint():QChar('.')) + "'</b>" +
             "<p>" + QObject::tr("Copyright &copy; 2006-2026, The BASIC-256 Team") + "</p>" +
-			"<p>" + QObject::tr("Please visit our web site at <a href=\"https://doc.basic256.org\">https://doc.basic256.org</a> for documentation.") + "</p>" +
+			"<p>" + QObject::tr("Please visit our website at <a href=\"https://basic256.org\">https://basic256.org</a>. For documentation, please visit <a href=\"https://doc.basic256.org\">https://doc.basic256.org</a>") + "</p>" +
 			"<p>" + QObject::tr("Please see the CONTRIBUTORS file for a list of developers and translators for this project.")  + "</p>" +
 			"<p><i>" + QObject::tr("This program is free software under the GNU General Public License, either version 3 of the License, or (at your option) any later version. You should have received a copy of the license along with this program; if not, see <a href=\"https://www.gnu.org/licenses/\">https://www.gnu.org/licenses/</a>.")  + "</i></p>";
 
