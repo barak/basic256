@@ -253,14 +253,17 @@ jobs:
         if-no-files-found: ignore
         path: ${{ github.workspace }}/*.zip
 
-    # Windows installer — the .exe as its own artifact
+    # Windows installer — the .exe as its own artifact. Matched by name, not
+    # by *.exe: build_installer_Windows.ps1 leaves vc_redist.x64.exe in the
+    # workspace root, which NSIS bundles INTO the installer, so a bare *.exe
+    # ships Microsoft's 25 MB redistributable as a download of its own.
     - name: Upload Windows installer
       if: runner.os == 'Windows'
       uses: actions/upload-artifact@v5
       with:
         name: ${{ matrix.artifact_name }}-Installer
         if-no-files-found: ignore
-        path: ${{ github.workspace }}/*.exe
+        path: ${{ github.workspace }}/BASIC256-*.exe
 
   flagsoff-dress-rehearsal:
     # Phase 3 gate: a desktop build with all six BASIC256_ENABLE_*
@@ -394,10 +397,14 @@ jobs:
     - name: Upload to GitHub Release
       uses: softprops/action-gh-release@v2
       with:
+        # BASIC256-*.exe rather than *.exe, for the same reason as the
+        # installer upload above: only our own installer belongs on the
+        # release page, never a bundled third-party redistributable that
+        # happened to be downloaded alongside it.
         files: |
           **/*.tar.gz
           **/*.zip
-          **/*.exe
+          **/BASIC256-*.exe
           **/*.AppImage
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
