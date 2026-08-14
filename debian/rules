@@ -1,23 +1,17 @@
 #!/usr/bin/make -f
 export DEB_BUILD_MAINT_OPTIONS=hardening=+all
-export QT_SELECT=qt5
 
 include /usr/share/dpkg/architecture.mk
-ifeq ($(DEB_BUILD_ARCH),$(DEB_HOST_ARCH))
-QMAKE = qmake
-else
-QMAKE = $(DEB_HOST_GNU_TYPE)-qmake
-endif
+
+BUILDDIR = obj-$(DEB_HOST_GNU_TYPE)
 
 %:
-	dh $@ --buildsystem=qmake
+	dh $@
 
-execute_before_dh_auto_build:
-	@echo "Build translation files regardless of whether they are included in sources."
-	-lrelease BASIC256.pro
-
-override_dh_auto_clean:
-	dh_auto_clean -- QMAKE=$(QMAKE)
-
-override_dh_auto_configure:
-	dh_auto_configure -- BASIC256.pro
+# We need to deal with installing icons CMakeLists.txt doesn't, and
+# build-time-generated *.qm files (as opposed to the prebuilt ones)
+execute_after_dh_install:
+	install -D -m 644 resources/icons/basic256_256.png \
+	  debian/basic256/usr/share/icons/hicolor/256x256/apps/basic256.png
+	install -D -m 644 -t debian/basic256/usr/share/basic256 \
+	  $(BUILDDIR)/basic256_*.qm

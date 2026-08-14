@@ -1,3 +1,2 @@
 debian/basic256.desktop			usr/share/applications/
 resources/icons/basic256.png		usr/share/icons/hicolor/64x64/apps/
-snap_build_env/snap/gui/basic256.png	usr/share/icons/hicolor/300x300/apps/

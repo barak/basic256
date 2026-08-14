@@ -1,6 +1,0 @@
-# Each of these files is only 8,0K. Both are referenced by examples. Replacing
-# one by a symlink would mean having to check every upstream release that they
-# are still identical. Not worth my time.
-basic256: duplicate-files usr/share/doc/basic256/examples/imgload/test.bmp usr/share/doc/basic256/examples/sprites/test.bmp
-# Likewise for two 4,0K PNGs.
-basic256: duplicate-files usr/share/doc/basic256/examples/imgload/help.png usr/share/doc/basic256/examples/sprites/help.png
