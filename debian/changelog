@@ -1,8 +1,10 @@
 basic256 (2.0.99.10-3) UNRELEASED; urgency=medium
 
   * forward port patches, context changes only
+  * bump policy
+  * swizzle upstream to new github repo
 
- -- Barak A. Pearlmutter <bap@debian.org>  Thu, 04 Sep 2025 15:41:30 +0100
+ -- Barak A. Pearlmutter <bap@debian.org>  Fri, 14 Aug 2026 14:28:26 +0100
 
 basic256 (2.0.99.10-2) unstable; urgency=medium
 

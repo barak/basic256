@@ -15,7 +15,6 @@ Build-Depends: debhelper-compat (= 13),
  qttools5-dev,
  qttools5-dev-tools,
 Standards-Version: 4.7.4
-Rules-Requires-Root: no
 Homepage: https://www.basic256.org/
 Vcs-Browser: https://salsa.debian.org/debian/basic256
 Vcs-Git: https://salsa.debian.org/debian/basic256.git

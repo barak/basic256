@@ -1,2 +1,4 @@
-version=4
-https://sf.net/kidbasic/@PACKAGE@_?@ANY_VERSION@\.orig@ARCHIVE_EXT@
+Version: 5
+Template: GitHub
+Owner: uglymike17
+Project: @PACKAGE@
