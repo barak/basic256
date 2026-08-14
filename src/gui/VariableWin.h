@@ -1,0 +1,95 @@
+/** Copyright (C) 2006, Ian Paul Larsen.
+ **
+ **  This program is free software: you can redistribute it and/or modify
+ **  it under the terms of the GNU General Public License as published by
+ **  the Free Software Foundation, either version 3 of the License, or
+ **  (at your option) any later version.
+ **
+ **  This program is distributed in the hope that it will be useful,
+ **  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ **  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ **  GNU General Public License for more details.
+ **
+ **  You should have received a copy of the GNU General Public License
+ **  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ **/
+
+#ifndef __VARIABLEWIN_H
+#define __VARIABLEWIN_H
+
+#define COLUMNNAME          0
+#define COLUMNTYPE          1
+#define COLUMNVALUE         2
+
+#include <QtWidgets/QTreeWidget>
+
+#include "ViewWidgetIFace.h"
+#include "DataElement.h"
+#include "Variables.h"
+#include "Convert.h"
+
+class VariableWin : public QTreeWidget, public ViewWidgetIFace {
+    Q_OBJECT
+
+public:
+    VariableWin();
+    ~VariableWin();
+    void clear();
+
+public slots:
+    void varWinAssign(Variables **, int, int);
+    void varWinAssign(Variables **, int, int, int, int);
+    void varWinAssign(Variables **, int, int, QString);
+    void varWinDropLevel(int);
+
+private:
+	Convert *convert;
+	void setTypeAndValue(QTreeWidgetItem *, DataElement *);
+	QString tr_stringType;
+	QString tr_integerType;
+	QString tr_floatType;
+	QString tr_referenceType;
+	QString tr_arrayType;
+	QString tr_mapType;
+	QString tr_unknownType;
+};
+
+
+class TreeWidgetItem : public QTreeWidgetItem {
+public:
+    TreeWidgetItem():QTreeWidgetItem(){}
+
+private:
+    static bool variantLessThan(const QVariant &a, const QVariant &b) {
+        // Treat an invalid QVariant as "less than" anything valid,
+        // and equal to another invalid QVariant.
+        if (!a.isValid() || !b.isValid())
+            return !a.isValid() && b.isValid();
+
+        // If both sides are numeric (int/longlong/double/etc.), compare numerically.
+        const bool aNumeric =
+            a.typeId() == QMetaType::Int  || a.typeId() == QMetaType::UInt ||
+            a.typeId() == QMetaType::LongLong || a.typeId() == QMetaType::ULongLong ||
+            a.typeId() == QMetaType::Double;
+        const bool bNumeric =
+            b.typeId() == QMetaType::Int  || b.typeId() == QMetaType::UInt ||
+            b.typeId() == QMetaType::LongLong || b.typeId() == QMetaType::ULongLong ||
+            b.typeId() == QMetaType::Double;
+
+        if (aNumeric && bNumeric)
+            return a.toDouble() < b.toDouble();
+
+        // Fall back to string comparison for everything else
+        // (text types, mixed types, references, etc.)
+        return a.toString() < b.toString();
+    }
+
+    bool operator<(const QTreeWidgetItem &other) const {
+        const int column = treeWidget()->sortColumn();
+        if (column == COLUMNTYPE)
+            return variantLessThan(data(column, Qt::EditRole), other.data(column, Qt::EditRole));
+        return variantLessThan(data(column, Qt::UserRole + 1), other.data(column, Qt::UserRole + 1));
+    }
+};
+
+#endif

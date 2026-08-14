@@ -1,3 +1,82 @@
+2026-08-10 M. Vilain <uglymike17@gmail.com>  
+	* The project has now reached a stable v2.1 state.
+	* The check box or radio button in front of a checkable menu item now sits clear of the item's text instead of overlapping it, and is drawn at the size the platform intends.
+	* Maximising the IDE window no longer gives all the extra room to the Edit window: it keeps at most two thirds of the width and the Graphics and Text Output windows share the rest. The Edit window is left alone if you have already dragged the divider to give the output side more than that.
+	* A program can now maximise the IDE window itself with the new MAXIMIZE statement. MAXIMIZE 1 does exactly what the window's maximise button does and MAXIMIZE 0 what the restore button does, and the result is remembered for the next start just as it is when you press those buttons yourself. A program started with -f fills the screen without being maximised, so MAXIMIZE 0 has nothing to restore there and does nothing.
+	* The browser version has moved to an address of its own, https://run.basic256.org. The links in the README that open a program with ?run= and pick a window layout with &mode= now use it.
+	* Docking the Graphics window back into the IDE after it has been floated no longer drags its floating size in with it. The pane comes back sized to the graphics canvas -- 500 wide for the usual 500x500, wider or taller if the program called GRAPHSIZE or the view is zoomed -- and never takes more than half the IDE window, whether it is docked at the side or above or below the Edit window.
+	* Browser (WASM): INCLUDE now finds the bundled module library, so a program running in the browser can say include "math.kbs" exactly as it does on the desktop. The library is built into the page, so there is nothing to download or install first.
+	* The Windows installer no longer puts an extra Basic256 folder in the installation directory holding a second copy of the Examples and the TestSuite. The BASIC256-Windows.zip download never had this.
+	* A new Example program, SpriteStatementDemo.kbs, has been added in the Examples/Sprites directory. It is a menu-driven tour of all eight SPRITE statements and of the functions that read a sprite back -- position, size, scale, rotation, opacity, visibility and collision -- with a step for each and a closing flock of mascots that puts them together. It is in the browser version's File/Open Example list too.
+	* The program has a new mascot, BitBot. He'll pop up here and there (README.md, doc.basic256.org, Discord,...). He exists in different poses. The images are drawn on a transparent background, so they sit properly on a dark or light theme.
+
+2026-08-01 M. Vilain <uglymike17@gmail.com>  
+	* The project has now moved to Beta3 state, meaning it runs, but issues might still lie dormant in both program and documentation
+	* Whole numbers are the full 64 bits on every platform: the bitwise shift operators (<< and >>) work across all 64 bits, reading a large whole number from a string or with INPUT keeps its value, and a number too large to fit in a whole number is reported as an error.
+	* The Edit and Text Output windows now follow a colour theme, chosen from View/Theme: Follow System (the default), Light, or Dark. Follow System needs Qt 6.5 or later and is greyed out on older builds. The Graphics Output window is not themed and stays white, so existing programs draw exactly as before.
+	* The About box, Help/Online help and F1 keyword help now open https://doc.basic256.org, which serves the same documentation site under its own name.
+	* Help/Check for update now simply opens the GitHub releases page, https://github.com/uglymike17/basic256/releases, where the builds for every platform are published. Compare the version there with the one in Help/About BASIC-256. 
+	* Browser (WASM): sound and speech work on iPad and iPhone, started by the first touch anywhere on the page, and playing a sound file or a URL with SOUND, SOUNDPLAY or SOUNDPLAYER goes through the same in-browser decoder as SOUNDLOAD, so SOUNDLENGTH, SOUNDPOSITION and SOUNDSEEK work on them too. SAY gives up after a wait sized to the length of the text if the speech engine never reports having finished, so a program carries on instead of hanging. If an iPad stays silent, check the side switch or the Control Centre mute, which silence web audio independently of the volume keys.
+	* Browser (WASM): the demos that expected a keyboard can be driven with a finger. BubbleUniverse_variations starts on a tap and cycles its variations on a tap or a click, StrangeAttractors is explored by dragging and cleared with a double-tap, and AIChatbot fills the window instead of sharing it with the editor.
+	* Examples: PacMan has been reworked -- a fixed 50 frames a second, a score that carries across lives, and the playfield narrowed so the score and legend have a panel of their own. A new game, Claude-AI-neon_snake, has been added.
+	* Documentation: the ELLIPSE and SETGRAPH statements and the GETARRAYBASE function, none of which had ever been documented, now have pages on the Docusaurus website, and the optional LET keyword in front of an assignment is described on the Variables page.
+	* Documentation: the bit shift operators (<< and >>) and the compound assignments &= and ;= are now documented, and the order of operations tables have been corrected to match what the interpreter actually does.
+	* Menu items that switch something on or off -- the windows and toolbars in the View menu, Show Whitespace Characters, Wrap Long Lines, Graphics Window Grid Lines, and the open programs in the Window menu -- now show a check box in front of them, empty or ticked, so it is clear which entries are settings and which are commands. Where only one of a group can apply at a time, View/Theme and View/Graphics Window Zoom, the entries show a round radio button instead.
+	* The program has a new logo. It is used for the icon of the program itself on every platform -- Windows, macOS, Linux and the browser tab -- on the welcome page of the Windows installer, in the Help/About BASIC-256 box in place of the desktop's generic information icon, and on the loading screen of the browser version. The icons are drawn on a transparent background, so they sit properly on a dark taskbar or Dock instead of in a white square.
+
+2026-07-26 M. Vilain <uglymike17@gmail.com>  
+	* The project has now moved to Beta2 state, meaning it runs, but issues might still lie dormant in both program and documentation
+	* Polyphonic sound have been corrected
+	* A new Example program 'SoundStatementDemo.kbs' demonstrating the new SOUNDxxx statements has been added to the Examples/Sound_Speech directory
+	* A new Example program 'ImageStatementDemo.kbs' demonstrating the new IMAGExxx statements has been added to the Examples/Image directory
+ 	* The REF() command (passing arrays to subroutines by reference) has been corrected.
+	* The Edit and Output windows are now pinned to a white/light scheme so code and text stay readable on desktops using a dark OS theme (Ubuntu dark, iPhone/iPad, etc.).
+	* The project has been relicensed from GPL version 2 to GPL version 3 or later.  The bundled md5 (RSA Data Security) and LineNumberArea (Qt example, BSD) files keep their own compatible licenses.
+    * A macOS for Intel has been added but this requires Sequoia (macOS 15)
+
+2026-07-17 M. Vilain <uglymike17@gmail.com>  
+	* The project has now moved to Beta state, meaning it runs, but issues might still lie dormant in both program and documentation
+	* A Docusaurus website has been created to replace the old doc.basic256.org in the code and is activated via the menu-item Help/Online help or by pressing F1 over a keyword. It lives on https://uglymike17.github.io/Basic256-Docs and is also shown in the Help/About BASIC-256 menu-item.
+	* All desktops now show a File/Open Examples. Previously, only the WASM build gave this option.
+ 	* Fix small errors that cropped up during testing.
+
+2026-07-10 M. Vilain <uglymike17@gmail.com>  
+	* Another Big one: Migrating Basic256 from Qt5 to Qt6 has allowed us to build Basic256 as a WASM application, meaning you can run it from the Web Browser! Currently, it runs here: https://uglymike17.github.io/basic256/
+	There are some caveats on this explained in the README.md file.
+ 
+	* Fix small errors that cropped up during testing.
+
+2026-07-05 M. Vilain <uglymike17@gmail.com>  
+	* Big one: Migrated Basic256 from Qt5 to Qt6, which is a major update that will allow for better performance on ARM-based systems like Raspberry Pi.|  
+	* Fix small errors that cropped up during edge-tests in TestSuite run.
+
+2026-07-04 M. Vilain <uglymike17@gmail.com>  
+	* Added: CLI option -f when used with -r/-a/-g/-t will now open the program fullscreen
+	* Added: CLI option -s when used will supress all screen output. Mainly used during testing but could be used to read/write/change a file/DB,...
+	* Small bugfix: Windows Installer created spurious basic256 directory with Examples and TestSuite.
+
+
+2026-06-30 M. Vilain <uglymike17@gmail.com>  
+	* Provide AppImage files for Linux-x86 and Linux-ARM in addition to the tar.gz files  
+	* Improved: CLI option -g will now open the Graphics window in the size you defined it (either 500x500 or by the graphsize you specified)  
+	* Small bugfix: on Windows, Iconlabels in Toolbars now follow the system settings..  
+
+
+2026-06-13 M. Vilain <uglymike17@gmail.com>  
+    * Copy Sourceforge build 2.0.99.10.2 over to Github    
+	* replace qmake (*.pro) with CMake (build.yml, CMakeLists.txt)  
+	* Replace MinGW with MSYS2 for Windows builds.  
+	* Replace deprecated Qt operators  
+	* move some Posix structures to Qt structures  
+	* provide basic.app for MacOS Silicon (ARM64) using brew with compiler AppleClang 17.0.0.17000013  
+	* provide stand-alone tarball for Linux-x86 Using compiler GNU 11.4.0.  
+	* provide stand-alone tarball for Linux-ARM (RPi Trixie). Using compiler GNU 13.3.0.  
+	* provide standalone zip file for Windows. No .nsi yet
+
+
+2011-2026 No changelog entries although a lot of changes happened over the years.
+
+
 2011-08-08 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.68
 	* added TEXTWIDTH statement to return width of a string i the current font before output to the graphics area
 
@@ -18,7 +97,7 @@
 2011-03-18 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.64
 	* Added option to View menu to hide Edit Widget (program source)
 
-2011-03-17 Javier González
+2011-03-17 Javier Gonzï¿½lez
 	* new Spanish UI translation
 
 2011-03-05 j.m.reneau <renejm@users.sourceforge.net> 0.9.6.63
@@ -502,4 +581,4 @@
 	(main): Pause/Resume button enabled
 
 2006-09-30 ian larsen <drblast@users.sourceforge.net> 0.1
-	* În sourceforge.net uploaded the first version
+	* ï¿½n sourceforge.net uploaded the first version

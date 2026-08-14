@@ -1,8 +1,8 @@
 /** Copyright (C) 2006, Ian Paul Larsen.
  **
- **  This program is free software; you can redistribute it and/or modify
+ **  This program is free software: you can redistribute it and/or modify
  **  it under the terms of the GNU General Public License as published by
- **  the Free Software Foundation; either version 2 of the License, or
+ **  the Free Software Foundation, either version 3 of the License, or
  **  (at your option) any later version.
  **
  **  This program is distributed in the hope that it will be useful,
@@ -10,14 +10,20 @@
  **  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **  GNU General Public License for more details.
  **
- **  You should have received a copy of the GNU General Public License along
- **  with this program; if not, write to the Free Software Foundation, Inc.,
- **  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ **  You should have received a copy of the GNU General Public License
+ **  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  **/
 
 %{
 //#define YYDEBUG 1
+#ifdef _MSC_VER
+/* Suppress C4244: bison generates YY_CAST(long, yystacksize) in its
+   stack-growth diagnostic code, where yystacksize is YYPTRDIFF_T =
+   ptrdiff_t (64-bit on MSVC x64) cast to long (32-bit on Windows).
+   This is a false positive warning. */
 
+#pragma warning(disable: 4244)
+#endif
 	#ifdef __cplusplus
 		extern "C" {
 	#endif
@@ -27,12 +33,13 @@
 	#include <string.h>
 	#include <math.h>
 	#include <errno.h>
-	#include "../BasicTypes.h"
-	#include "../Constants.h"
-	#include "../WordCodes.h"
-	#include "../CompileErrors.h"
-	#include "../ErrorCodes.h"
-	#include "../Version.h"
+	#include <limits.h>
+	#include "../src/core/BasicTypes.h"
+	#include "../src/core/Constants.h"
+	#include "../src/core/WordCodes.h"
+	#include "../src/core/CompileErrors.h"
+	#include "../src/core/ErrorCodes.h"
+	#include "../src/core/Version.h"
 
 
 	#define SYMTABLESIZE 2000
@@ -141,37 +148,30 @@
                 return((size + sizeof(int) - 1) / sizeof(int));
 	}
 
-    void addInt(int data) {
-        checkWordMem(1);
-        wordCode[wordOffset] = data;
-        wordOffset++;
-    }
-    
 	void addOp(int op) {
-		addInt(op);
+		checkWordMem(1);
+		wordCode[wordOffset] = op;
+                wordOffset++;
 		//printf("line=%i addOp op=%i\n",linenumber, op);
 	}
 
-	void addIntOp(int op, long data) {
+        void addData(int data) {
+                checkWordMem(1);
+                wordCode[wordOffset] = data;
+                wordOffset++;
+        }
+
+	void addIntOp(int op, int data) {
 		addOp(op);
-        addInt(data);
+                addData(data);
 	}
 
-	void addIntIntOp(int op, long data, long data2) {
+	void addIntIntOp(int op, int data, int data2) {
 		addOp(op);
-		addInt(data);
-		addInt(data2);
+		addData(data);
+		addData(data2);
 	}
 
-	void addLongOp(int op, long data) {
-		addOp(op);
-		unsigned int wlen = bytesToFullWords(sizeof(long));
-		checkWordMem(wlen);
-		long *temp = (long *) (wordCode + wordOffset);
-		*temp = data;
-		wordOffset += wlen;
-	}
-	
 	void addFloatOp(int op, double data) {
 		addOp(op);
 		unsigned int wlen = bytesToFullWords(sizeof(double));
@@ -180,6 +180,16 @@
 		*temp = data;
 		wordOffset += wlen;
 	}
+
+	void addLongLongOp(int op, long long data) {
+    	addOp(op);
+    	unsigned int wlen = bytesToFullWords(sizeof(long long));  // = 2
+    	checkWordMem(wlen);
+    	long long *temp = (long long *)(wordCode + wordOffset);
+    	*temp = data;
+    	wordOffset += wlen;
+	}
+
 
 	void addStringOp(int op, char *data) {
 		addOp(op);
@@ -284,6 +294,32 @@
 		symtableaddressargs[numsyms] = -1;
 		numsyms++;
 		return numsyms - 1;
+	}
+
+	// Emit the implicit fill for a DIM/REDIM written without an explicit FILL
+	// clause, so a fresh array's elements are usable immediately instead of
+	// raising "Element of array a[1] has not been assigned a value".
+	//
+	// BASIC256 has no static types -- the lexer's identifier pattern is
+	// [a-zA-Z][a-zA-Z0-9_$]*, so '$' is just a character in the name -- and the
+	// trailing '$' is therefore the only signal that a variable is meant to hold
+	// text. It is the signal users already rely on, so use it: '$' names fill with
+	// "", everything else with 0. Filling a string array with the number 0 would
+	// make PRINT a$[0] show "0" rather than nothing.
+	//
+	// mode: 1 = every element (DIM creates the array fresh, so all of them);
+	//       0 = only the still-unassigned ones (REDIM grows an existing array, and
+	//           the values already in it must survive).
+	void addDefaultFill(int v, int mode) {
+		char *name = (v >= 0 && v < numsyms) ? symtable[v] : NULL;
+		size_t len = name ? strlen(name) : 0;
+		if (len > 0 && name[len - 1] == '$') {
+			addStringOp(OP_PUSHSTRING, "");
+		} else {
+			addIntOp(OP_PUSHINT, 0);
+		}
+		addIntOp(OP_PUSHINT, mode);
+		addIntOp(OP_ARRAYFILL, v);
 	}
 
 	#define INTERNALSYMBOLEXIT 0 //at the end of the loop - all done
@@ -654,12 +690,12 @@
 %token B256LTRIM
 %token B256MAINTOOLBARVISIBLE
 %token B256MAP
+%token B256MAXIMIZE
 %token B256MD5
 %token B256MID
 %token B256MIDX
 %token B256MINUTE
 %token B256MOD
-%token B256MKDIR
 %token B256MONTH
 %token B256MOUSEB
 %token B256MOUSEBUTTON_CENTER
@@ -683,7 +719,6 @@
 %token B256NOT
 %token B256OFFERROR
 %token B256ONERROR
-%token B256ONSTOP
 %token B256OPEN
 %token B256OPENB
 %token B256OPENFILEDIALOG
@@ -707,7 +742,6 @@
 %token B256PORTIN
 %token B256PORTOUT
 %token B256PRINT
-%token B256PRINTAT
 %token B256PRINTERCANCEL
 %token B256PRINTEROFF
 %token B256PRINTERON
@@ -735,7 +769,6 @@
 %token B256RGB
 %token B256RIGHT
 %token B256RJUST
-%token B256RMDIR
 %token B256ROUND
 %token B256RTRIM
 %token B256SAY
@@ -790,7 +823,6 @@
 %token B256SPRITES
 %token B256SPRITESHOW
 %token B256SPRITESLICE
-%token B256SPRITETEXT
 %token B256SPRITEV
 %token B256SPRITEW
 %token B256SPRITEX
@@ -867,21 +899,20 @@
 %token B256YELLOW
 %token B256ZFILL
 
-%union {
-	int intnum;
-	long longnum;
+%union anytype {
+	long long number;
 	double floatnum;
 	char *string;
 }
 
-%token <longnum> B256INTEGER
+%token <number> B256INTEGER
 %token <floatnum> B256FLOAT
 %token <string> B256STRING
 %token <string> B256HEXCONST
 %token <string> B256BINCONST
 %token <string> B256OCTCONST
-%token <intnum> B256VARIABLE
-%token <intnum> B256LABEL
+%token <number> B256VARIABLE
+%token <number> B256LABEL
 
 
 %right ','
@@ -984,14 +1015,14 @@ array_indexing:
 	'[' expr ',' expr ']'
 	| '[' expr ']' '[' expr ']'
 	| '[' expr ']' {
-		addLongOp(OP_PUSHLONG, 0);
+		addIntOp(OP_PUSHINT, 0);
 		addOp(OP_STACKSWAP);
 	}
 	;
 
 variable:
 	B256VARIABLE {
-		varnumber[nvarnumber++] = $1;
+		varnumber[nvarnumber++] = (unsigned int)$1;
 	}
 	| '(' variable ')'
 	;
@@ -1018,6 +1049,14 @@ functionvariable:
 			args[numargs] = varnumber[--nvarnumber]; argstype[numargs] = ARGSTYPEVALUE; numargs++;
 			//printf("functionvariable %i %i %i\n", args[numargs-1], argstype[numargs-1],numargs);
 		}
+		| B256REF '(' variable_a ')' {
+			// ref(variable) parameter - the caller passes a T_REF (see callexpr's
+			// OP_VAR_REF) so the ordinary OP_VAR_SET / setData stores the reference
+			// and the parameter aliases the caller's variable. The keyword here is
+			// accepted for documentation/symmetry and generates the same code as a
+			// plain value parameter.
+			args[numargs] = varnumber[--nvarnumber]; argstype[numargs] = ARGSTYPEVALUE; numargs++;
+		}
 		;
 
 functionvariablelist:
@@ -1042,8 +1081,8 @@ functionvariables:
 // a mustached list of mustached lists (2 dimensional array)
 listoflists:
 	'{' listinlist '}'{
-		addLongOp(OP_PUSHLONG, numberoflists);		// number of lists (y dim)
-		addLongOp(OP_PUSHLONG, listlenmax);			// maximum number of expressions (x dim)
+		addIntOp(OP_PUSHINT, numberoflists);		// number of lists (y dim)
+		addIntOp(OP_PUSHINT, listlenmax);			// maximum number of expressions (x dim)
 #ifdef DEBUG
 	fprintf(stderr, "listlenmax %d\n", listlenmax);
 #endif
@@ -1054,7 +1093,7 @@ listoflists:
 // child of list of lists representing a single row of values
 listinlist:
 	listitems {
-		addLongOp(OP_PUSHLONG, listlen);
+		addIntOp(OP_PUSHINT, listlen);
 		if (listlen>listlenmax) listlenmax=listlen;
 		listlen = 0;
 		numberoflists = 1;
@@ -1067,7 +1106,7 @@ listinlist:
 // a one dimensional array
 listofitems:
 	'{' listitems '}' {
-		addLongOp(OP_PUSHLONG, listlen);
+		addIntOp(OP_PUSHINT, listlen);
 		if (listlen>listlenmax) listlenmax=listlen;
 		listlen = 0;
 	}
@@ -1083,7 +1122,7 @@ listitems:
 // a one dimensional array
 listofmapitems:
 	'{' mapitems '}' {
-		addLongOp(OP_PUSHLONG, listlen);
+		addIntOp(OP_PUSHINT, listlen);
 		if (listlen>listlenmax) listlenmax=listlen;
 		listlen = 0;
 		numberoflists = 0;
@@ -1225,13 +1264,13 @@ expr_multi:
 expr_function:
 	variable '(' callexprlist ')' {
 		// function call with arguments
-		addLongOp(OP_PUSHLONG, listlen); //push number of arguments passed to compare with FUNCTION definition
+		addIntOp(OP_PUSHINT, listlen); //push number of arguments passed to compare with FUNCTION definition
 		addIntOp(OP_CALLFUNCTION, varnumber[--nvarnumber]);
 		addIntOp(OP_CURRLINE, filenumber * 0x1000000 + linenumber);
 	}
 	| variable '(' ')' {
 		// function call without arguments
-		addLongOp(OP_PUSHLONG, 0); //push number of arguments passed to compare with FUNCTION definition
+		addIntOp(OP_PUSHINT, 0); //push number of arguments passed to compare with FUNCTION definition
 		addIntOp(OP_CALLFUNCTION, varnumber[--nvarnumber]);
 		addIntOp(OP_CURRLINE, filenumber * 0x1000000 + linenumber);
 	}
@@ -1244,46 +1283,46 @@ expr_function:
    ### Constants                           ###
    ########################################### */
 expr_constants:
-	B256BLACK args_none { addLongOp(OP_PUSHLONG, 0xff000000L); }
-	| B256BLUE args_none { addLongOp(OP_PUSHLONG, 0xff0000ffL); }
-	| B256BOOLFALSE args_none { addLongOp(OP_PUSHLONG, 0); }
-	| B256BOOLTRUE args_none { addLongOp(OP_PUSHLONG, 1); }
-	| B256CLEAR args_none { addLongOp(OP_PUSHLONG, 0x00); }
-	| B256CYAN args_none { addLongOp(OP_PUSHLONG, 0xff00ffffL); }
-	| B256DARKBLUE args_none { addLongOp(OP_PUSHLONG, 0xff000080L); }
-	| B256DARKCYAN args_none { addLongOp(OP_PUSHLONG, 0xff008080L); }
-	| B256DARKGREEN args_none { addLongOp(OP_PUSHLONG, 0xff008000L); }
-	| B256DARKGREY args_none { addLongOp(OP_PUSHLONG, 0xff808080L); }
-	| B256DARKORANGE args_none { addLongOp(OP_PUSHLONG, 0xffb03d00L); }
-	| B256DARKPURPLE args_none { addLongOp(OP_PUSHLONG, 0xff800080L); }
-	| B256DARKRED args_none { addLongOp(OP_PUSHLONG, 0xff800000L); }
-	| B256DARKYELLOW args_none { addLongOp(OP_PUSHLONG, 0xff808000L); }
-	| B256GREEN args_none { addLongOp(OP_PUSHLONG, 0xff00ff00L); }
-	| B256GREY args_none { addLongOp(OP_PUSHLONG, 0xffa4a4a4L); }
-	| B256MOUSEBUTTON_CENTER args_none { addLongOp(OP_PUSHLONG, MOUSEBUTTON_CENTER); }
-	| B256MOUSEBUTTON_DOUBLECLICK args_none { addLongOp(OP_PUSHLONG, MOUSEBUTTON_DOUBLECLICK); }
-	| B256MOUSEBUTTON_LEFT args_none { addLongOp(OP_PUSHLONG, MOUSEBUTTON_LEFT); }
-	| B256MOUSEBUTTON_NONE args_none { addLongOp(OP_PUSHLONG, MOUSEBUTTON_NONE); }
-	| B256MOUSEBUTTON_RIGHT args_none { addLongOp(OP_PUSHLONG, MOUSEBUTTON_RIGHT); }
-	| B256ORANGE args_none { addLongOp(OP_PUSHLONG, 0xffff6600L); }
-	| B256OSTYPE_ANDROID args_none { addLongOp(OP_PUSHLONG, OSTYPE_ANDROID); }
-	| B256OSTYPE_LINUX args_none { addLongOp(OP_PUSHLONG, OSTYPE_LINUX); }
-	| B256OSTYPE_MACINTOSH args_none { addLongOp(OP_PUSHLONG, OSTYPE_MACINTOSH); }
-	| B256OSTYPE_WINDOWS args_none { addLongOp(OP_PUSHLONG, OSTYPE_WINDOWS); }
-	| B256PURPLE args_none { addLongOp(OP_PUSHLONG, 0xffff00ffL); }
-	| B256RED args_none { addLongOp(OP_PUSHLONG, 0xffff0000L); }
-	| B256SLICE_ALL args_none { addLongOp(OP_PUSHLONG, SLICE_ALL); }
-	| B256SLICE_PAINT args_none { addLongOp(OP_PUSHLONG, SLICE_PAINT); }
-	| B256SLICE_SPRITE args_none { addLongOp(OP_PUSHLONG, SLICE_SPRITE); }
-	| B256TYPE_ARRAY args_none { addLongOp(OP_PUSHLONG, T_ARRAY); }
-	| B256TYPE_FLOAT args_none { addLongOp(OP_PUSHLONG, T_FLOAT); }
-	| B256TYPE_INT args_none { addLongOp(OP_PUSHLONG, T_INT); }
-	| B256TYPE_MAP args_none { addLongOp(OP_PUSHLONG, T_MAP); }
-	| B256TYPE_REF args_none { addLongOp(OP_PUSHLONG, T_REF); }
-	| B256TYPE_STRING args_none { addLongOp(OP_PUSHLONG, T_STRING); }
-	| B256TYPE_UNASSIGNED args_none { addLongOp(OP_PUSHLONG, T_UNASSIGNED); }
-	| B256WHITE args_none { addLongOp(OP_PUSHLONG, 0xffffffffL); }
-	| B256YELLOW args_none { addLongOp(OP_PUSHLONG, 0xffffff00L); }
+	B256BLACK args_none { addIntOp(OP_PUSHINT, 0xff000000); }
+	| B256BLUE args_none { addIntOp(OP_PUSHINT, 0xff0000ff); }
+	| B256BOOLFALSE args_none { addIntOp(OP_PUSHINT, 0); }
+	| B256BOOLTRUE args_none { addIntOp(OP_PUSHINT, 1); }
+	| B256CLEAR args_none { addIntOp(OP_PUSHINT, 0x00); }
+	| B256CYAN args_none { addIntOp(OP_PUSHINT, 0xff00ffff); }
+	| B256DARKBLUE args_none { addIntOp(OP_PUSHINT, 0xff000080); }
+	| B256DARKCYAN args_none { addIntOp(OP_PUSHINT, 0xff008080); }
+	| B256DARKGREEN args_none { addIntOp(OP_PUSHINT, 0xff008000); }
+	| B256DARKGREY args_none { addIntOp(OP_PUSHINT, 0xff808080); }
+	| B256DARKORANGE args_none { addIntOp(OP_PUSHINT, 0xffb03d00); }
+	| B256DARKPURPLE args_none { addIntOp(OP_PUSHINT, 0xff800080); }
+	| B256DARKRED args_none { addIntOp(OP_PUSHINT, 0xff800000); }
+	| B256DARKYELLOW args_none { addIntOp(OP_PUSHINT, 0xff808000); }
+	| B256GREEN args_none { addIntOp(OP_PUSHINT, 0xff00ff00); }
+	| B256GREY args_none { addIntOp(OP_PUSHINT, 0xffa4a4a4); }
+	| B256MOUSEBUTTON_CENTER args_none { addIntOp(OP_PUSHINT, MOUSEBUTTON_CENTER); }
+	| B256MOUSEBUTTON_DOUBLECLICK args_none { addIntOp(OP_PUSHINT, MOUSEBUTTON_DOUBLECLICK); }
+	| B256MOUSEBUTTON_LEFT args_none { addIntOp(OP_PUSHINT, MOUSEBUTTON_LEFT); }
+	| B256MOUSEBUTTON_NONE args_none { addIntOp(OP_PUSHINT, MOUSEBUTTON_NONE); }
+	| B256MOUSEBUTTON_RIGHT args_none { addIntOp(OP_PUSHINT, MOUSEBUTTON_RIGHT); }
+	| B256ORANGE args_none { addIntOp(OP_PUSHINT, 0xffff6600); }
+	| B256OSTYPE_ANDROID args_none { addIntOp(OP_PUSHINT, OSTYPE_ANDROID); }
+	| B256OSTYPE_LINUX args_none { addIntOp(OP_PUSHINT, OSTYPE_LINUX); }
+	| B256OSTYPE_MACINTOSH args_none { addIntOp(OP_PUSHINT, OSTYPE_MACINTOSH); }
+	| B256OSTYPE_WINDOWS args_none { addIntOp(OP_PUSHINT, OSTYPE_WINDOWS); }
+	| B256PURPLE args_none { addIntOp(OP_PUSHINT, 0xffff00ff); }
+	| B256RED args_none { addIntOp(OP_PUSHINT, 0xffff0000); }
+	| B256SLICE_ALL args_none { addIntOp(OP_PUSHINT, SLICE_ALL); }
+	| B256SLICE_PAINT args_none { addIntOp(OP_PUSHINT, SLICE_PAINT); }
+	| B256SLICE_SPRITE args_none { addIntOp(OP_PUSHINT, SLICE_SPRITE); }
+	| B256TYPE_ARRAY args_none { addIntOp(OP_PUSHINT, T_ARRAY); }
+	| B256TYPE_FLOAT args_none { addIntOp(OP_PUSHINT, T_FLOAT); }
+	| B256TYPE_INT args_none { addIntOp(OP_PUSHINT, T_INT); }
+	| B256TYPE_MAP args_none { addIntOp(OP_PUSHINT, T_MAP); }
+	| B256TYPE_REF args_none { addIntOp(OP_PUSHINT, T_REF); }
+	| B256TYPE_STRING args_none { addIntOp(OP_PUSHINT, T_STRING); }
+	| B256TYPE_UNASSIGNED args_none { addIntOp(OP_PUSHINT, T_UNASSIGNED); }
+	| B256WHITE args_none { addIntOp(OP_PUSHINT, 0xffffffff); }
+	| B256YELLOW args_none { addIntOp(OP_PUSHINT, 0xffffff00); }
 	
 	
 	
@@ -1292,385 +1331,385 @@ expr_constants:
    ########################################### */
 expr_errors:
 	B256ERROR_ARGUMENTCOUNT args_none {
-		addLongOp(OP_PUSHLONG, ERROR_ARGUMENTCOUNT);
+		addIntOp(OP_PUSHINT, ERROR_ARGUMENTCOUNT);
 	}
 	| B256ERROR_ARRAYELEMENT args_none {
-		addLongOp(OP_PUSHLONG, ERROR_ARRAYELEMENT);
+		addIntOp(OP_PUSHINT, ERROR_ARRAYELEMENT);
 	}
 	| B256ERROR_ARRAYEVEN args_none {
-		addLongOp(OP_PUSHLONG, ERROR_ARRAYEVEN);
+		addIntOp(OP_PUSHINT, ERROR_ARRAYEVEN);
 	}
 	| B256ERROR_ARRAYEXPR args_none {
-		addLongOp(OP_PUSHLONG, ERROR_ARRAYEXPR);
+		addIntOp(OP_PUSHINT, ERROR_ARRAYEXPR);
 	}
 	| B256ERROR_ARRAYINDEX args_none {
-		addLongOp(OP_PUSHLONG, ERROR_ARRAYINDEX);
+		addIntOp(OP_PUSHINT, ERROR_ARRAYINDEX);
 	}
 	| B256ERROR_ARRAYINDEXMISSING args_none {
-		addLongOp(OP_PUSHLONG, ERROR_ARRAYINDEXMISSING);
+		addIntOp(OP_PUSHINT, ERROR_ARRAYINDEXMISSING);
 	}
 	| B256ERROR_ARRAYLENGTH2D args_none {
-		addLongOp(OP_PUSHLONG, ERROR_ARRAYLENGTH2D);
+		addIntOp(OP_PUSHINT, ERROR_ARRAYLENGTH2D);
 	}
 	| B256ERROR_ARRAYNITEMS args_none {
-		addLongOp(OP_PUSHLONG, ERROR_ARRAYNITEMS);
+		addIntOp(OP_PUSHINT, ERROR_ARRAYNITEMS);
 	}
 	| B256ERROR_ARRAYSIZELARGE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_ARRAYSIZELARGE);
+		addIntOp(OP_PUSHINT, ERROR_ARRAYSIZELARGE);
 	}
 	| B256ERROR_ARRAYSIZESMALL args_none {
-		addLongOp(OP_PUSHLONG, ERROR_ARRAYSIZESMALL);
+		addIntOp(OP_PUSHINT, ERROR_ARRAYSIZESMALL);
 	}
 	| B256ERROR_ASINACOSRANGE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_ASINACOSRANGE);
+		addIntOp(OP_PUSHINT, ERROR_ASINACOSRANGE);
 	}
 	| B256ERROR_BOOLEANCONV args_none {
-		addLongOp(OP_PUSHLONG, ERROR_BOOLEANCONV);
+		addIntOp(OP_PUSHINT, ERROR_BOOLEANCONV);
 	}
 	| B256ERROR_DBCOLNO args_none {
-		addLongOp(OP_PUSHLONG, ERROR_DBCOLNO);
+		addIntOp(OP_PUSHINT, ERROR_DBCOLNO);
 	}
 	| B256ERROR_DBCONNNUMBER args_none {
-		addLongOp(OP_PUSHLONG, ERROR_DBCONNNUMBER);
+		addIntOp(OP_PUSHINT, ERROR_DBCONNNUMBER);
 	}
 	| B256ERROR_DBNOTOPEN args_none {
-		addLongOp(OP_PUSHLONG, ERROR_DBNOTOPEN);
+		addIntOp(OP_PUSHINT, ERROR_DBNOTOPEN);
 	}
 	| B256ERROR_DBNOTSET args_none {
-		addLongOp(OP_PUSHLONG, ERROR_DBNOTSET);
+		addIntOp(OP_PUSHINT, ERROR_DBNOTSET);
 	}
 	| B256ERROR_DBNOTSETROW args_none {
-		addLongOp(OP_PUSHLONG, ERROR_DBNOTSETROW);
+		addIntOp(OP_PUSHINT, ERROR_DBNOTSETROW);
 	}
 	| B256ERROR_DBOPEN args_none {
-		addLongOp(OP_PUSHLONG, ERROR_DBOPEN);
+		addIntOp(OP_PUSHINT, ERROR_DBOPEN);
 	}
 	| B256ERROR_DBQUERY args_none {
-		addLongOp(OP_PUSHLONG, ERROR_DBQUERY);
+		addIntOp(OP_PUSHINT, ERROR_DBQUERY);
 	}
 	| B256ERROR_DBSETNUMBER args_none {
-		addLongOp(OP_PUSHLONG, ERROR_DBSETNUMBER);
+		addIntOp(OP_PUSHINT, ERROR_DBSETNUMBER);
 	}
 	| B256ERROR_DIVZERO args_none {
-		addLongOp(OP_PUSHLONG, ERROR_DIVZERO);
+		addIntOp(OP_PUSHINT, ERROR_DIVZERO);
 	}
 	| B256ERROR_DOWNLOAD args_none {
-		addLongOp(OP_PUSHLONG, ERROR_DOWNLOAD);
+		addIntOp(OP_PUSHINT, ERROR_DOWNLOAD);
 	}
 	| B256ERROR_ENVELOPEMAX args_none {
-		addLongOp(OP_PUSHLONG, ERROR_ENVELOPEMAX);
+		addIntOp(OP_PUSHINT, ERROR_ENVELOPEMAX);
 	}
 	| B256ERROR_ENVELOPEODD args_none {
-		addLongOp(OP_PUSHLONG, ERROR_ENVELOPEODD);
+		addIntOp(OP_PUSHINT, ERROR_ENVELOPEODD);
 	}
 	| B256ERROR_EXPECTEDARRAY args_none {
-		addLongOp(OP_PUSHLONG, ERROR_EXPECTEDARRAY);
+		addIntOp(OP_PUSHINT, ERROR_EXPECTEDARRAY);
 	}
 	| B256ERROR_EXPECTEDSOUND args_none {
-		addLongOp(OP_PUSHLONG, ERROR_EXPECTEDSOUND);
+		addIntOp(OP_PUSHINT, ERROR_EXPECTEDSOUND);
 	}
 	| B256ERROR_FILENOTOPEN args_none {
-		addLongOp(OP_PUSHLONG, ERROR_FILENOTOPEN);
+		addIntOp(OP_PUSHINT, ERROR_FILENOTOPEN);
 	}
 	| B256ERROR_FILENUMBER args_none {
-		addLongOp(OP_PUSHLONG, ERROR_FILENUMBER);
+		addIntOp(OP_PUSHINT, ERROR_FILENUMBER);
 	}
 	| B256ERROR_FILEOPEN args_none {
-		addLongOp(OP_PUSHLONG, ERROR_FILEOPEN);
+		addIntOp(OP_PUSHINT, ERROR_FILEOPEN);
 	}
 	| B256ERROR_FILEOPERATION args_none {
-		addLongOp(OP_PUSHLONG, ERROR_FILEOPERATION);
+		addIntOp(OP_PUSHINT, ERROR_FILEOPERATION);
 	}
 	| B256ERROR_FILERESET args_none {
-		addLongOp(OP_PUSHLONG, ERROR_FILERESET);
+		addIntOp(OP_PUSHINT, ERROR_FILERESET);
 	}
 	| B256ERROR_FILEWRITE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_FILEWRITE);
+		addIntOp(OP_PUSHINT, ERROR_FILEWRITE);
 	}
 	| B256ERROR_FOLDER args_none {
-		addLongOp(OP_PUSHLONG, ERROR_FOLDER);
+		addIntOp(OP_PUSHINT, ERROR_FOLDER);
 	}
 	| B256ERROR_FREEDB args_none {
-		addLongOp(OP_PUSHLONG, ERROR_FREEDB);
+		addIntOp(OP_PUSHINT, ERROR_FREEDB);
 	}
 	| B256ERROR_FREEDBSET args_none {
-		addLongOp(OP_PUSHLONG, ERROR_FREEDBSET);
+		addIntOp(OP_PUSHINT, ERROR_FREEDBSET);
 	}
 	| B256ERROR_FREEFILE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_FREEFILE);
+		addIntOp(OP_PUSHINT, ERROR_FREEFILE);
 	}
 	| B256ERROR_FREENET args_none {
-		addLongOp(OP_PUSHLONG, ERROR_FREENET);
+		addIntOp(OP_PUSHINT, ERROR_FREENET);
 	}
 	| B256ERROR_HARMONICLIST args_none {
-		addLongOp(OP_PUSHLONG, ERROR_HARMONICLIST);
+		addIntOp(OP_PUSHINT, ERROR_HARMONICLIST);
 	}
 	| B256ERROR_HARMONICNUMBER args_none {
-		addLongOp(OP_PUSHLONG, ERROR_HARMONICNUMBER);
+		addIntOp(OP_PUSHINT, ERROR_HARMONICNUMBER);
 	}
 	| B256ERROR_IMAGEFILE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_IMAGEFILE);
+		addIntOp(OP_PUSHINT, ERROR_IMAGEFILE);
 	}
 	| B256ERROR_IMAGERESOURCE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_IMAGERESOURCE);
+		addIntOp(OP_PUSHINT, ERROR_IMAGERESOURCE);
 	}
 	| B256ERROR_IMAGESAVETYPE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_IMAGESAVETYPE);
+		addIntOp(OP_PUSHINT, ERROR_IMAGESAVETYPE);
 	}
 	| B256ERROR_IMAGESCALE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_IMAGESCALE);
+		addIntOp(OP_PUSHINT, ERROR_IMAGESCALE);
 	}
 	| B256ERROR_INFINITY args_none {
-		addLongOp(OP_PUSHLONG, ERROR_INFINITY);
+		addIntOp(OP_PUSHINT, ERROR_INFINITY);
 	}
 	| B256ERROR_INTEGERRANGE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_INTEGERRANGE);
+		addIntOp(OP_PUSHINT, ERROR_INTEGERRANGE);
 	}
 	| B256ERROR_INVALIDKEYNAME args_none {
-		addLongOp(OP_PUSHLONG, ERROR_INVALIDKEYNAME);
+		addIntOp(OP_PUSHINT, ERROR_INVALIDKEYNAME);
 	}
 	| B256ERROR_INVALIDPROGNAME args_none {
-		addLongOp(OP_PUSHLONG, ERROR_INVALIDPROGNAME);
+		addIntOp(OP_PUSHINT, ERROR_INVALIDPROGNAME);
 	}
 	| B256ERROR_INVALIDRESOURCE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_INVALIDRESOURCE);
+		addIntOp(OP_PUSHINT, ERROR_INVALIDRESOURCE);
 	}
 	| B256ERROR_LOGRANGE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_LOGRANGE);
+		addIntOp(OP_PUSHINT, ERROR_LOGRANGE);
 	}
 	| B256ERROR_LONGRANGE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_LONGRANGE);
+		addIntOp(OP_PUSHINT, ERROR_LONGRANGE);
 	}
 	| B256ERROR_MAXRECURSE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_MAXRECURSE);
+		addIntOp(OP_PUSHINT, ERROR_MAXRECURSE);
 	}
 	| B256ERROR_NETACCEPT args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NETACCEPT);
+		addIntOp(OP_PUSHINT, ERROR_NETACCEPT);
 	}
 	| B256ERROR_NETBIND args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NETBIND);
+		addIntOp(OP_PUSHINT, ERROR_NETBIND);
 	}
 	| B256ERROR_NETCONN args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NETCONN);
+		addIntOp(OP_PUSHINT, ERROR_NETCONN);
 	}
 	| B256ERROR_NETHOST args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NETHOST);
+		addIntOp(OP_PUSHINT, ERROR_NETHOST);
 	}
 	| B256ERROR_NETNONE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NETNONE);
+		addIntOp(OP_PUSHINT, ERROR_NETNONE);
 	}
 	| B256ERROR_NETREAD args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NETREAD);
+		addIntOp(OP_PUSHINT, ERROR_NETREAD);
 	}
 	| B256ERROR_NETSOCK args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NETSOCK);
+		addIntOp(OP_PUSHINT, ERROR_NETSOCK);
 	}
 	| B256ERROR_NETSOCKNUMBER args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NETSOCKNUMBER);
+		addIntOp(OP_PUSHINT, ERROR_NETSOCKNUMBER);
 	}
 	| B256ERROR_NETSOCKOPT args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NETSOCKOPT);
+		addIntOp(OP_PUSHINT, ERROR_NETSOCKOPT);
 	}
 	| B256ERROR_NETWRITE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NETWRITE);
+		addIntOp(OP_PUSHINT, ERROR_NETWRITE);
 	}
 	| B256ERROR_NEXTNOFOR args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NEXTNOFOR);
+		addIntOp(OP_PUSHINT, ERROR_NEXTNOFOR);
 	}
 	| B256ERROR_NONE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NONE);
+		addIntOp(OP_PUSHINT, ERROR_NONE);
 	}
 	| B256ERROR_NOSUCHFUNCTION args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NOSUCHFUNCTION);
+		addIntOp(OP_PUSHINT, ERROR_NOSUCHFUNCTION);
 	}
 	| B256ERROR_NOSUCHLABEL args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NOSUCHLABEL);
+		addIntOp(OP_PUSHINT, ERROR_NOSUCHLABEL);
 	}
 	| B256ERROR_NOSUCHSUBROUTINE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NOSUCHSUBROUTINE);
+		addIntOp(OP_PUSHINT, ERROR_NOSUCHSUBROUTINE);
 	}
 	| B256ERROR_NOTARRAY args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NOTARRAY);
+		addIntOp(OP_PUSHINT, ERROR_NOTARRAY);
 	}
 	| B256ERROR_NOTIMPLEMENTED args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NOTIMPLEMENTED);
+		addIntOp(OP_PUSHINT, ERROR_NOTIMPLEMENTED);
 	}
 	| B256ERROR_NUMBERCONV args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NUMBERCONV);
+		addIntOp(OP_PUSHINT, ERROR_NUMBERCONV);
 	}
 	| B256ERROR_NUMBEREXPR args_none {
-		addLongOp(OP_PUSHLONG, ERROR_NUMBEREXPR);
+		addIntOp(OP_PUSHINT, ERROR_NUMBEREXPR);
 	}
 	| B256ERROR_ONEDIMENSIONAL args_none {
-		addLongOp(OP_PUSHLONG, ERROR_ONEDIMENSIONAL);
+		addIntOp(OP_PUSHINT, ERROR_ONEDIMENSIONAL);
 	}
 	| B256ERROR_ONERRORSUB args_none {
-		addLongOp(OP_PUSHLONG, ERROR_ONERRORSUB);
+		addIntOp(OP_PUSHINT, ERROR_ONERRORSUB);
 	}
 	| B256ERROR_PENWIDTH args_none {
-		addLongOp(OP_PUSHLONG, ERROR_PENWIDTH);
+		addIntOp(OP_PUSHINT, ERROR_PENWIDTH);
 	}
 	| B256ERROR_PERMISSION args_none {
-		addLongOp(OP_PUSHLONG, ERROR_PERMISSION);
+		addIntOp(OP_PUSHINT, ERROR_PERMISSION);
 	}
 	| B256ERROR_POLYPOINTS args_none {
-		addLongOp(OP_PUSHLONG, ERROR_POLYPOINTS);
+		addIntOp(OP_PUSHINT, ERROR_POLYPOINTS);
 	}
 	| B256ERROR_PRINTERNOTOFF args_none {
-		addLongOp(OP_PUSHLONG, ERROR_PRINTERNOTOFF);
+		addIntOp(OP_PUSHINT, ERROR_PRINTERNOTOFF);
 	}
 	| B256ERROR_PRINTERNOTON args_none {
-		addLongOp(OP_PUSHLONG, ERROR_PRINTERNOTON);
+		addIntOp(OP_PUSHINT, ERROR_PRINTERNOTON);
 	}
 	| B256ERROR_PRINTEROPEN args_none {
-		addLongOp(OP_PUSHLONG, ERROR_PRINTEROPEN);
+		addIntOp(OP_PUSHINT, ERROR_PRINTEROPEN);
 	}
 	| B256ERROR_RADIX args_none {
-		addLongOp(OP_PUSHLONG, ERROR_RADIX);
+		addIntOp(OP_PUSHINT, ERROR_RADIX);
 	}
 	| B256ERROR_RADIXSTRING args_none {
-		addLongOp(OP_PUSHLONG, ERROR_RADIXSTRING);
+		addIntOp(OP_PUSHINT, ERROR_RADIXSTRING);
 	}
 	| B256ERROR_REFNOTASSIGNED args_none {
-		addLongOp(OP_PUSHLONG, ERROR_REFNOTASSIGNED);
+		addIntOp(OP_PUSHINT, ERROR_REFNOTASSIGNED);
 	}
 	| B256ERROR_RGB args_none {
-		addLongOp(OP_PUSHLONG, ERROR_RGB);
+		addIntOp(OP_PUSHINT, ERROR_RGB);
 	}
 	| B256ERROR_SERIALPARAMETER args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SERIALPARAMETER);
+		addIntOp(OP_PUSHINT, ERROR_SERIALPARAMETER);
 	}
 	| B256ERROR_SETTINGMAXKEYS args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SETTINGMAXKEYS);
+		addIntOp(OP_PUSHINT, ERROR_SETTINGMAXKEYS);
 	}
 	| B256ERROR_SETTINGMAXLEN args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SETTINGMAXLEN);
+		addIntOp(OP_PUSHINT, ERROR_SETTINGMAXLEN);
 	}
 	| B256ERROR_SETTINGSGETACCESS args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SETTINGSGETACCESS);
+		addIntOp(OP_PUSHINT, ERROR_SETTINGSGETACCESS);
 	}
 	| B256ERROR_SETTINGSSETACCESS args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SETTINGSSETACCESS);
+		addIntOp(OP_PUSHINT, ERROR_SETTINGSSETACCESS);
 	}
 	| B256ERROR_SLICESIZE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SLICESIZE);
+		addIntOp(OP_PUSHINT, ERROR_SLICESIZE);
 	}
 	| B256ERROR_SOUNDERROR args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SOUNDERROR);
+		addIntOp(OP_PUSHINT, ERROR_SOUNDERROR);
 	}
 	| B256ERROR_SOUNDFILE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SOUNDFILE);
+		addIntOp(OP_PUSHINT, ERROR_SOUNDFILE);
 	}
 	| B256ERROR_SOUNDFILEFORMAT args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SOUNDFILEFORMAT);
+		addIntOp(OP_PUSHINT, ERROR_SOUNDFILEFORMAT);
 	}
 	| B256ERROR_SOUNDLENGTH args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SOUNDLENGTH);
+		addIntOp(OP_PUSHINT, ERROR_SOUNDLENGTH);
 	}
 	| B256ERROR_SOUNDNOTSEEKABLE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SOUNDNOTSEEKABLE);
+		addIntOp(OP_PUSHINT, ERROR_SOUNDNOTSEEKABLE);
 	}
 	| B256ERROR_SOUNDRESOURCE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SOUNDRESOURCE);
+		addIntOp(OP_PUSHINT, ERROR_SOUNDRESOURCE);
 	}
 	| B256ERROR_SPRITENA args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SPRITENA);
+		addIntOp(OP_PUSHINT, ERROR_SPRITENA);
 	}
 	| B256ERROR_SPRITENUMBER args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SPRITENUMBER);
+		addIntOp(OP_PUSHINT, ERROR_SPRITENUMBER);
 	}
 	| B256ERROR_SPRITESLICE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SPRITESLICE);
+		addIntOp(OP_PUSHINT, ERROR_SPRITESLICE);
 	}
 	| B256ERROR_SQRRANGE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_SQRRANGE);
+		addIntOp(OP_PUSHINT, ERROR_SQRRANGE);
 	}
 	| B256ERROR_STACKUNDERFLOW args_none {
-		addLongOp(OP_PUSHLONG, ERROR_STACKUNDERFLOW);
+		addIntOp(OP_PUSHINT, ERROR_STACKUNDERFLOW);
 	}
 	| B256ERROR_STRING2NOTE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_STRING2NOTE);
+		addIntOp(OP_PUSHINT, ERROR_STRING2NOTE);
 	}
 	| B256ERROR_STRINGCONV args_none {
-		addLongOp(OP_PUSHLONG, ERROR_STRINGCONV);
+		addIntOp(OP_PUSHINT, ERROR_STRINGCONV);
 	}
 	| B256ERROR_STRINGEXPR args_none {
-		addLongOp(OP_PUSHLONG, ERROR_STRINGEXPR);
+		addIntOp(OP_PUSHINT, ERROR_STRINGEXPR);
 	}
 	| B256ERROR_STRINGMAXLEN args_none {
-		addLongOp(OP_PUSHLONG, ERROR_STRINGMAXLEN);
+		addIntOp(OP_PUSHINT, ERROR_STRINGMAXLEN);
 	}
 	| B256ERROR_STRSTART args_none {
-		addLongOp(OP_PUSHLONG, ERROR_STRSTART);
+		addIntOp(OP_PUSHINT, ERROR_STRSTART);
 	}
 	| B256ERROR_TOOMANYSOUNDS args_none {
-		addLongOp(OP_PUSHLONG, ERROR_TOOMANYSOUNDS);
+		addIntOp(OP_PUSHINT, ERROR_TOOMANYSOUNDS);
 	}
 	| B256ERROR_UNEXPECTEDRETURN args_none {
-		addLongOp(OP_PUSHLONG, ERROR_UNEXPECTEDRETURN);
+		addIntOp(OP_PUSHINT, ERROR_UNEXPECTEDRETURN);
 	}
 	| B256ERROR_UNSERIALIZEFORMAT args_none {
-		addLongOp(OP_PUSHLONG, ERROR_UNSERIALIZEFORMAT);
+		addIntOp(OP_PUSHINT, ERROR_UNSERIALIZEFORMAT);
 	}
 	| B256ERROR_VARCIRCULAR args_none {
-		addLongOp(OP_PUSHLONG, ERROR_VARCIRCULAR);
+		addIntOp(OP_PUSHINT, ERROR_VARCIRCULAR);
 	}
 	| B256ERROR_VARNOTASSIGNED args_none {
-		addLongOp(OP_PUSHLONG, ERROR_VARNOTASSIGNED);
+		addIntOp(OP_PUSHINT, ERROR_VARNOTASSIGNED);
 	}
 	| B256ERROR_VARNULL args_none {
-		addLongOp(OP_PUSHLONG, ERROR_VARNULL);
+		addIntOp(OP_PUSHINT, ERROR_VARNULL);
 	}
 	| B256ERROR_WAVEFORMLOGICAL args_none {
-		addLongOp(OP_PUSHLONG, ERROR_WAVEFORMLOGICAL);
+		addIntOp(OP_PUSHINT, ERROR_WAVEFORMLOGICAL);
 	}
 	| B256ERROR_WAVOBSOLETE args_none {
-		addLongOp(OP_PUSHLONG, ERROR_WAVOBSOLETE);
+		addIntOp(OP_PUSHINT, ERROR_WAVOBSOLETE);
 	}
 	| B256WARNING_ARRAYELEMENT args_none {
-		addLongOp(OP_PUSHLONG, WARNING_ARRAYELEMENT);
+		addIntOp(OP_PUSHINT, WARNING_ARRAYELEMENT);
 	}
 	| B256WARNING_BOOLEANCONV args_none {
-		addLongOp(OP_PUSHLONG, WARNING_BOOLEANCONV);
+		addIntOp(OP_PUSHINT, WARNING_BOOLEANCONV);
 	}
 	| B256WARNING_INTEGERRANGE args_none {
-		addLongOp(OP_PUSHLONG, WARNING_INTEGERRANGE);
+		addIntOp(OP_PUSHINT, WARNING_INTEGERRANGE);
 	}
 	| B256WARNING_LONGRANGE args_none {
-		addLongOp(OP_PUSHLONG, WARNING_LONGRANGE);
+		addIntOp(OP_PUSHINT, WARNING_LONGRANGE);
 	}
 	| B256WARNING_NUMBERCONV args_none {
-		addLongOp(OP_PUSHLONG, WARNING_NUMBERCONV);
+		addIntOp(OP_PUSHINT, WARNING_NUMBERCONV);
 	}
 	| B256WARNING_REFNOTASSIGNED args_none {
-		addLongOp(OP_PUSHLONG, WARNING_REFNOTASSIGNED);
+		addIntOp(OP_PUSHINT, WARNING_REFNOTASSIGNED);
 	}
 	| B256WARNING_SOUNDERROR args_none {
-		addLongOp(OP_PUSHLONG, WARNING_SOUNDERROR);
+		addIntOp(OP_PUSHINT, WARNING_SOUNDERROR);
 	}
 	| B256WARNING_SOUNDFILEFORMAT args_none {
-		addLongOp(OP_PUSHLONG, WARNING_SOUNDFILEFORMAT);
+		addIntOp(OP_PUSHINT, WARNING_SOUNDFILEFORMAT);
 	}
 	| B256WARNING_SOUNDLENGTH args_none {
-		addLongOp(OP_PUSHLONG, WARNING_SOUNDLENGTH);
+		addIntOp(OP_PUSHINT, WARNING_SOUNDLENGTH);
 	}
 	| B256WARNING_SOUNDNOTSEEKABLE args_none {
-		addLongOp(OP_PUSHLONG, WARNING_SOUNDNOTSEEKABLE);
+		addIntOp(OP_PUSHINT, WARNING_SOUNDNOTSEEKABLE);
 	}
 	| B256WARNING_START args_none {
-		addLongOp(OP_PUSHLONG, WARNING_START);
+		addIntOp(OP_PUSHINT, WARNING_START);
 	}
 	| B256WARNING_STRING2NOTE args_none {
-		addLongOp(OP_PUSHLONG, WARNING_STRING2NOTE);
+		addIntOp(OP_PUSHINT, WARNING_STRING2NOTE);
 	}
 	| B256WARNING_STRINGCONV args_none {
-		addLongOp(OP_PUSHLONG, WARNING_STRINGCONV);
+		addIntOp(OP_PUSHINT, WARNING_STRINGCONV);
 	}
 	| B256WARNING_VARNOTASSIGNED args_none {
-		addLongOp(OP_PUSHLONG, WARNING_VARNOTASSIGNED);
+		addIntOp(OP_PUSHINT, WARNING_VARNOTASSIGNED);
 	}
 	| B256WARNING_WAVOBSOLETE args_none {
-		addLongOp(OP_PUSHLONG, WARNING_WAVOBSOLETE);
+		addIntOp(OP_PUSHINT, WARNING_WAVOBSOLETE);
 	}
 	;
 
@@ -1680,22 +1719,26 @@ expr_errors:
    ########################################### */
 expr_numeric:
 	B256INTEGER {
-		addLongOp(OP_PUSHLONG, $1);
-		//printf("add op_pushlong %li\n", $1);
+    	if ($1 >= INT_MIN && $1 <= INT_MAX)
+        	addIntOp(OP_PUSHINT, (int)$1);     // stays 32-bit in bytecode
+    	else
+       		addLongLongOp(OP_PUSHLONG, $1);    // 64-bit in bytecode
 	}
-	
+
 	| B256FLOAT   {
 		if(isfinite($1)){
 			addFloatOp(OP_PUSHFLOAT, $1);
 		}else{
-			errorcode = COMPERR_FLOATTOOLARGE;
+			errorcode = COMPERR_NUMBERTOOLARGE;
 			return -1;
 		}
 	}
 
 	| '+' B256INTEGER %prec B256UNARY {
-		 // accept/eat unary plus only for numbers
-		 addLongOp(OP_PUSHLONG, $2);
+    	if ($2 >= INT_MIN && $2 <= INT_MAX)
+        	addIntOp(OP_PUSHINT, (int)$2);
+    	else
+        	addLongLongOp(OP_PUSHLONG, $2);
 	}
 
 	| '+' B256FLOAT %prec B256UNARY {
@@ -1703,7 +1746,7 @@ expr_numeric:
 		if(isfinite($2)){
 			addFloatOp(OP_PUSHFLOAT, $2);
 		}else{
-			errorcode = COMPERR_FLOATTOOLARGE;
+			errorcode = COMPERR_NUMBERTOOLARGE;
 			return -1;
 		}
 	}			
@@ -1722,7 +1765,7 @@ expr_numeric:
 	}
 	| expr '%' %prec B256UNARY {
 		/* expression% is actually a percentage */
-		addLongOp(OP_PUSHLONG, 100);
+		addIntOp(OP_PUSHINT, 100);
 		addOp(OP_DIV);
 	}
 	| expr B256INTDIV expr {
@@ -1761,7 +1804,7 @@ expr_numeric:
 		addIntOp(OP_ARR_GET, v);		// get current value
 		addOp(OP_STACKDUP);				// duplicate (1 to save and 1 to increment)
 		addOp(OP_STACKSAVE);			// save original
-		addLongOp(OP_PUSHLONG,1);			// add 1
+		addIntOp(OP_PUSHINT,1);			// add 1
 		addOp(OP_ADD);
 		addIntOp(OP_ARR_SET, v);		// assign new value
 		addOp(OP_STACKUNSAVE);			// put original value on the stack
@@ -1773,7 +1816,7 @@ expr_numeric:
 		addIntOp(OP_ARR_GET, v);		// get current value
 		addOp(OP_STACKDUP);				// duplicate (1 to save and 1 to increment)
 		addOp(OP_STACKSAVE);			// save original
-		addLongOp(OP_PUSHLONG,-1);		// subtract 1
+		addIntOp(OP_PUSHINT,-1);		// subtract 1
 		addOp(OP_ADD);
 		addIntOp(OP_ARR_SET, v);		// assign new value
 		addOp(OP_STACKUNSAVE);			// put original value on the stack
@@ -1783,7 +1826,7 @@ expr_numeric:
 		int v = varnumber[--nvarnumber];
 		addOp(OP_STACKDUP2);			// save indexes
 		addIntOp(OP_ARR_GET, v);		// get current value
-		addLongOp(OP_PUSHLONG,1);			// add 1
+		addIntOp(OP_PUSHINT,1);			// add 1
 		addOp(OP_ADD);
 		addOp(OP_STACKDUP);				// duplicate (1 to set 1 to stack)
 		addOp(OP_STACKSAVE);			// save 1 to stack
@@ -1795,7 +1838,7 @@ expr_numeric:
 		int v = varnumber[--nvarnumber];
 		addOp(OP_STACKDUP2);			// save indexes
 		addIntOp(OP_ARR_GET, v);		// get current value
-		addLongOp(OP_PUSHLONG,-1);		// subtract 1
+		addIntOp(OP_PUSHINT,-1);		// subtract 1
 		addOp(OP_ADD);
 		addOp(OP_STACKDUP);				// duplicate (1 to set 1 to stack)
 		addOp(OP_STACKSAVE);			// save 1 to stack
@@ -1805,27 +1848,27 @@ expr_numeric:
 	| variable B256ADD1 {
 		addIntOp(OP_VAR_GET,varnumber[--nvarnumber]);
 		addIntOp(OP_VAR_GET,varnumber[nvarnumber]);
-		addLongOp(OP_PUSHLONG,1);
+		addIntOp(OP_PUSHINT,1);
 		addOp(OP_ADD);
 		addIntOp(OP_VAR_SET,varnumber[nvarnumber]);
 	}
 	| variable B256SUB1 {
 		addIntOp(OP_VAR_GET,varnumber[--nvarnumber]);
 		addIntOp(OP_VAR_GET,varnumber[nvarnumber]);
-		addLongOp(OP_PUSHLONG,-1);
+		addIntOp(OP_PUSHINT,-1);
 		addOp(OP_ADD);
 		addIntOp(OP_VAR_SET,varnumber[nvarnumber]);
 	}
 	| B256ADD1 variable {
 		addIntOp(OP_VAR_GET,varnumber[--nvarnumber]);
-		addLongOp(OP_PUSHLONG,1);
+		addIntOp(OP_PUSHINT,1);
 		addOp(OP_ADD);
 		addIntOp(OP_VAR_SET,varnumber[nvarnumber]);
 		addIntOp(OP_VAR_GET,varnumber[nvarnumber]);
 	}
 	| B256SUB1 variable {
 		addIntOp(OP_VAR_GET,varnumber[--nvarnumber]);
-		addLongOp(OP_PUSHLONG,-1);
+		addIntOp(OP_PUSHINT,-1);
 		addOp(OP_ADD);
 		addIntOp(OP_VAR_SET,varnumber[nvarnumber]);
 		addIntOp(OP_VAR_GET,varnumber[nvarnumber]);
@@ -1835,17 +1878,17 @@ expr_numeric:
 	| B256LENGTH '(' expr ')' { addOp(OP_LENGTH); }
 	| B256ASC '(' expr ')' { addOp(OP_ASC); }
 	| B256INSTR '(' expr ',' expr ')' {
-		addLongOp(OP_PUSHLONG, 1);	// start
-		addLongOp(OP_PUSHLONG, 0);	// case sens flag
+		addIntOp(OP_PUSHINT, 1);	// start
+		addIntOp(OP_PUSHINT, 0);	// case sens flag
 		addOp(OP_INSTR);
 	}
 	| B256INSTR '(' expr ',' expr ',' expr ')' {
-		addLongOp(OP_PUSHLONG, 0);	// case sens flag
+		addIntOp(OP_PUSHINT, 0);	// case sens flag
 		addOp(OP_INSTR);
 	 }
 	| B256INSTR '(' expr ',' expr ',' expr ',' expr')' { addOp(OP_INSTR); }
 	| B256INSTRX '(' expr ',' expr ')' {
-		addLongOp(OP_PUSHLONG, 1);	//start
+		addIntOp(OP_PUSHINT, 1);	//start
 		addOp(OP_INSTRX);
 	}
 	| B256INSTRX '(' expr ',' expr ',' expr ')' { addOp(OP_INSTRX); }
@@ -1867,7 +1910,7 @@ expr_numeric:
 	| B256RAND args_none { addOp(OP_RAND); }
 				| B256PI args_none { addFloatOp(OP_PUSHFLOAT, 3.14159265358979323846); }
 	| B256BOOLEOF args_none {
-		addLongOp(OP_PUSHLONG, 0);
+		addIntOp(OP_PUSHINT, 0);
 		addOp(OP_EOF);
 	}
 	| B256BOOLEOF '(' expr ')' { addOp(OP_EOF); }
@@ -1881,17 +1924,17 @@ expr_numeric:
 	| B256GRAPHWIDTH args_none { addOp(OP_GRAPHWIDTH); }
 	| B256GRAPHHEIGHT args_none { addOp(OP_GRAPHHEIGHT); }
 	| B256SIZE args_none {
-		addLongOp(OP_PUSHLONG, 0);
+		addIntOp(OP_PUSHINT, 0);
 		addOp(OP_SIZE);
 	}
 	| B256SIZE '(' expr ')' { addOp(OP_SIZE); }
 	| B256KEYPRESSED args_none {
-		addLongOp(OP_PUSHLONG, 0x00);
+		addIntOp(OP_PUSHINT, 0x00);
 		addOp(OP_KEYPRESSED);
 	}
 	| B256KEYPRESSED '(' expr ')' { addOp(OP_KEYPRESSED); }
 	| B256KEY args_none     {
-		addLongOp(OP_PUSHLONG, 0x00);
+		addIntOp(OP_PUSHINT, 0x00);
 		addOp(OP_KEY);
 	}
 	| B256KEY '(' expr ')'     {
@@ -1905,7 +1948,7 @@ expr_numeric:
 	| B256CLICKB args_none { addOp(OP_CLICKB); }
 	| B256PIXEL '(' expr ',' expr ')' { addOp(OP_PIXEL); }
 	| B256RGB '(' expr ',' expr ',' expr ')' {
-		addLongOp(OP_PUSHLONG,255);	// a
+		addIntOp(OP_PUSHINT,255);	// a
 		addOp(OP_RGB);
 	}
 	| B256RGB '(' expr ',' expr ',' expr ',' expr ')' {
@@ -1915,7 +1958,7 @@ expr_numeric:
 	| B256GETBRUSHCOLOR args_none { addOp(OP_GETBRUSHCOLOR); }
 	| B256GETPENWIDTH args_none { addOp(OP_GETPENWIDTH); }
 	| B256SPRITECOLLIDE '(' expr ',' expr ',' expr ')' { addOp(OP_SPRITECOLLIDE); }
-	| B256SPRITECOLLIDE '(' expr ',' expr ')' { addLongOp(OP_PUSHLONG, 0); addOp(OP_SPRITECOLLIDE); }
+	| B256SPRITECOLLIDE '(' expr ',' expr ')' { addIntOp(OP_PUSHINT, 0); addOp(OP_SPRITECOLLIDE); }
 	| B256SPRITEX '(' expr ')' { addOp(OP_SPRITEX); }
 	| B256SPRITEY '(' expr ')' { addOp(OP_SPRITEY); }
 	| B256SPRITEH '(' expr ')' { addOp(OP_SPRITEH); }
@@ -1925,60 +1968,60 @@ expr_numeric:
 	| B256SPRITES '(' expr ')' { addOp(OP_SPRITES); }
 	| B256SPRITEO '(' expr ')' { addOp(OP_SPRITEO); }
 	| B256DBROW args_none {
-		addLongOp(OP_PUSHLONG,0);	// default db number
-		addLongOp(OP_PUSHLONG,0);	// default dbset number
+		addIntOp(OP_PUSHINT,0);	// default db number
+		addIntOp(OP_PUSHINT,0);	// default dbset number
 		addOp(OP_DBROW);
 	}
 	| B256DBROW '(' expr ')' {
-		addLongOp(OP_PUSHLONG,0);	// default dbset number
+		addIntOp(OP_PUSHINT,0);	// default dbset number
 		addOp(OP_DBROW);
 	}
 	| B256DBROW '(' expr ',' expr')' {
 		addOp(OP_DBROW);
 	}
 	| B256DBINT '(' expr ')' {
-		addLongOp(OP_PUSHLONG,0);	// default db number
+		addIntOp(OP_PUSHINT,0);	// default db number
 		addOp(OP_STACKSWAP);
-		addLongOp(OP_PUSHLONG,0);	// default dbset number
+		addIntOp(OP_PUSHINT,0);	// default dbset number
 		addOp(OP_STACKSWAP);
 		addOp(OP_DBINT); }
 	| B256DBINT '(' expr ',' expr ')' {
-		addLongOp(OP_PUSHLONG,0);	// default dbset number
+		addIntOp(OP_PUSHINT,0);	// default dbset number
 		addOp(OP_STACKSWAP);
 		addOp(OP_DBINT); }
 	| B256DBINT '(' expr ',' expr ',' expr ')' {
 		addOp(OP_DBINT); }
 	| B256DBFLOAT '(' expr ')' {
-		addLongOp(OP_PUSHLONG,0);	// default db number
+		addIntOp(OP_PUSHINT,0);	// default db number
 		addOp(OP_STACKSWAP);
-		addLongOp(OP_PUSHLONG,0);	// default dbset number
+		addIntOp(OP_PUSHINT,0);	// default dbset number
 		addOp(OP_STACKSWAP);
 		addOp(OP_DBFLOAT); }
 	| B256DBFLOAT '(' expr ',' expr ')' {
-		addLongOp(OP_PUSHLONG,0);	// default dbset number
+		addIntOp(OP_PUSHINT,0);	// default dbset number
 		addOp(OP_STACKSWAP);
 		addOp(OP_DBFLOAT); }
 	| B256DBFLOAT '(' expr ',' expr ',' expr ')' {
 		addOp(OP_DBFLOAT); }
 	| B256DBNULL '(' expr ')' {
-		addLongOp(OP_PUSHLONG,0);	// default db number
+		addIntOp(OP_PUSHINT,0);	// default db number
 		addOp(OP_STACKSWAP);
-		addLongOp(OP_PUSHLONG,0);	// default dbset number
+		addIntOp(OP_PUSHINT,0);	// default dbset number
 		addOp(OP_STACKSWAP);
 		addOp(OP_DBNULL); }
 	| B256DBNULL '(' expr ',' expr ')' {
-		addLongOp(OP_PUSHLONG,0);	// default dbset number
+		addIntOp(OP_PUSHINT,0);	// default dbset number
 		addOp(OP_STACKSWAP);
 		addOp(OP_DBNULL); }
 	| B256DBNULL '(' expr ',' expr ',' expr ')' {
 		addOp(OP_DBNULL); }
 	| B256LASTERROR args_none { addOp(OP_LASTERROR); }
 	| B256LASTERRORLINE args_none { addOp(OP_LASTERRORLINE); }
-	| B256NETDATA args_none { addLongOp(OP_PUSHLONG, 0); addOp(OP_NETDATA); }
+	| B256NETDATA args_none { addIntOp(OP_PUSHINT, 0); addOp(OP_NETDATA); }
 	| B256NETDATA '(' expr ')' { addOp(OP_NETDATA); }
 	| B256PORTIN '(' expr ')' { addOp(OP_PORTIN); }
 	| B256COUNT '(' expr ',' expr ')' {
-		addLongOp(OP_PUSHLONG, 0); // case sens flag
+		addIntOp(OP_PUSHINT, 0); // case sens flag
 		addOp(OP_COUNT);
 	 }
 	| B256COUNT '(' expr ',' expr ',' expr ')' { addOp(OP_COUNT); }
@@ -1989,67 +2032,85 @@ expr_numeric:
 	| B256TEXTWIDTH '(' expr ',' expr ')' { addOp(OP_TEXTBOXWIDTH); }
 	| B256TEXTHEIGHT args_none { addOp(OP_TEXTHEIGHT); }
 	| B256TEXTHEIGHT '(' expr ',' expr ')' { addOp(OP_TEXTBOXHEIGHT); }
-	| B256READBYTE args_none { addLongOp(OP_PUSHLONG, 0); addOp(OP_READBYTE); }
+	| B256READBYTE args_none { addIntOp(OP_PUSHINT, 0); addOp(OP_READBYTE); }
 	| B256READBYTE '(' expr ')' { addOp(OP_READBYTE); }
 	| B256FREEDB args_none { addOp(OP_FREEDB); }
 	| B256FREEDBSET args_none {
-		addLongOp(OP_PUSHLONG,0);	// default db number
+		addIntOp(OP_PUSHINT,0);	// default db number
 		addOp(OP_FREEDBSET);
 	}
 	| B256FREEDBSET '(' expr ')' { addOp(OP_FREEDBSET); }
 	| B256FREEFILE args_none { addOp(OP_FREEFILE); }
 	| B256FREENET args_none { addOp(OP_FREENET); }
-	| B256VERSION args_none { addLongOp(OP_PUSHLONG, VERSIONSIGNATURE); }
+	| B256VERSION args_none { addIntOp(OP_PUSHINT, VERSIONSIGNATURE); }
 	| B256CONFIRM '(' expr ')' {
-		addLongOp(OP_PUSHLONG,-1);	// no default
+		addIntOp(OP_PUSHINT,-1);	// no default
 		addOp(OP_CONFIRM);
 	}
 	| B256CONFIRM '(' expr ',' expr ')' {
 		addOp(OP_CONFIRM);
 	}
 	| B256FROMBINARY '(' expr ')' {
-		addLongOp(OP_PUSHLONG,2);	// radix
+		addIntOp(OP_PUSHINT,2);	// radix
 		addOp(OP_FROMRADIX);
 	}
 	| B256FROMHEX '(' expr ')' {
-		addLongOp(OP_PUSHLONG,16);	// radix
+		addIntOp(OP_PUSHINT,16);	// radix
 		addOp(OP_FROMRADIX);
 	}
 	| B256FROMOCTAL '(' expr ')' {
-		addLongOp(OP_PUSHLONG,8);	// radix
+		addIntOp(OP_PUSHINT,8);	// radix
 		addOp(OP_FROMRADIX);
 	}
 	| B256FROMRADIX '(' expr ',' expr ')' {
 		addOp(OP_FROMRADIX);
 	}
 	| B256BINCONST {
-		addLongOp(OP_PUSHLONG,strtoul($1, NULL, 2));
+		errno = 0;
+		unsigned long long v = strtoull($1, NULL, 2);
+		if (errno == ERANGE) { errorcode = COMPERR_NUMBERTOOLARGE; return -1; }
+		if (v <= 0xFFFFFFFFULL)
+    		addIntOp(OP_PUSHINT, (int)v);
+		else
+    		addLongLongOp(OP_PUSHLONG, (long long)v);
 		if(errno==ERANGE){
-			errorcode = COMPERR_INTEGERTOOLARGE;
+			errorcode = COMPERR_NUMBERTOOLARGE;
 			return -1;
 		}
 		//addStringOp(OP_PUSHSTRING, $1);
-		//addLongOp(OP_PUSHLONG,2);	// radix
+		//addIntOp(OP_PUSHINT,2);	// radix
 		//addOp(OP_FROMRADIX);
 	}
 	| B256HEXCONST {
-		addLongOp(OP_PUSHLONG,strtoul($1, NULL, 16));
+		errno = 0;
+		unsigned long long v = strtoull($1, NULL, 16);
+		if (errno == ERANGE) { errorcode = COMPERR_NUMBERTOOLARGE; return -1; }
+		if (v <= 0xFFFFFFFFULL)
+    		addIntOp(OP_PUSHINT, (int)v);
+		else
+    		addLongLongOp(OP_PUSHLONG, (long long)v);
 		if(errno==ERANGE){
-			errorcode = COMPERR_INTEGERTOOLARGE;
+			errorcode = COMPERR_NUMBERTOOLARGE;
 			return -1;
 		}
 		//addStringOp(OP_PUSHSTRING, $1);
-		//addLongOp(OP_PUSHLONG,16);	// radix
+		//addIntOp(OP_PUSHINT,16);	// radix
 		//addOp(OP_FROMRADIX);
 	}
 	| B256OCTCONST {
-		addLongOp(OP_PUSHLONG,strtoul($1, NULL, 8));
+		errno = 0;
+		unsigned long long v = strtoull($1, NULL, 8);
+		if (errno == ERANGE) { errorcode = COMPERR_NUMBERTOOLARGE; return -1; }
+		if (v <= 0xFFFFFFFFULL)
+    		addIntOp(OP_PUSHINT, (int)v);
+		else
+    		addLongLongOp(OP_PUSHLONG, (long long)v);
 		if(errno==ERANGE){
-			errorcode = COMPERR_INTEGERTOOLARGE;
+			errorcode = COMPERR_NUMBERTOOLARGE;
 			return -1;
 		}
 		//addStringOp(OP_PUSHSTRING, $1);
-		//addLongOp(OP_PUSHLONG,8);	// radix
+		//addIntOp(OP_PUSHINT,8);	// radix
 		//addOp(OP_FROMRADIX);
 	}
 	| B256WAVLENGTH args_none { addOp(OP_WAVLENGTH); }
@@ -2064,8 +2125,9 @@ expr_numeric:
 		addOp(OP_SOUNDPLAYER);
 	}
 	| B256SOUNDPLAYER '(' args_ee ')' {
-		addLongOp(OP_PUSHLONG, 2);	// 2 columns
-		addLongOp(OP_PUSHLONG, 1);	// 1 row
+		addIntOp(OP_PUSHINT, 2);	// 2 columns (this)
+		addIntOp(OP_PUSHINT, 1);	// 1 row
+		addIntOp(OP_PUSHINT, 2);	// 2 columns (max)
 		addOp(OP_LIST2ARRAY);
 		addOp(OP_SOUNDPLAYER);
 	}
@@ -2076,21 +2138,21 @@ expr_numeric:
 		addOp(OP_SOUNDPOSITION);
 	}
 	| B256SOUNDPOSITION args_none {
-		addLongOp(OP_PUSHLONG, -1);
+		addIntOp(OP_PUSHINT, -1);
 		addOp(OP_SOUNDPOSITION);
 	}
 	| B256SOUNDSTATE '(' expr ')' {
 		addOp(OP_SOUNDSTATE);
 	}
 	| B256SOUNDSTATE args_none {
-		addLongOp(OP_PUSHLONG, -1);
+		addIntOp(OP_PUSHINT, -1);
 		addOp(OP_SOUNDSTATE);
 	}
 	| B256SOUNDLENGTH '(' expr ')' {
 		addOp(OP_SOUNDLENGTH);
 	}
 	| B256SOUNDLENGTH args_none {
-		addLongOp(OP_PUSHLONG, -1);
+		addIntOp(OP_PUSHINT, -1);
 		addOp(OP_SOUNDLENGTH);
 	}
 	| B256SOUNDSAMPLERATE args_none {
@@ -2106,7 +2168,7 @@ expr_numeric:
 		addOp(OP_IMAGEPIXEL);
 	}
 	| B256ROUND '(' expr ')' {
-		addLongOp(OP_PUSHLONG,0);		// default decimal places
+		addIntOp(OP_PUSHINT,0);		// default decimal places
 		addOp(OP_ROUND);
 	}
 	| B256ROUND '(' args_ee ')' {
@@ -2141,30 +2203,30 @@ expr_string:
 	| B256UPPER '(' expr ')' { addOp(OP_UPPER); }
 	| B256LOWER '(' expr ')' { addOp(OP_LOWER); }
 	| B256MID '(' expr ',' expr ',' expr ')' { addOp(OP_MID); }
-	| B256MIDX '(' expr ',' expr ')' { addLongOp(OP_PUSHLONG, 1); addOp(OP_MIDX); }
+	| B256MIDX '(' expr ',' expr ')' { addIntOp(OP_PUSHINT, 1); addOp(OP_MIDX); }
 	| B256MIDX '(' expr ',' expr ',' expr ')' { addOp(OP_MIDX); }
 	| B256LEFT '(' expr ',' expr ')' { addOp(OP_LEFT); }
 	| B256RIGHT '(' expr ',' expr ')' { addOp(OP_RIGHT); }
-	| B256READ args_none { addLongOp(OP_PUSHLONG, 0); addOp(OP_READ); }
+	| B256READ args_none { addIntOp(OP_PUSHINT, 0); addOp(OP_READ); }
 	| B256READ '(' expr ')' { addOp(OP_READ); }
-	| B256READLINE args_none { addLongOp(OP_PUSHLONG, 0); addOp(OP_READLINE); }
+	| B256READLINE args_none { addIntOp(OP_PUSHINT, 0); addOp(OP_READLINE); }
 	| B256READLINE '(' expr ')' { addOp(OP_READLINE); }
 	| B256CURRENTDIR args_none { addOp(OP_CURRENTDIR); }
 	| B256DBSTRING '(' expr ')' {
-		addLongOp(OP_PUSHLONG,0);	// default db number
+		addIntOp(OP_PUSHINT,0);	// default db number
 		addOp(OP_STACKSWAP);
-		addLongOp(OP_PUSHLONG,0);	// default dbset number
+		addIntOp(OP_PUSHINT,0);	// default dbset number
 		addOp(OP_STACKSWAP);
 		addOp(OP_DBSTRING); }
 	| B256DBSTRING '(' expr ',' expr ')' {
-		addLongOp(OP_PUSHLONG,0);	// default dbset number
+		addIntOp(OP_PUSHINT,0);	// default dbset number
 		addOp(OP_STACKSWAP);
 		addOp(OP_DBSTRING); }
 	| B256DBSTRING '(' expr ',' expr ',' expr ')' {
 		addOp(OP_DBSTRING); }
 	| B256LASTERRORMESSAGE args_none { addOp(OP_LASTERRORMESSAGE); }
 	| B256LASTERROREXTRA args_none { addOp(OP_LASTERROREXTRA); }
-	| B256NETREAD  args_none { addLongOp(OP_PUSHLONG, 0); addOp(OP_NETREAD); }
+	| B256NETREAD  args_none { addIntOp(OP_PUSHINT, 0); addOp(OP_NETREAD); }
 	| B256NETREAD '(' expr ')' { addOp(OP_NETREAD); }
 	| B256NETADDRESS args_none { addOp(OP_NETADDRESS); }
 	| B256MD5 '(' expr ')' { addOp(OP_MD5); }
@@ -2174,7 +2236,7 @@ expr_string:
 	| B256DIR '(' expr ')' { addOp(OP_DIR); }
 	| B256DIR args_none { addStringOp(OP_PUSHSTRING, ""); addOp(OP_DIR); }
 	| B256REPLACE '(' expr ',' expr ',' expr ')' {
-		addLongOp(OP_PUSHLONG, 0);	// case sens flag
+		addIntOp(OP_PUSHINT, 0);	// case sens flag
 		addOp(OP_REPLACE);
 	}
 	| B256REPLACE '(' expr ',' expr ',' expr ',' expr ')' { addOp(OP_REPLACE); }
@@ -2200,15 +2262,15 @@ expr_string:
 	| B256PROMPT '(' expr ',' expr ')' {
 		addOp(OP_PROMPT); }
 	| B256TOBINARY '(' expr ')' {
-		addLongOp(OP_PUSHLONG,2);	// radix
+		addIntOp(OP_PUSHINT,2);	// radix
 		addOp(OP_TORADIX);
 	}
 	| B256TOHEX '(' expr ')' {
-		addLongOp(OP_PUSHLONG,16);	// radix
+		addIntOp(OP_PUSHINT,16);	// radix
 		addOp(OP_TORADIX);
 	}
 	| B256TOOCTAL '(' expr ')' {
-		addLongOp(OP_PUSHLONG,8);	// radix
+		addIntOp(OP_PUSHINT,8);	// radix
 		addOp(OP_TORADIX);
 	}
 	| B256TORADIX '(' expr ',' expr ')' {
@@ -2228,8 +2290,9 @@ expr_string:
 		addOp(OP_SOUNDLOAD);
 	}
 	| B256SOUNDLOAD '(' args_ee ')' {
-		addLongOp(OP_PUSHLONG, 2);	// 2 columns
-		addLongOp(OP_PUSHLONG, 1);	// 1 row
+		addIntOp(OP_PUSHINT, 2);	// 2 columns (this)
+		addIntOp(OP_PUSHINT, 1);	// 1 row
+		addIntOp(OP_PUSHINT, 2);	// 2 columns (max)
 		addOp(OP_LIST2ARRAY);
 		addOp(OP_SOUNDLOAD);
 	}
@@ -2240,26 +2303,26 @@ expr_string:
 		addOp(OP_IMAGENEW);
 	}
 	| B256IMAGENEW '(' expr ',' expr ')' {
-		addLongOp(OP_PUSHLONG, 0x00);
+		addIntOp(OP_PUSHINT, 0x00);
 		addOp(OP_IMAGENEW);
 	}
 	| B256IMAGELOAD '(' expr ')' {
 		addOp(OP_IMAGELOAD);
 	}
 	| B256IMAGECOPY '(' expr ',' expr ',' expr ',' expr ',' expr ')' {
-		addLongOp(OP_PUSHLONG, 5); //number of arguments
+		addIntOp(OP_PUSHINT, 5); //number of arguments
 		addOp(OP_IMAGECOPY);
 	}
 	| B256IMAGECOPY '(' expr ',' expr ',' expr ',' expr ')' {
-		addLongOp(OP_PUSHLONG, 4); //number of arguments
+		addIntOp(OP_PUSHINT, 4); //number of arguments
 		addOp(OP_IMAGECOPY);
 	}
 	| B256IMAGECOPY '(' expr ')' {
-		addLongOp(OP_PUSHLONG, 1); //number of arguments
+		addIntOp(OP_PUSHINT, 1); //number of arguments
 		addOp(OP_IMAGECOPY);
 	}
 	| B256IMAGECOPY args_none {
-		addLongOp(OP_PUSHLONG, 0); //number of arguments
+		addIntOp(OP_PUSHINT, 0); //number of arguments
 		addOp(OP_IMAGECOPY);
 	}
 	| B256LJUST '(' args_ee ')' {
@@ -2311,7 +2374,7 @@ expr_dataelement:
 	}
 	
 	| B256EXPLODE args_ee {
-		addLongOp(OP_PUSHLONG, 0);	// case sensitive flag
+		addIntOp(OP_PUSHINT, 0);	// case sensitive flag
 		addOp(OP_EXPLODE);
 	}
 	| B256EXPLODE args_eee {
@@ -2322,7 +2385,7 @@ expr_dataelement:
 	}
 
 	| B256GETSLICE args_eeee {
-		addLongOp(OP_PUSHLONG, SLICE_ALL);	// get everything
+		addIntOp(OP_PUSHINT, SLICE_ALL);	// get everything
 		addOp(OP_GETSLICE);
 	}
 	| B256GETSLICE args_eeeee {
@@ -2406,16 +2469,13 @@ statement:
 	| linestmt
 	| maintoolbarvisiblestmt
 	| mapstmt
-	| B256MKDIR expr {
-		addOp(OP_MKDIR);
-	}
+	| maximizestmt
 	| netclosestmt
 	| netconnectstmt
 	| netlistenstmt
 	| netwritestmt
 	| nextstmt
 	| offerrorstmt
-	| onstopstmt
 	| onerrorstmt
 	| openstmt
 	| outputvisiblestmt
@@ -2431,7 +2491,6 @@ statement:
 	| printeronstmt
 	| printerpagestmt
 	| printstmt
-	| printatstmt
 	| putslicestmt
 	| rectstmt
 	| redimstmt
@@ -2439,9 +2498,6 @@ statement:
 	| regexminimalstmt
 	| resetstmt
 	| returnstmt
-	| B256RMDIR expr {
-		addOp(OP_RMDIR);
-	}
 	| saystmt
 	| seedstmt
 	| seekstmt
@@ -2470,7 +2526,6 @@ statement:
 	| spritepolystmt
 	| spriteshowstmt
 	| spriteslicestmt
-	| spritetextstmt
 	| stampstmt
 	| subroutinestmt
 	| systemstmt
@@ -2826,74 +2881,89 @@ mapstmt: 	B256MAP functionvariables {
 			}
 
 dimstmt: 	B256DIM array_element {
-				addIntOp(OP_DIM, varnumber[--nvarnumber]);
+				// No FILL clause: zero-fill by default (0, or "" for a $ name).
+				int v = varnumber[--nvarnumber];
+				addIntOp(OP_DIM, v);
+				addDefaultFill(v, 1);
 			}
 			| B256DIM array_element B256FILL expr {
 				addOp(OP_STACKTOPTO2);
 				addIntOp(OP_DIM, varnumber[--nvarnumber]);
-				addLongOp(OP_PUSHLONG, 1);		// fill all elements
+				addIntOp(OP_PUSHINT, 1);		// fill all elements
 				addIntOp(OP_ARRAYFILL, varnumber[nvarnumber]);
 			}
 			| B256DIM variable_a expr {
-				addLongOp(OP_PUSHLONG, 1);
+				int v = varnumber[--nvarnumber];
+				addIntOp(OP_PUSHINT, 1);
 				addOp(OP_STACKSWAP);
-				addIntOp(OP_DIM, varnumber[--nvarnumber]);
+				addIntOp(OP_DIM, v);
+				addDefaultFill(v, 1);
 			}
 			| B256DIM variable_a expr B256FILL expr {
 				addOp(OP_STACKSWAP);
-				addLongOp(OP_PUSHLONG, 1);
+				addIntOp(OP_PUSHINT, 1);
 				addOp(OP_STACKSWAP);
 				addIntOp(OP_DIM, varnumber[--nvarnumber]);
-				addLongOp(OP_PUSHLONG, 1);		// fill all elements
+				addIntOp(OP_PUSHINT, 1);		// fill all elements
 				addIntOp(OP_ARRAYFILL, varnumber[nvarnumber]);
 			}
 			| B256DIM variable_a args_ee {
-				addIntOp(OP_DIM, varnumber[--nvarnumber]);
+				int v = varnumber[--nvarnumber];
+				addIntOp(OP_DIM, v);
+				addDefaultFill(v, 1);
 			}
 			| B256DIM variable_a args_ee B256FILL expr {
 				addOp(OP_STACKTOPTO2);
 				addIntOp(OP_DIM, varnumber[--nvarnumber]);
-				addLongOp(OP_PUSHLONG, 1);		// fill all elements
+				addIntOp(OP_PUSHINT, 1);		// fill all elements
 				addIntOp(OP_ARRAYFILL, varnumber[nvarnumber]);
 			}
 			| B256DIM variable_a '=' expr {
 				addIntOp(OP_VAR_SET, varnumber[--nvarnumber]);
 			}
 			| B256DIM variable_a B256FILL expr {
-				addLongOp(OP_PUSHLONG, 1);
+				addIntOp(OP_PUSHINT, 1);
 				addIntOp(OP_ARRAYFILL, varnumber[--nvarnumber]);
 			}
 			;
 
 redimstmt:	B256REDIM array_element {
-				addIntOp(OP_REDIM, varnumber[--nvarnumber]);
+				// No FILL clause: zero-fill the *new* elements only (mode 0), so a
+				// grown array keeps the values it already held.
+				int v = varnumber[--nvarnumber];
+				addIntOp(OP_REDIM, v);
+				addDefaultFill(v, 0);
 			}
 			| B256REDIM array_element B256FILL expr {
 				addOp(OP_STACKTOPTO2);
 				addIntOp(OP_REDIM, varnumber[--nvarnumber]);
-				addLongOp(OP_PUSHLONG, 0);		// just fill unassigned
+				addIntOp(OP_PUSHINT, 0);		// just fill unassigned
 				addIntOp(OP_ARRAYFILL, varnumber[nvarnumber]);
 			}
 			| B256REDIM variable_a expr {
-				addLongOp(OP_PUSHLONG, 1);
+				int v = varnumber[--nvarnumber];
+				addIntOp(OP_PUSHINT, 1);
 				addOp(OP_STACKSWAP);
-				addIntOp(OP_REDIM, varnumber[--nvarnumber]);
+				addIntOp(OP_REDIM, v);
+				addDefaultFill(v, 0);
 			}
 			| B256REDIM variable_a expr B256FILL expr {
 				addOp(OP_STACKSWAP);
-				addLongOp(OP_PUSHLONG, 1);
+				addIntOp(OP_PUSHINT, 1);
 				addOp(OP_STACKSWAP);
 				addIntOp(OP_REDIM, varnumber[--nvarnumber]);
-				addLongOp(OP_PUSHLONG, 0);		// just fill unassigned
+				addIntOp(OP_PUSHINT, 0);		// just fill unassigned
 				addIntOp(OP_ARRAYFILL, varnumber[nvarnumber]);
 			}
 			| B256REDIM variable_a args_ee {
-				addIntOp(OP_REDIM, varnumber[--nvarnumber]);
+				int v = varnumber[--nvarnumber];
+				addIntOp(OP_REDIM, v);
+				addDefaultFill(v, 0);
 			}
 			| B256REDIM variable_a args_ee B256FILL expr {
 				addOp(OP_STACKTOPTO2);
 				addIntOp(OP_REDIM, varnumber[--nvarnumber]);
-				addLongOp(OP_PUSHLONG, 0);		// just fill unassigned
+				addIntOp(OP_PUSHINT, 0);		// just fill unassigned
 				addIntOp(OP_ARRAYFILL, varnumber[nvarnumber]);
 			}
 			;
@@ -2914,11 +2984,11 @@ clearstmt:	B256CLS args_none {
 			}
 			| B256CLG args_none {
 				// push the color clear if there are no arguments
-				addLongOp(OP_PUSHLONG, 0x00);
-				//addLongOp(OP_PUSHLONG, 0x00);
-				//addLongOp(OP_PUSHLONG, 0x00);
-				//addLongOp(OP_PUSHLONG, 0x00);
-				//addLongOp(OP_PUSHLONG, 0x00);
+				addIntOp(OP_PUSHINT, 0x00);
+				//addIntOp(OP_PUSHINT, 0x00);
+				//addIntOp(OP_PUSHINT, 0x00);
+				//addIntOp(OP_PUSHINT, 0x00);
+				//addIntOp(OP_PUSHINT, 0x00);
 				//addOp(OP_RGB);
 				addOp(OP_CLG);
 			}
@@ -2964,7 +3034,7 @@ arrayelementassign:
 				int v = varnumber[--nvarnumber];
 				addOp(OP_STACKDUP2);			// save indexes
 				addIntOp(OP_ARR_GET, v);		// get current value
-				addLongOp(OP_PUSHLONG,1);			// add 1
+				addIntOp(OP_PUSHINT,1);			// add 1
 				addOp(OP_ADD);
 				addIntOp(OP_ARR_SET, v);		// assign new value
 			}
@@ -2973,7 +3043,7 @@ arrayelementassign:
 				int v = varnumber[--nvarnumber];
 				addOp(OP_STACKDUP2);			// save indexes
 				addIntOp(OP_ARR_GET, v);		// get current value
-				addLongOp(OP_PUSHLONG,-1);		// subtract 1
+				addIntOp(OP_PUSHINT,-1);		// subtract 1
 				addOp(OP_ADD);
 				addIntOp(OP_ARR_SET, v);		// assign new value
 			}
@@ -3046,7 +3116,7 @@ arrayelementassign:
 /* assign an entire array in one statement */
 arrayassign:
 			variable_a B256FILL expr {
-				addLongOp(OP_PUSHLONG, 1);		// fill all elements
+				addIntOp(OP_PUSHINT, 1);		// fill all elements
 				addIntOp(OP_ARRAYFILL, varnumber[--nvarnumber]);
 			}
 			;
@@ -3058,13 +3128,13 @@ assign:
 			}
 			| variable B256ADD1 {
 				addIntOp(OP_VAR_GET,varnumber[--nvarnumber]);
-				addLongOp(OP_PUSHLONG,1);
+				addIntOp(OP_PUSHINT,1);
 				addOp(OP_ADD);
 				addIntOp(OP_VAR_SET,varnumber[nvarnumber]);
 			}
 			| variable B256SUB1 {
 				addIntOp(OP_VAR_GET,varnumber[--nvarnumber]);
-				addLongOp(OP_PUSHLONG,-1);
+				addIntOp(OP_PUSHINT,-1);
 				addOp(OP_ADD);
 				addIntOp(OP_VAR_SET,varnumber[nvarnumber]);
 			}
@@ -3113,7 +3183,7 @@ forstmt: 	B256FOR variable '=' expr B256TO expr {
 				int var =  varnumber[--nvarnumber];
 				newIf(linenumber, IFTABLETYPEFOR, var);
 				// push default step 1 and exit address
-				addLongOp(OP_PUSHLONG, 1); //step
+				addIntOp(OP_PUSHINT, 1); //step
 				addIntOp(OP_PUSHLABEL, getInternalSymbol(iftableid[numifs-1],INTERNALSYMBOLEXIT));
 				addIntOp(OP_FOR, var);
 			}
@@ -3212,12 +3282,12 @@ gosubstmt:	B256GOSUB variable {
 			;
 
 callstmt:	B256CALL variable '(' ')' {
-				addLongOp(OP_PUSHLONG, 0); //push number of arguments passed to compare with SUBROUTINE definition
+				addIntOp(OP_PUSHINT, 0); //push number of arguments passed to compare with SUBROUTINE definition
 				addIntOp(OP_CALLSUBROUTINE, varnumber[--nvarnumber]);
 				addIntOp(OP_CURRLINE, filenumber * 0x1000000 + linenumber);
 			}
 			| B256CALL variable '(' callexprlist ')' {
-					addLongOp(OP_PUSHLONG, listlen); //push number of arguments passed to compare with SUBROUTINE definition
+					addIntOp(OP_PUSHINT, listlen); //push number of arguments passed to compare with SUBROUTINE definition
 					addIntOp(OP_CALLSUBROUTINE, varnumber[--nvarnumber]);
 					addIntOp(OP_CURRLINE, filenumber * 0x1000000 + linenumber);
 			}
@@ -3239,12 +3309,6 @@ onerrorstmt:
 			| B256ONERROR variable '(' callexprlist ')' {
 				errorcode = COMPERR_ONERRORCALL;
 				return -1;
-			}
-			;
-
-onstopstmt:
-			B256ONSTOP variable '(' ')' {
-				addIntOp(OP_ONSTOPCALL, varnumber[--nvarnumber]);
 			}
 			;
 
@@ -3280,7 +3344,7 @@ colorstmt:	B256SETCOLOR expr {
 				addOp(OP_SETCOLOR);
 			}
 			| B256SETCOLOR args_eee {
-				addLongOp(OP_PUSHLONG, 255);
+				addIntOp(OP_PUSHINT, 255);
 				addOp(OP_RGB);
 				addOp(OP_STACKDUP);
 				addOp(OP_SETCOLOR);
@@ -3289,9 +3353,9 @@ colorstmt:	B256SETCOLOR expr {
 			;
 
 soundstmt:	B256SOUND args_ee {
-				addLongOp(OP_PUSHLONG, 2);	// 2 columns (this)
-				addLongOp(OP_PUSHLONG, 1);	// 1 row
-				addLongOp(OP_PUSHLONG, 2);	// 2 columns (max)
+				addIntOp(OP_PUSHINT, 2);	// 2 columns (this)
+				addIntOp(OP_PUSHINT, 1);	// 1 row
+				addIntOp(OP_PUSHINT, 2);	// 2 columns (max)
 				addOp(OP_LIST2ARRAY);
 				addOp(OP_SOUND);
 			}
@@ -3301,12 +3365,13 @@ soundstmt:	B256SOUND args_ee {
 			;
 
 soundplaystmt:	B256SOUNDPLAY args_none {
-		addLongOp(OP_PUSHLONG, -1);
+		addIntOp(OP_PUSHINT, -1);
 		addOp(OP_SOUNDPLAY);
 	}
 	| B256SOUNDPLAY args_ee {
-		addLongOp(OP_PUSHLONG, 2);	// 2 columns
-		addLongOp(OP_PUSHLONG, 1);	// 1 row
+		addIntOp(OP_PUSHINT, 2);	// 2 columns (this)
+		addIntOp(OP_PUSHINT, 1);	// 1 row
+		addIntOp(OP_PUSHINT, 2);	// 2 columns (max)
 		addOp(OP_LIST2ARRAY);
 		addOp(OP_SOUNDPLAY);
 	}
@@ -3322,7 +3387,7 @@ soundpausestmt:  B256SOUNDPAUSE expr {
 		addOp(OP_SOUNDPAUSE);
 	}
 	| B256SOUNDPAUSE args_none {
-		addLongOp(OP_PUSHLONG, -1);
+		addIntOp(OP_PUSHINT, -1);
 		addOp(OP_SOUNDPAUSE);
 	}
 	;
@@ -3331,7 +3396,7 @@ soundplayeroffstmt:  B256SOUNDPLAYEROFF expr {
 		addOp(OP_SOUNDPLAYEROFF);
 	}
 	| B256SOUNDPLAYEROFF args_none {
-		addLongOp(OP_PUSHLONG, -1);
+		addIntOp(OP_PUSHINT, -1);
 		addOp(OP_SOUNDPLAYEROFF);
 	}
 	;
@@ -3340,7 +3405,7 @@ soundstopstmt:  B256SOUNDSTOP expr {
 		addOp(OP_SOUNDSTOP);
 	}
 	| B256SOUNDSTOP args_none {
-		addLongOp(OP_PUSHLONG, -1);
+		addIntOp(OP_PUSHINT, -1);
 		addOp(OP_SOUNDSTOP);
 	}
 	;
@@ -3350,14 +3415,14 @@ soundwaitstmt:
 		addOp(OP_SOUNDWAIT);
 	}
 	| B256SOUNDWAIT args_none {
-		addLongOp(OP_PUSHLONG, -1);
+		addIntOp(OP_PUSHINT, -1);
 		addOp(OP_SOUNDWAIT);
 	}
 	;
 
 soundwaveformstmt:  
 	B256SOUNDWAVEFORM expr {
-		addLongOp(OP_PUSHLONG,0);
+		addIntOp(OP_PUSHINT,0);
 		addOp(OP_SOUNDWAVEFORM);
 	}
 	| B256SOUNDWAVEFORM args_ee {
@@ -3397,11 +3462,12 @@ soundfadestmt:  B256SOUNDFADE args_eeee {
 		addOp(OP_SOUNDFADE);
 	}
 	| B256SOUNDFADE args_eee {
-		addOp(OP_STACKTOPTO2);
-		addOp(OP_STACKTOPTO2);
-		addLongOp(OP_PUSHLONG, -1);
-		addOp(OP_STACKSWAP);
-		addOp(OP_STACKSWAP2);
+		// documented 3-arg form: soundfade player#, volume, seconds
+		// -- identical to the 4-arg form with the trailing delay omitted,
+		// so just default delay to 0. (The previous code instead inserted
+		// player#=-1 at the front, shifting the args to volume/seconds/delay
+		// so `soundfade id, vol, secs` was misread and no fade was heard.)
+		addIntOp(OP_PUSHINT, 0);	// default delay = 0 seconds
 		addOp(OP_SOUNDFADE);
 	}
 	;
@@ -3410,7 +3476,7 @@ soundseekstmt:  B256SOUNDSEEK args_ee {
 		addOp(OP_SOUNDSEEK);
 	}
 	| B256SOUNDSEEK expr {
-		addLongOp(OP_PUSHLONG, -1);
+		addIntOp(OP_PUSHINT, -1);
 		addOp(OP_STACKSWAP);
 		addOp(OP_SOUNDSEEK);
 	}
@@ -3420,7 +3486,7 @@ soundvolumestmt:  B256SOUNDVOLUME args_ee {
 		addOp(OP_SOUNDVOLUME);
 	}
 	| B256SOUNDVOLUME expr {
-		addLongOp(OP_PUSHLONG, -1);
+		addIntOp(OP_PUSHINT, -1);
 		addOp(OP_STACKSWAP);
 		addOp(OP_SOUNDVOLUME);
 	}
@@ -3430,7 +3496,7 @@ soundloopstmt:  B256SOUNDLOOP args_ee {
 		addOp(OP_SOUNDLOOP);
 	}
 	| B256SOUNDLOOP expr {
-		addLongOp(OP_PUSHLONG, -1);
+		addIntOp(OP_PUSHINT, -1);
 		addOp(OP_STACKSWAP);
 		addOp(OP_SOUNDLOOP);
 	}
@@ -3461,33 +3527,33 @@ ellipsestmt:
 
 arcstmt:
 	B256ARC args_eeeee {
-		addLongOp(OP_PUSHLONG, 5); // with bounding circle
+		addIntOp(OP_PUSHINT, 5); // with bounding circle
 		addOp(OP_ARC);
 	}
 	| B256ARC args_eeeeee {
-		addLongOp(OP_PUSHLONG, 6); // with bounding rectangle
+		addIntOp(OP_PUSHINT, 6); // with bounding rectangle
 		addOp(OP_ARC);
 	}
 	;
 
 chordstmt:
 	B256CHORD args_eeeee {
-		addLongOp(OP_PUSHLONG, 5); // with bounding circle
+		addIntOp(OP_PUSHINT, 5); // with bounding circle
 		addOp(OP_CHORD);
 	}
 	| B256CHORD args_eeeeee {
-		addLongOp(OP_PUSHLONG, 6); // with bounding rectangle
+		addIntOp(OP_PUSHINT, 6); // with bounding rectangle
 		addOp(OP_CHORD);
 	}
 	;
 
 piestmt:
 	B256PIE args_eeeee {
-		addLongOp(OP_PUSHLONG, 5); // with bounding circle
+		addIntOp(OP_PUSHINT, 5); // with bounding circle
 		addOp(OP_PIE);
 	}
 	| B256PIE args_eeeeee {
-		addLongOp(OP_PUSHLONG, 6); // with bounding rectangle
+		addIntOp(OP_PUSHINT, 6); // with bounding rectangle
 		addOp(OP_PIE);
 	}
 	;
@@ -3510,7 +3576,7 @@ textstmt:
 		addOp(OP_TEXT);
 	}
 	| B256TEXT args_eeeee {
-		addLongOp(OP_PUSHLONG, 0); // flags
+		addIntOp(OP_PUSHINT, 0); // flags
 		addOp(OP_TEXTBOX);
 	}
 	| B256TEXT args_eeeeee {
@@ -3523,18 +3589,18 @@ fontstmt:
 		addOp(OP_FONT);
 	}
 	| B256FONT args_eee {
-		addLongOp(OP_PUSHLONG, 0); // font is not italic
+		addIntOp(OP_PUSHINT, 0); // font is not italic
 		addOp(OP_FONT);
 	}
 	| B256FONT args_ee {
-		addLongOp(OP_PUSHLONG, -1); // default weight
-		addLongOp(OP_PUSHLONG, 0); // font is not italic
+		addIntOp(OP_PUSHINT, -1); // default weight
+		addIntOp(OP_PUSHINT, 0); // font is not italic
 		addOp(OP_FONT);
 	}
 	| B256FONT expr {
-		addLongOp(OP_PUSHLONG, -1); // default size
-		addLongOp(OP_PUSHLONG, -1); // default weight
-		addLongOp(OP_PUSHLONG, 0); // font is not italic
+		addIntOp(OP_PUSHINT, -1); // default size
+		addIntOp(OP_PUSHINT, -1); // default weight
+		addIntOp(OP_PUSHINT, 0); // font is not italic
 		addOp(OP_FONT);
 	}
 	;
@@ -3580,53 +3646,53 @@ stampstmt: 	B256STAMP args_eeeee {
 			;
 
 openstmt:	B256OPEN expr  {
-				addLongOp(OP_PUSHLONG, 0); // file number zero
+				addIntOp(OP_PUSHINT, 0); // file number zero
 				addOp(OP_STACKSWAP);
-				addLongOp(OP_PUSHLONG, 0); // not binary
+				addIntOp(OP_PUSHINT, 0); // not binary
 				addOp(OP_OPEN);
 			}
 			| B256OPEN args_ee {
-				addLongOp(OP_PUSHLONG, 0); // not binary
+				addIntOp(OP_PUSHINT, 0); // not binary
 				addOp(OP_OPEN);
 			}
 			| B256OPENB expr  {
-				addLongOp(OP_PUSHLONG, 0); // file number zero
+				addIntOp(OP_PUSHINT, 0); // file number zero
 				addOp(OP_STACKSWAP);
-				addLongOp(OP_PUSHLONG, 1); // binary
+				addIntOp(OP_PUSHINT, 1); // binary
 				addOp(OP_OPEN);
 			}
 			| B256OPENB args_ee {
-				addLongOp(OP_PUSHLONG, 1); // binary
+				addIntOp(OP_PUSHINT, 1); // binary
 				addOp(OP_OPEN);
 			}
 			| B256OPENSERIAL args_ee {
-				addLongOp(OP_PUSHLONG, 9600); // baud
-				addLongOp(OP_PUSHLONG, 8); // data bits
-				addLongOp(OP_PUSHLONG, 1); // stop bits
-				addLongOp(OP_PUSHLONG, 0); // parity
-				addLongOp(OP_PUSHLONG, 0); // flow
+				addIntOp(OP_PUSHINT, 9600); // baud
+				addIntOp(OP_PUSHINT, 8); // data bits
+				addIntOp(OP_PUSHINT, 1); // stop bits
+				addIntOp(OP_PUSHINT, 0); // parity
+				addIntOp(OP_PUSHINT, 0); // flow
 				addOp(OP_OPENSERIAL);
 			}
 			| B256OPENSERIAL args_eee {
-				addLongOp(OP_PUSHLONG, 8); // data bits
-				addLongOp(OP_PUSHLONG, 1); // stop bits
-				addLongOp(OP_PUSHLONG, 0); // parity
-				addLongOp(OP_PUSHLONG, 0); // flow
+				addIntOp(OP_PUSHINT, 8); // data bits
+				addIntOp(OP_PUSHINT, 1); // stop bits
+				addIntOp(OP_PUSHINT, 0); // parity
+				addIntOp(OP_PUSHINT, 0); // flow
 				addOp(OP_OPENSERIAL);
 			}
 			| B256OPENSERIAL args_eeee {
-				addLongOp(OP_PUSHLONG, 1); // stop bits
-				addLongOp(OP_PUSHLONG, 0); // parity
-				addLongOp(OP_PUSHLONG, 0); // flow
+				addIntOp(OP_PUSHINT, 1); // stop bits
+				addIntOp(OP_PUSHINT, 0); // parity
+				addIntOp(OP_PUSHINT, 0); // flow
 				addOp(OP_OPENSERIAL);
 			}
 			| B256OPENSERIAL args_eeeee {
-				addLongOp(OP_PUSHLONG, 0); // parity
-				addLongOp(OP_PUSHLONG, 0); // flow
+				addIntOp(OP_PUSHINT, 0); // parity
+				addIntOp(OP_PUSHINT, 0); // flow
 				addOp(OP_OPENSERIAL);
 			}
 			| B256OPENSERIAL args_eeeeee {
-				addLongOp(OP_PUSHLONG, 0); // flow
+				addIntOp(OP_PUSHINT, 0); // flow
 				addOp(OP_OPENSERIAL);
 			}
 			| B256OPENSERIAL args_eeeeeee {
@@ -3635,7 +3701,7 @@ openstmt:	B256OPEN expr  {
 			;
 
 writestmt:	B256WRITE expr {
-				addLongOp(OP_PUSHLONG, 0);  // file number zero
+				addIntOp(OP_PUSHINT, 0);  // file number zero
 				addOp(OP_STACKSWAP);
 				addOp(OP_WRITE);
 			}
@@ -3646,7 +3712,7 @@ writestmt:	B256WRITE expr {
 
 writelinestmt:
 			B256WRITELINE expr {
-				addLongOp(OP_PUSHLONG, 0);
+				addIntOp(OP_PUSHINT, 0);
 				addOp(OP_STACKSWAP);
 				addOp(OP_WRITELINE);
 			}
@@ -3657,7 +3723,7 @@ writelinestmt:
 
 writebytestmt:
 			B256WRITEBYTE expr {
-				addLongOp(OP_PUSHLONG, 0);
+				addIntOp(OP_PUSHINT, 0);
 				addOp(OP_STACKSWAP);
 				addOp(OP_WRITEBYTE);
 			}
@@ -3667,7 +3733,7 @@ writebytestmt:
 			;
 
 closestmt:	B256CLOSE args_none {
-				addLongOp(OP_PUSHLONG, 0);
+				addIntOp(OP_PUSHINT, 0);
 				addOp(OP_CLOSE);
 			}
 			| B256CLOSE expr {
@@ -3676,7 +3742,7 @@ closestmt:	B256CLOSE args_none {
 			;
 
 resetstmt:	B256RESET args_none {
-				addLongOp(OP_PUSHLONG, 0);
+				addIntOp(OP_PUSHINT, 0);
 				addOp(OP_RESET);
 			}
 			| B256RESET expr {
@@ -3690,7 +3756,7 @@ seedstmt:	B256SEED expr {
 			;
 			
 seekstmt:	B256SEEK expr {
-				addLongOp(OP_PUSHLONG, 0);
+				addIntOp(OP_PUSHINT, 0);
 				addOp(OP_STACKSWAP);
 				addOp(OP_SEEK);
 			}
@@ -3700,94 +3766,94 @@ seekstmt:	B256SEEK expr {
 			;
 
 inputstmt:	B256INPUT args_ev {
-				addLongOp(OP_PUSHLONG,T_UNASSIGNED);
+				addIntOp(OP_PUSHINT,T_UNASSIGNED);
 				addOp(OP_INPUT);
 				addIntOp(OP_VAR_SET, varnumber[--nvarnumber]);
 			}
 			| B256INPUT variable  {
 				addStringOp(OP_PUSHSTRING, "");
-				addLongOp(OP_PUSHLONG,T_UNASSIGNED);
+				addIntOp(OP_PUSHINT,T_UNASSIGNED);
 				addOp(OP_INPUT);
 				addIntOp(OP_VAR_SET, varnumber[--nvarnumber]);
 			}
 			| B256INPUT args_ea {
 				addOp(OP_STACKTOPTO2); addOp(OP_STACKTOPTO2);		// bring prompt to top
-				addLongOp(OP_PUSHLONG,T_UNASSIGNED);
+				addIntOp(OP_PUSHINT,T_UNASSIGNED);
 				addOp(OP_INPUT);
 				addIntOp(OP_ARR_SET, varnumber[--nvarnumber]);
 			}
 			| B256INPUT array_element {
 				addStringOp(OP_PUSHSTRING, "");
-				addLongOp(OP_PUSHLONG,T_UNASSIGNED);
+				addIntOp(OP_PUSHINT,T_UNASSIGNED);
 				addOp(OP_INPUT);
 				addIntOp(OP_ARR_SET, varnumber[--nvarnumber]);
 			}
 			| B256INPUTSTRING args_ev {
-				addLongOp(OP_PUSHLONG,T_STRING);
+				addIntOp(OP_PUSHINT,T_STRING);
 				addOp(OP_INPUT);
 				addIntOp(OP_VAR_SET, varnumber[--nvarnumber]);
 			}
 			| B256INPUTSTRING variable  {
 				addStringOp(OP_PUSHSTRING, "");
-				addLongOp(OP_PUSHLONG,T_STRING);
+				addIntOp(OP_PUSHINT,T_STRING);
 				addOp(OP_INPUT);
 				addIntOp(OP_VAR_SET, varnumber[--nvarnumber]);
 			}
 			| B256INPUTSTRING args_ea {
 				addOp(OP_STACKTOPTO2); addOp(OP_STACKTOPTO2);		// bring prompt to top
-				addLongOp(OP_PUSHLONG,T_STRING);
+				addIntOp(OP_PUSHINT,T_STRING);
 				addOp(OP_INPUT);
 				addIntOp(OP_ARR_SET, varnumber[--nvarnumber]);
 			}
 			| B256INPUTSTRING array_element {
 				addStringOp(OP_PUSHSTRING, "");
-				addLongOp(OP_PUSHLONG,T_STRING);
+				addIntOp(OP_PUSHINT,T_STRING);
 				addOp(OP_INPUT);
 				addIntOp(OP_ARR_SET, varnumber[--nvarnumber]);
 			}
 			| B256INPUTINT args_ev {
-				addLongOp(OP_PUSHLONG,T_INT);
+				addIntOp(OP_PUSHINT,T_INT);
 				addOp(OP_INPUT);
 				addIntOp(OP_VAR_SET, varnumber[--nvarnumber]);
 			}
 			| B256INPUTINT variable  {
 				addStringOp(OP_PUSHSTRING, "");
-				addLongOp(OP_PUSHLONG,T_INT);
+				addIntOp(OP_PUSHINT,T_INT);
 				addOp(OP_INPUT);
 				addIntOp(OP_VAR_SET, varnumber[--nvarnumber]);
 			}
 			| B256INPUTINT args_ea {
 				addOp(OP_STACKTOPTO2); addOp(OP_STACKTOPTO2);		// bring prompt to top
-				addLongOp(OP_PUSHLONG,T_INT);
+				addIntOp(OP_PUSHINT,T_INT);
 				addOp(OP_INPUT);
 				addIntOp(OP_ARR_SET, varnumber[--nvarnumber]);
 			}
 			| B256INPUTINT array_element {
 				addStringOp(OP_PUSHSTRING, "");
-				addLongOp(OP_PUSHLONG,T_INT);
+				addIntOp(OP_PUSHINT,T_INT);
 				addOp(OP_INPUT);
 				addIntOp(OP_ARR_SET, varnumber[--nvarnumber]);
 			}
 			| B256INPUTFLOAT args_ev {
-				addLongOp(OP_PUSHLONG,T_FLOAT);
+				addIntOp(OP_PUSHINT,T_FLOAT);
 				addOp(OP_INPUT);
 				addIntOp(OP_VAR_SET, varnumber[--nvarnumber]);
 			}
 			| B256INPUTFLOAT variable  {
 				addStringOp(OP_PUSHSTRING, "");
-				addLongOp(OP_PUSHLONG,T_FLOAT);
+				addIntOp(OP_PUSHINT,T_FLOAT);
 				addOp(OP_INPUT);
 				addIntOp(OP_VAR_SET, varnumber[--nvarnumber]);
 			}
 			| B256INPUTFLOAT args_ea {
 				addOp(OP_STACKTOPTO2); addOp(OP_STACKTOPTO2);		// bring prompt to top
-				addLongOp(OP_PUSHLONG,T_FLOAT);
+				addIntOp(OP_PUSHINT,T_FLOAT);
 				addOp(OP_INPUT);
 				addIntOp(OP_ARR_SET, varnumber[--nvarnumber]);
 			}
 			| B256INPUTFLOAT array_element {
 				addStringOp(OP_PUSHSTRING, "");
-				addLongOp(OP_PUSHLONG,T_FLOAT);
+				addIntOp(OP_PUSHINT,T_FLOAT);
 				addOp(OP_INPUT);
 				addIntOp(OP_ARR_SET, varnumber[--nvarnumber]);
 			}
@@ -3795,56 +3861,45 @@ inputstmt:	B256INPUT args_ev {
 
 printstmt:
 			B256PRINT args_none {
-				addLongOp(OP_PUSHLONG, 0); //push number of arguments passed
-				addLongOp(OP_PUSHLONG, 1); // need NL
+				addIntOp(OP_PUSHINT, 0); //push number of arguments passed
+				addIntOp(OP_PUSHINT, 1); // need NL
 				addOp(OP_PRINT);
 			}
 			| B256PRINT expr B256SEMICOLON {
-				addLongOp(OP_PUSHLONG, 1); //push number of arguments passed
-				addLongOp(OP_PUSHLONG, 0); // suppress NL
+				addIntOp(OP_PUSHINT, 1); //push number of arguments passed
+				addIntOp(OP_PUSHINT, 0); // suppress NL
 				addOp(OP_PRINT);
 			}
 			| B256PRINT listitems {
-				addLongOp(OP_PUSHLONG, listlen); //push number of arguments passed
-				addLongOp(OP_PUSHLONG, 1); // need NL
+				addIntOp(OP_PUSHINT, listlen); //push number of arguments passed
+				addIntOp(OP_PUSHINT, 1); // need NL
 				addOp(OP_PRINT);
 			}
 			| B256PRINT '(' listitems ')' {
-				addLongOp(OP_PUSHLONG, listlen); //push number of arguments passed
-				addLongOp(OP_PUSHLONG, 1); // need NL
+				addIntOp(OP_PUSHINT, listlen); //push number of arguments passed
+				addIntOp(OP_PUSHINT, 1); // need NL
 				addOp(OP_PRINT);
 			}
 			| '?' args_none {
-				addLongOp(OP_PUSHLONG, 0); //push number of arguments passed
-				addLongOp(OP_PUSHLONG, 1); // need NL
+				addIntOp(OP_PUSHINT, 0); //push number of arguments passed
+				addIntOp(OP_PUSHINT, 1); // need NL
 				addOp(OP_PRINT);
 			}
 			| '?' expr B256SEMICOLON {
-				addLongOp(OP_PUSHLONG, 1); //push number of arguments passed
-				addLongOp(OP_PUSHLONG, 0); // suppress NL
+				addIntOp(OP_PUSHINT, 1); //push number of arguments passed
+				addIntOp(OP_PUSHINT, 0); // suppress NL
 				addOp(OP_PRINT);
 			}
 			| '?' listitems {
-				addLongOp(OP_PUSHLONG, listlen); //push number of arguments passed
-				addLongOp(OP_PUSHLONG, 1); // need NL
+				addIntOp(OP_PUSHINT, listlen); //push number of arguments passed
+				addIntOp(OP_PUSHINT, 1); // need NL
 				addOp(OP_PRINT);
 			}
 			| '?' '(' listitems ')' {
-				addLongOp(OP_PUSHLONG, listlen); //push number of arguments passed
-				addLongOp(OP_PUSHLONG, 1); // need NL
+				addIntOp(OP_PUSHINT, listlen); //push number of arguments passed
+				addIntOp(OP_PUSHINT, 1); // need NL
 				addOp(OP_PRINT);
 			}			;
-
-printatstmt:
-			B256PRINTAT args_ee {
-				addStringOp(OP_PUSHSTRING, "");
-				addOp(OP_PRINTAT);
-			}
-			| B256PRINTAT args_eee {
-				addOp(OP_PRINTAT);
-			}
-			;
-
 
 wavpausestmt:
 			B256WAVPAUSE args_none {
@@ -3888,15 +3943,15 @@ putslicestmt:
 imgloadstmt:
 			B256IMGLOAD args_eee
 			{
-				addLongOp(OP_PUSHLONG, 1); // scale
+				addIntOp(OP_PUSHINT, 1); // scale
 				addOp(OP_STACKSWAP);
-				addLongOp(OP_PUSHLONG, 0); // rotate
+				addIntOp(OP_PUSHINT, 0); // rotate
 				addOp(OP_STACKSWAP);
 				addOp(OP_IMGLOAD);
 			}
 			| B256IMGLOAD args_eeee
 			{
-				addLongOp(OP_PUSHLONG, 0); // rotate
+				addIntOp(OP_PUSHINT, 0); // rotate
 				addOp(OP_STACKSWAP);
 				addOp(OP_IMGLOAD);
 			}
@@ -3929,36 +3984,26 @@ spritepolystmt:
 				addOp(OP_SPRITEPOLY);
 			}
 			;
-			
-spritetextstmt:
-			B256SPRITETEXT args_ee {
-				addLongOp(OP_PUSHLONG, 0x00);	// clear
-				addOp(OP_SPRITETEXT);
-			}
-			| B256SPRITETEXT args_eee {
-				addOp(OP_SPRITETEXT);
-			}
-			;
 
 spriteplacestmt:
 			B256SPRITEPLACE args_eee
 			{
-				addLongOp(OP_PUSHLONG,3);	// nr of arguments
+				addIntOp(OP_PUSHINT,3);	// nr of arguments
 				addOp(OP_SPRITEPLACE);
 			}
 			| B256SPRITEPLACE args_eeee
 			{
-				addLongOp(OP_PUSHLONG,4);	// nr of arguments
+				addIntOp(OP_PUSHINT,4);	// nr of arguments
 				addOp(OP_SPRITEPLACE);
 			}
 			| B256SPRITEPLACE args_eeeee
 			{
-				addLongOp(OP_PUSHLONG,5);	// nr of arguments
+				addIntOp(OP_PUSHINT,5);	// nr of arguments
 				addOp(OP_SPRITEPLACE);
 			}
 			| B256SPRITEPLACE args_eeeeee
 			{
-					addLongOp(OP_PUSHLONG,6);	// nr of arguments
+					addIntOp(OP_PUSHINT,6);	// nr of arguments
 					addOp(OP_SPRITEPLACE);
 			}
 			;
@@ -3966,19 +4011,19 @@ spriteplacestmt:
 spritemovestmt:
 			B256SPRITEMOVE args_eee
 			{
-				addLongOp(OP_PUSHLONG,3);	// nr of arguments
+				addIntOp(OP_PUSHINT,3);	// nr of arguments
 				addOp(OP_SPRITEMOVE);
 			}
 			| B256SPRITEMOVE args_eeee  {
-				addLongOp(OP_PUSHLONG,4);	// nr of arguments
+				addIntOp(OP_PUSHINT,4);	// nr of arguments
 				addOp(OP_SPRITEMOVE);
 			}
 			| B256SPRITEMOVE args_eeeee {
-				addLongOp(OP_PUSHLONG,5);	// nr of arguments
+				addIntOp(OP_PUSHINT,5);	// nr of arguments
 				addOp(OP_SPRITEMOVE);
 			}
 			| B256SPRITEMOVE args_eeeeee {
-					addLongOp(OP_PUSHLONG,6);	// nr of arguments
+					addIntOp(OP_PUSHINT,6);	// nr of arguments
 					addOp(OP_SPRITEMOVE);
 			}
 			;
@@ -4009,7 +4054,7 @@ changedirstmt:
 
 dbopenstmt:
 			B256DBOPEN expr {
-				addLongOp(OP_PUSHLONG,0);	// default db number
+				addIntOp(OP_PUSHINT,0);	// default db number
 				addOp(OP_STACKSWAP);
 				addOp(OP_DBOPEN);
 			}
@@ -4020,7 +4065,7 @@ dbopenstmt:
 
 dbclosestmt:
 			B256DBCLOSE args_none {
-				addLongOp(OP_PUSHLONG,0);	// default db number
+				addIntOp(OP_PUSHINT,0);	// default db number
 				addOp(OP_DBCLOSE);
 			}
 			| B256DBCLOSE expr {
@@ -4030,7 +4075,7 @@ dbclosestmt:
 
 dbexecutestmt:
 			B256DBEXECUTE expr {
-				addLongOp(OP_PUSHLONG,0);	// default db number
+				addIntOp(OP_PUSHINT,0);	// default db number
 				addOp(OP_STACKSWAP);
 				addOp(OP_DBEXECUTE);
 			}
@@ -4041,14 +4086,14 @@ dbexecutestmt:
 
 dbopensetstmt:
 			B256DBOPENSET expr {
-				addLongOp(OP_PUSHLONG,0);	// default db number
+				addIntOp(OP_PUSHINT,0);	// default db number
 				addOp(OP_STACKSWAP);
-				addLongOp(OP_PUSHLONG,0);	// default dbset number
+				addIntOp(OP_PUSHINT,0);	// default dbset number
 				addOp(OP_STACKSWAP);
 				addOp(OP_DBOPENSET);
 			}
 			| B256DBOPENSET args_ee {
-				addLongOp(OP_PUSHLONG,0);	// default dbset number
+				addIntOp(OP_PUSHINT,0);	// default dbset number
 				addOp(OP_STACKSWAP);
 				addOp(OP_DBOPENSET);
 			}
@@ -4059,12 +4104,12 @@ dbopensetstmt:
 
 dbclosesetstmt:
 			B256DBCLOSESET args_none {
-				addLongOp(OP_PUSHLONG,0);	// default db number
-				addLongOp(OP_PUSHLONG,0);	// default dbset number
+				addIntOp(OP_PUSHINT,0);	// default db number
+				addIntOp(OP_PUSHINT,0);	// default dbset number
 				addOp(OP_DBCLOSESET);
 			}
 			| B256DBCLOSESET expr {
-				addLongOp(OP_PUSHLONG,0);	// default dbset number
+				addIntOp(OP_PUSHINT,0);	// default dbset number
 				addOp(OP_DBCLOSESET);
 			}
 			| B256DBCLOSESET args_ee {
@@ -4074,7 +4119,7 @@ dbclosesetstmt:
 
 netlistenstmt:
 			B256NETLISTEN expr {
-				addLongOp(OP_PUSHLONG, 0);
+				addIntOp(OP_PUSHINT, 0);
 				addOp(OP_STACKSWAP);
 				addOp(OP_NETLISTEN);
 			}
@@ -4085,7 +4130,7 @@ netlistenstmt:
 
 netconnectstmt:
 			B256NETCONNECT args_ee {
-				addLongOp(OP_PUSHLONG, 0);
+				addIntOp(OP_PUSHINT, 0);
 				addOp(OP_STACKTOPTO2);
 				addOp(OP_NETCONNECT);
 			}
@@ -4096,7 +4141,7 @@ netconnectstmt:
 
 netwritestmt:
 			B256NETWRITE expr {
-				addLongOp(OP_PUSHLONG, 0);
+				addIntOp(OP_PUSHINT, 0);
 				addOp(OP_STACKSWAP);
 				addOp(OP_NETWRITE);
 			}
@@ -4107,7 +4152,7 @@ netwritestmt:
 
 netclosestmt:
 			B256NETCLOSE args_none {
-				addLongOp(OP_PUSHLONG, 0);
+				addIntOp(OP_PUSHINT, 0);
 				addOp(OP_NETCLOSE);
 			}
 			| B256NETCLOSE expr {
@@ -4187,6 +4232,12 @@ graphtoolbarvisiblestmt:
 outputtoolbarvisiblestmt:
 			B256OUTPUTTOOLBARVISIBLE expr {
 				addOp(OP_OUTPUTTOOLBARVISIBLE);
+			}
+			;
+
+maximizestmt:
+			B256MAXIMIZE expr {
+				addOp(OP_MAXIMIZE);
 			}
 			;
 			
@@ -4374,7 +4425,7 @@ functionstmt:
 				}
 				//
 				// initialize return variable
-				addLongOp(OP_PUSHLONG, 0);
+				addIntOp(OP_PUSHINT, 0);
 				addIntOp(OP_VAR_SET, functionDefSymbol);
 				//
 				numargs=0;	// clear the list for next function
@@ -4502,22 +4553,22 @@ imagecropstmt:
 
 imageautocropstmt:
 	B256IMAGEAUTOCROP expr {
-		addLongOp(OP_PUSHLONG,1);	// nr of arguments
+		addIntOp(OP_PUSHINT,1);	// nr of arguments
 		addOp(OP_IMAGEAUTOCROP);
 	}
 	| B256IMAGEAUTOCROP args_ee {
-		addLongOp(OP_PUSHLONG,2);	// nr of arguments
+		addIntOp(OP_PUSHINT,2);	// nr of arguments
 		addOp(OP_IMAGEAUTOCROP);
 	}
 	;
 
 imageresizestmt:
 	B256IMAGERESIZE args_eee {
-		addLongOp(OP_PUSHLONG,3);	// nr of arguments
+		addIntOp(OP_PUSHINT,3);	// nr of arguments
 		addOp(OP_IMAGERESIZE);
 	}
 	| B256IMAGERESIZE args_ee {
-		addLongOp(OP_PUSHLONG,2);	// nr of arguments
+		addIntOp(OP_PUSHINT,2);	// nr of arguments
 		addOp(OP_IMAGERESIZE);
 	}
 	;
@@ -4534,19 +4585,19 @@ imagesetpixelstmt:
 
 imagedrawstmt:
 	B256IMAGEDRAW args_eeeeee {
-		addLongOp(OP_PUSHLONG,6);	// nr of arguments
+		addIntOp(OP_PUSHINT,6);	// nr of arguments
 		addOp(OP_IMAGEDRAW);
 	}
 	| B256IMAGEDRAW args_eeeee {
-		addLongOp(OP_PUSHLONG,5);	// nr of arguments
+		addIntOp(OP_PUSHINT,5);	// nr of arguments
 		addOp(OP_IMAGEDRAW);
 	}
 	| B256IMAGEDRAW args_eeee {
-		addLongOp(OP_PUSHLONG,4);	// nr of arguments
+		addIntOp(OP_PUSHINT,4);	// nr of arguments
 		addOp(OP_IMAGEDRAW);
 	}
 	| B256IMAGEDRAW args_eee {
-		addLongOp(OP_PUSHLONG,3);	// nr of arguments
+		addIntOp(OP_PUSHINT,3);	// nr of arguments
 		addOp(OP_IMAGEDRAW);
 	}
 	;
@@ -4554,19 +4605,19 @@ imagedrawstmt:
 imagecenteredstmt:
 	B256IMAGECENTERED args_eeeeee
 	{
-		addLongOp(OP_PUSHLONG,6);	// nr of arguments
+		addIntOp(OP_PUSHINT,6);	// nr of arguments
 		addOp(OP_IMAGECENTERED);
 	}
 	| B256IMAGECENTERED args_eeeee  {
-		addLongOp(OP_PUSHLONG,5);	// nr of arguments
+		addIntOp(OP_PUSHINT,5);	// nr of arguments
 		addOp(OP_IMAGECENTERED);
 	}
 	| B256IMAGECENTERED args_eeee {
-		addLongOp(OP_PUSHLONG,4);	// nr of arguments
+		addIntOp(OP_PUSHINT,4);	// nr of arguments
 		addOp(OP_IMAGECENTERED);
 	}
 	| B256IMAGECENTERED args_eee {
-		addLongOp(OP_PUSHLONG,3);	// nr of arguments
+		addIntOp(OP_PUSHINT,3);	// nr of arguments
 		addOp(OP_IMAGECENTERED);
 	}
 	;
@@ -4576,7 +4627,7 @@ imagetransformedstmt:
 		addOp(OP_IMAGETRANSFORMED);
 	}
 	| B256IMAGETRANSFORMED args_eeeeeeeee {
-		addLongOp(OP_PUSHLONG,1); // opacity
+		addIntOp(OP_PUSHINT,1); // opacity
 		addOp(OP_IMAGETRANSFORMED);
 	}
 	;
@@ -4593,7 +4644,7 @@ imageflipstmt:
 		addOp(OP_IMAGEFLIP);
 	}
 	| B256IMAGEFLIP args_ee {
-		addLongOp(OP_PUSHLONG,0);
+		addIntOp(OP_PUSHINT,0);
 		addOp(OP_IMAGEFLIP);
 	}
 	;

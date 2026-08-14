@@ -1,0 +1,496 @@
+# ==========================================================================
+#  BASIC-256 IMAGE SHOWCASE
+#  A tour of the previously undocumented IMAGE* family of statements and functions.
+#
+#    * Draw a file .......... imgload
+#    * Image resources ...... imageload, imagewidth, imageheight,
+#                             imagedraw, imagecentered
+#    * Change an image ...... imageresize, imagesmooth, imageflip,
+#                             imagerotate, imagecrop, imageautocrop
+#    * Pixels ............... imagepixel, imagenew, imagesetpixel
+#    * Copy / warp / save ... imagecopy, imagetransformed, imgsave
+#
+#  Window is 800 x 600.  The picture in PICFILE is expected to be 400 x 400
+#  and must sit in the same folder as this program.
+#  Every step waits for you to press Enter, so you can read as you go.
+# ==========================================================================
+
+global GW, GH, PICFILE
+GW = 800 : GH = 600
+PICFILE = "lady.png"
+graphsize GW, GH
+fastgraphics
+
+call banner("BASIC-256 Image Showcase")
+
+found = exists(PICFILE)
+if found = false then
+	print "  NOTE: '" + PICFILE + "' was not found next to this program."
+	print "  If the pictures do not appear, put it there or edit PICFILE."
+end if
+
+do
+	call showmenu()
+	input "  Select 1-12: ", sel$
+	choice = int(sel$)
+
+	begin case
+		case choice = 1  : call demoImgload()
+		case choice = 2  : call demoResource()
+		case choice = 3  : call demoImagedraw()
+		case choice = 4  : call demoCentered()
+		case choice = 5  : call demoResize()
+		case choice = 6  : call demoFlipRotate()
+		case choice = 7  : call demoCrop()
+		case choice = 8  : call demoPixelRead()
+		case choice = 9  : call demoPixelWrite()
+		case choice = 10 : call demoCopyTransform()
+		case choice = 11 : call demoSave()
+		case choice = 12 : print "Goodbye!"
+			else         : print "  Please choose a number from 1 to 12."
+	end case
+until choice = 12
+end
+
+
+# --------------------------------------------------------------------------
+#  SCREEN HELPERS  (all sized for the 800 x 600 window)
+# --------------------------------------------------------------------------
+subroutine banner(t$)
+	clg
+	color rgb(20, 24, 40)
+	rect 0, 0, GW, GH
+	color rgb(90, 200, 255)
+	font "Sans", 26, 100
+	text 28, 34, t$
+	color rgb(150, 160, 190)
+	font "Sans", 13, 50
+	text 30, 92,  "A tour of the IMAGE* statements, drawn on this screen."
+	text 30, 116, "Each step waits for Enter in the text area - read as you go."
+	text 30, 156, "Picture file: " + PICFILE + "   (expected 400 x 400)"
+	text 30, 180, "It must sit in the same folder as this program."
+	refresh
+end subroutine
+
+subroutine showmenu()
+	print
+	print "==================== IMAGE MENU ===================="
+	print "  Draw a file to the screen"
+	print "    1.  imgload            - quick draw (centre, scale, rotate)"
+	print "  Load a reusable image resource"
+	print "    2.  imageload / imagewidth / imageheight"
+	print "    3.  imagedraw          - place, scale, mirror, fade"
+	print "    4.  imagecentered      - centre, scale, rotate, fade"
+	print "  Change an image"
+	print "    5.  imageresize / imagesmooth"
+	print "    6.  imageflip / imagerotate"
+	print "    7.  imagecrop / imageautocrop"
+	print "  Work with pixels"
+	print "    8.  imagepixel         - read pixels (mosaic)"
+	print "    9.  imagenew / imagesetpixel - glitch a photo"
+	print "  Copy, warp & save"
+	print "   10.  imagecopy / imagetransformed"
+	print "   11.  imgsave            - save the screen to a file"
+	print "   12.  Quit"
+	print "===================================================="
+end subroutine
+
+# Clear to a dark frame with a title bar.
+# Layout: title band y 0..48, drawing area y 56..536, caption strip y 536..600.
+subroutine frame(title$)
+	clg
+	color rgb(18, 20, 34)
+	rect 0, 0, GW, GH
+	color rgb(90, 200, 255)
+	font "Sans", 18, 100
+	text 20, 14, title$
+	color rgb(40, 44, 66)
+	line 16, 48, GW - 16, 48
+	refresh
+end subroutine
+
+# Two-line caption in a strip along the bottom (64 px tall)
+subroutine caption(a$, b$)
+	color rgb(18, 20, 34)
+	rect 0, GH - 64, GW, 64
+	color rgb(40, 44, 66)
+	line 16, GH - 64, GW - 16, GH - 64
+	color rgb(160, 210, 120)
+	font "Sans", 14, 100
+	text 20, GH - 56, a$
+	color rgb(150, 160, 190)
+	font "Sans", 12, 50
+	text 20, GH - 32, b$
+	refresh
+end subroutine
+
+# Wait for the user so they can read the current step
+subroutine waitgo()
+	input "  [Enter] = next step... ", zz$
+end subroutine
+
+# Load the picture and resize it to be "targeth" pixels tall; return the id
+function fitpic$(targeth)
+	id$ = imageload(PICFILE)
+	sc = targeth / imageheight(id$)
+	imageresize id$, int(imagewidth(id$) * sc), int(targeth)
+	fitpic$ = id$
+end function
+
+
+# --------------------------------------------------------------------------
+#  1. imgload  - draw an image FILE straight to the screen
+# --------------------------------------------------------------------------
+subroutine demoImgload()
+	call frame("1. imgload - draw a file straight to the screen")
+	print
+	print "  imgload draws an image FILE onto the screen in one step -"
+	print "  no resource variable needed. The point you give is the CENTRE."
+
+	call caption("imgload x, y, file$", "Full size (400x400), centred at (400,280). It fits the window as-is.")
+	imgload 400, 280, PICFILE
+	refresh
+	call waitgo()
+
+	call frame("1. imgload - with a scale factor")
+	call caption("imgload x, y, scale, file$", "The third value scales it: 0.50 means half size (200 px).")
+	imgload 400, 290, 0.50, PICFILE
+	refresh
+	call waitgo()
+
+	call frame("1. imgload - with scale AND rotation")
+	call caption("imgload x, y, scale, angle, file$", "The fourth value rotates, in radians (0.44 is about 25 degrees).")
+	imgload 400, 290, 0.50, 0.44, PICFILE
+	refresh
+	call waitgo()
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  2. imageload / imagewidth / imageheight  - a reusable resource
+# --------------------------------------------------------------------------
+subroutine demoResource()
+	call frame("2. imageload - load once, reuse it")
+	img$ = imageload(PICFILE)
+	w = imagewidth(img$)
+	h = imageheight(img$)
+	print
+	print "  img$ = imageload(file$) returns a resource you can draw again"
+	print "  and again without re-reading the file from disk."
+	print "  imagewidth(img$)  = " + w
+	print "  imageheight(img$) = " + h
+
+	call caption("imagedraw img$, x, y", "Loaded " + w + "x" + h + " px; here drawn at natural size (no scaling).")
+	imagedraw img$, int((GW - w) / 2), 70
+	refresh
+	call waitgo()
+	unload img$
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  3. imagedraw  - position, scale, mirror, fade
+# --------------------------------------------------------------------------
+subroutine demoImagedraw()
+	img$ = imageload(PICFILE)
+
+	call frame("3. imagedraw - the same image at different sizes")
+	call caption("imagedraw img$, x, y, w, h", "Give any width and height to stretch or shrink the picture.")
+	imagedraw img$, 40, 70, 150, 150
+	imagedraw img$, 220, 70, 240, 240
+	imagedraw img$, 490, 70, 300, 300
+	refresh
+	call waitgo()
+
+	call frame("3. imagedraw - a negative size mirrors")
+	call caption("imagedraw img$, x, y, -w, h", "Negative width flips left-right; negative height flips top-bottom.")
+	imagedraw img$, 80, 90, 300, 300
+	imagedraw img$, 420, 90, -300, 300
+	refresh
+	call waitgo()
+
+	call frame("3. imagedraw - with opacity")
+	call caption("imagedraw img$, x, y, w, h, opacity", "The last value (0..1) fades it - here two copies overlap.")
+	imagedraw img$, 160, 70, 340, 340, 1.0
+	imagedraw img$, 320, 130, 340, 340, 0.4
+	refresh
+	call waitgo()
+	unload img$
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  4. imagecentered  - anchored at the middle, easy rotation
+# --------------------------------------------------------------------------
+subroutine demoCentered()
+	img$ = imageload(PICFILE)
+
+	call frame("4. imagecentered - anchored at its middle")
+	call caption("imagecentered img$, x, y, scale", "(x,y) is the CENTRE, not a corner. Scale 0.8 leaves a margin.")
+	imagecentered img$, 400, 290, 0.8
+	refresh
+	call waitgo()
+
+	call frame("4. imagecentered - rotate about the centre")
+	call caption("imagecentered img$, x, y, scale, angle", "Angle in radians; it spins around that centre point.")
+	imagecentered img$, 400, 290, 0.8, 0.6
+	refresh
+	call waitgo()
+
+	call frame("4. imagecentered - a ring of small copies")
+	call caption("... , scale, angle, opacity", "Centre-anchoring makes copies fan out neatly around a point.")
+	for k = 0 to 7
+		ang = k * 2 * pi / 8
+		px = 400 + 170 * cos(ang)
+		py = 285 + 170 * sin(ang)
+		imagecentered img$, px, py, 0.16, ang, 0.9
+	next k
+	refresh
+	call waitgo()
+	unload img$
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  5. imageresize / imagesmooth  - thumbnails, fast vs smooth
+# --------------------------------------------------------------------------
+subroutine demoResize()
+	call frame("5. imageresize + imagesmooth - make thumbnails")
+	print
+	print "  imageresize changes the resource itself (in place)."
+	print "  imagesmooth true/false picks smooth vs fast (blocky) scaling."
+
+	imagesmooth false
+	a$ = imageload(PICFILE)
+	imageresize a$, 90, 90
+
+	imagesmooth true
+	b$ = imageload(PICFILE)
+	imageresize b$, 90, 90
+
+	imagesmooth false                    # draw both without extra smoothing
+	call caption("imageresize img$, w, h", "Both shrunk to 90x90, then blown up. Left = fast, right = smooth.")
+	imagedraw a$, 120, 120, 280, 280
+	imagedraw b$, 440, 120, 280, 280
+	color rgb(150, 160, 190) : font "Sans", 12, 50
+	text 120, 410, "imagesmooth false"
+	text 440, 410, "imagesmooth true"
+	refresh
+	call waitgo()
+	print "  Tip: imageresize img$, 0.25 resizes by a scale factor instead."
+	unload a$ : unload b$
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  6. imageflip / imagerotate  - transform the resource in place
+# --------------------------------------------------------------------------
+subroutine demoFlipRotate()
+	call frame("6. imageflip - mirror the resource")
+	call caption("imageflip img$, horiz, vert", "Two booleans pick the axis. Here horizontal (left-right).")
+	a$ = fitpic$(380)
+	imageflip a$, true, false
+	imagedraw a$, int((GW - imagewidth(a$)) / 2), 60, imagewidth(a$), imageheight(a$)
+	refresh
+	call waitgo()
+
+	call frame("6. imageflip - vertical")
+	call caption("imageflip img$, false, true", "The second boolean flips top-to-bottom (upside down).")
+	b$ = fitpic$(380)
+	imageflip b$, false, true
+	imagedraw b$, int((GW - imagewidth(b$)) / 2), 60, imagewidth(b$), imageheight(b$)
+	refresh
+	call waitgo()
+
+	call frame("6. imagerotate - rotate the resource")
+	call caption("imagerotate img$, radians", "The canvas grows so nothing is clipped. Here about 30 degrees.")
+	c$ = fitpic$(330)
+	imagerotate c$, pi / 6
+	imagedraw c$, int((GW - imagewidth(c$)) / 2), 56, imagewidth(c$), imageheight(c$)
+	refresh
+	call waitgo()
+	unload a$ : unload b$ : unload c$
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  7. imagecrop / imageautocrop
+# --------------------------------------------------------------------------
+subroutine demoCrop()
+	call frame("7. imagecrop - keep only a rectangle")
+	print
+	print "  imagecrop img$, x, y, w, h  trims the resource to that box,"
+	print "  measured in the image's own pixels."
+	img$ = imageload(PICFILE)
+	imagecrop img$, 110, 60, 150, 160          # face region (approx, in 400px image)
+	cw = imagewidth(img$) : ch = imageheight(img$)
+	dh = 400 : dw = int(cw * dh / ch)
+	call caption("imagecrop img$, x, y, w, h", "Cut to a " + cw + "x" + ch + " box around the face, then drawn larger.")
+	imagedraw img$, int((GW - dw) / 2), 60, dw, dh
+	refresh
+	call waitgo()
+	unload img$
+
+	call frame("7. imageautocrop - trim a solid-colour border")
+	bord = rgb(30, 120, 200)
+	canvas$ = imagenew(520, 440, bord)
+	small$ = fitpic$(300)
+	setgraph canvas$                     # redirect drawing onto the image
+	imagedraw small$, int((520 - imagewidth(small$)) / 2), int((440 - imageheight(small$)) / 2), imagewidth(small$), imageheight(small$)
+	setgraph ""                          # draw to the screen again
+	call caption("Before imageautocrop", "A picture sitting inside a solid blue border.")
+	imagedraw canvas$, int((GW - 520) / 2), 56, 520, 440
+	refresh
+	call waitgo()
+
+	imageautocrop canvas$, bord
+	call frame("7. imageautocrop - after")
+	nw = imagewidth(canvas$) : nh = imageheight(canvas$)
+	call caption("imageautocrop img$, colour", "The blue border is gone; only differing pixels remain (" + nw + "x" + nh + ").")
+	imagedraw canvas$, int((GW - nw) / 2), 60, nw, nh
+	refresh
+	call waitgo()
+	unload canvas$ : unload small$
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  8. imagepixel  - read the colour of any pixel (build a mosaic)
+# --------------------------------------------------------------------------
+subroutine demoPixelRead()
+	call frame("8. imagepixel - read the colour of any pixel")
+	print
+	print "  imagepixel(img$, x, y) returns the colour at that pixel."
+	print "  Here we sample a grid and paint big blocks - a mosaic."
+	img$ = imageload(PICFILE)
+	w = imagewidth(img$) : h = imageheight(img$)
+
+	cols = 48
+	block = int((GH - 116) / cols)       # square blocks that fit the drawing area
+	if block < 1 then block = 1
+	rows = int(cols * h / w)
+	mw = block * cols : mh = block * rows
+	ox = int((GW - mw) / 2)
+	oy = int(52 + ((GH - 116) - mh) / 2)
+
+	call caption("c = imagepixel(img$, x, y)", "Sampling a " + cols + "x" + rows + " grid; each block is one sampled colour.")
+	for gy = 0 to rows - 1
+		for gx = 0 to cols - 1
+			sx = int((gx + 0.5) * w / cols)
+			sy = int((gy + 0.5) * h / rows)
+			color imagepixel(img$, sx, sy)
+			rect ox + gx * block, oy + gy * block, block + 1, block + 1
+		next gx
+		refresh
+	next gy
+	call waitgo()
+	unload img$
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  9. imagenew / imagesetpixel  - rebuild a photo with a glitch effect
+# --------------------------------------------------------------------------
+subroutine demoPixelWrite()
+	call frame("9. imagenew + imagesetpixel - glitch a photo")
+	print
+	print "  imagenew(w, h) makes a blank image, imagesetpixel writes one"
+	print "  pixel, and imagepixel reads one. Together they can rebuild a"
+	print "  photo any way we like - here a horizontal-scramble 'glitch'."
+
+	src$ = imageload(PICFILE)
+	imageresize src$, 240, 240            # work small so the pixel loop is quick
+	w = imagewidth(src$) : h = imageheight(src$)
+	dst$ = imagenew(w, h, rgb(0, 0, 0))
+
+	call caption("imagesetpixel dst, x, y, imagepixel(src, sx, sy)", "Rebuilding " + w + "x" + h + " px, sliding bands sideways (takes a few seconds).")
+
+	# Walk the image in horizontal bands. Each band gets its own sideways
+	# shift (and a small vertical jump), so whole strips slide out of place.
+	y = 0
+	while y < h
+		bandh = 2 + int(rand * 16)                # this band is 2..17 rows tall
+		if rand < 0.6 then
+			xoff = int((rand - 0.5) * w * 0.1)    # a big tear
+		else
+			xoff = int((rand - 0.5) * 8)         # a little jitter
+		end if
+		yoff = int((rand - 0.5) * 10)             # small vertical slip
+		y2 = y + bandh
+		if y2 > h then y2 = h
+		for yy = y to y2 - 1
+			sy = (yy + yoff + h) mod h
+			for xx = 0 to w - 1
+				sx = (xx - xoff + w * 4) mod w    # + w*4 keeps it positive before mod
+				imagesetpixel dst$, xx, yy, imagepixel(src$, sx, sy)
+			next xx
+		next yy
+		y = y2
+	end while
+
+	call frame("9. imagenew + imagesetpixel - glitch a photo")
+	call caption("Left: original     Right: pixel-scrambled copy", "Every pixel on the right was written one at a time with imagesetpixel.")
+	imagedraw src$, 70, 100, 300, 300
+	imagedraw dst$, 430, 100, 300, 300
+	refresh
+	call waitgo()
+	unload src$ : unload dst$
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  10. imagecopy / imagetransformed  - grab pixels and warp them
+# --------------------------------------------------------------------------
+subroutine demoCopyTransform()
+	call frame("10. imagecopy - grab pixels into a new image")
+	print
+	print "  imagecopy(img$, x, y, w, h) copies a region into a NEW"
+	print "  resource; imagecopy() with no image grabs the whole screen."
+	img$ = imageload(PICFILE)
+	face$ = imagecopy(img$, 110, 60, 150, 160)
+	fh = 380 : fw = int(imagewidth(face$) * fh / imageheight(face$))
+	call caption("face$ = imagecopy(img$, x, y, w, h)", "Copied the face into its own image; the original is untouched.")
+	imagedraw face$, int((GW - fw) / 2), 60, fw, fh
+	refresh
+	call waitgo()
+
+	call frame("10. imagetransformed - map the 4 corners anywhere")
+	call caption("imagetransformed img$, x1,y1, ... , x4,y4", "Send the corners to any quad for a skew / perspective tilt.")
+	imagedraw face$, 60, 120, 180, 190
+	imagetransformed face$, 440, 90, 730, 140, 750, 470, 420, 500
+	refresh
+	call waitgo()
+	unload img$ : unload face$
+	print "  Done."
+end subroutine
+
+
+# --------------------------------------------------------------------------
+#  11. imgsave  - save the whole graphics screen to a file
+# --------------------------------------------------------------------------
+subroutine demoSave()
+	call frame("11. imgsave - save the screen to a file")
+	imgload 400, 250, 0.60, PICFILE
+	color rgb(90, 200, 255) : font "Sans", 22, 100
+	text 24, 470, "Exported from BASIC-256"
+	refresh
+
+	out$ = "lady_export.png"
+	imgsave out$
+	print
+	print "  imgsave file$ writes the WHOLE graphics screen to a file."
+	print "  The type defaults to PNG; add a type like JPG for JPEG."
+	print "  Saved to: " + out$ + "  (in the program's folder)"
+	call caption("imgsave file$", "Saved this screen as " + out$ + ".")
+	call waitgo()
+	print "  Done."
+end subroutine

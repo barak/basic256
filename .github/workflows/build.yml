@@ -1,0 +1,403 @@
+name: Build BASIC-256_2.1.Beta CMake
+on:
+  push:
+    branches: [ main, v2.1.Beta03 ]
+    # Pushes to either branch build/test the full matrix, but only main
+    # deploys to GitHub Pages -- the pages-deploy job below stays gated to
+    # refs/heads/main, so breaking changes on the beta branch can't
+    # overwrite the live site. Deployment is main's alone. (Without main in
+    # this list a push to main triggered nothing at all, and the deploy
+    # gate could never be reached.)
+    #
+    # Note a push only ever consults the workflow file on the branch being
+    # pushed, so the beta entry here is documentation of what is active --
+    # v2.1.Beta03's own copy is what actually builds that branch.
+  pull_request:
+  release:
+    types: [created]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # Oldest macOS the .app is built to run on. Read by both build_macos.sh (as
+  # CMAKE_OSX_DEPLOYMENT_TARGET) and package_macos.sh (which checks the finished
+  # bundle against it), so the two cannot drift apart. Keep in step with the
+  # pinned macos-* runner images and with the requirement stated in README.md.
+  MACOS_DEPLOYMENT_TARGET: "15.0"
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04  # <-- Change from ubuntu-latest to ubuntu-22.04
+            arch: x86_64
+            use_jurplel: false
+            qt_arch: gcc_64
+            artifact_name: BASIC256-Linux-x86_64
+          - os: windows-2022
+            arch: x86_64
+            use_jurplel: false
+            qt_arch: win64_msvc2019_64  # Updated for MSVC 2019 / 2022 compatibility
+            artifact_name: BASIC256-Windows
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            use_jurplel: false
+            artifact_name: BASIC256-RaspberryPi-ARM64
+          # Pinned, NOT macos-latest. The image decides the minimum macOS the
+          # artifact will run on: when macos-latest rolled to macOS 26 this
+          # build silently started requiring macOS 26 (Homebrew's QtMultimedia
+          # bottle was built for 26), locking out everyone on Sequoia and older.
+          # Pin the image and set a deployment target so that floor is a
+          # decision rather than a side effect of GitHub moving the label.
+          - os: macos-15
+            arch: arm64
+            use_jurplel: false
+            qt_arch: clang_64
+            artifact_name: BASIC256-MacOS-AppleSilicon
+          # Intel. Deliberately the macOS 15 image rather than a newer one: a
+          # binary linked against a newer SDK can refuse to start on older
+          # systems, so building on the oldest available Intel image gives the
+          # widest compatibility. macos-13 (the old Intel label) is retired.
+          - os: macos-15-intel
+            arch: x86_64
+            use_jurplel: false
+            qt_arch: clang_64
+            artifact_name: BASIC256-MacOS-Intel
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.x'
+  
+    # ---------------------------
+    # Linux x86_64 Build
+    # ---------------------------
+    - name: Build Linux x86_64
+      if: matrix.os == 'ubuntu-22.04'
+      run: |
+        bash .github/scripts/build_Linux_x86.sh
+
+    # ---------------------------
+    # Linux x86_64 TestSuite gate
+    # ---------------------------
+    - name: Run TestSuite (Linux x86_64)
+      if: matrix.os == 'ubuntu-22.04'
+      timeout-minutes: 5
+      run: |
+        bash .github/scripts/run_testsuite.sh build/basic256
+
+    # -----------------------------------------------------------------
+    # Raspberry Pi ARM64 Native Build Flow
+    # -----------------------------------------------------------------
+    - name: Build RPi 4 (Trixie)
+      if: matrix.os == 'ubuntu-24.04-arm'
+      run: |
+        bash .github/scripts/build_Linux_RPi_Trixie.sh
+
+    # ---------------------------
+    # Linux ARM64 TestSuite gate
+    # ---------------------------
+    - name: Run TestSuite (Linux ARM64)
+      if: matrix.os == 'ubuntu-24.04-arm'
+      timeout-minutes: 5
+      run: |
+        bash .github/scripts/run_testsuite.sh build/basic256
+
+    # ---------------------------
+    # Windows Build
+    # ---------------------------
+    - name: Build Windows x86_64
+      if: runner.os == 'Windows'
+      shell: pwsh
+      env:
+        ARTIFACT_NAME: ${{ matrix.artifact_name }}.zip
+      run:
+        ./.github/scripts/build_windows.ps1
+
+    # ---------------------------
+    # Windows TestSuite gate
+    # ---------------------------
+    - name: Run TestSuite (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      timeout-minutes: 5
+      run:
+        ./.github/scripts/run_testsuite.ps1 -Basic256Exe build\Release\basic256.exe
+
+    # ---------------------------
+    # MacOS Build
+    # ---------------------------
+    - name: Build macOS (${{ matrix.arch }})
+      if: runner.os == 'macOS'
+      shell: bash
+      env:
+        ARTIFACT_NAME: ${{ matrix.artifact_name }}.zip
+        TARGET_ARCH: ${{ matrix.arch }}
+      run: |
+        chmod +x ./.github/scripts/build_macos.sh
+        bash ./.github/scripts/build_macos.sh
+
+    # ---------------------------
+    # MacOS TestSuite gate
+    # ---------------------------
+    - name: Run TestSuite (macOS)
+      if: runner.os == 'macOS'
+      shell: bash
+      timeout-minutes: 5
+      run: |
+        bash .github/scripts/run_testsuite.sh build/basic256.app/Contents/MacOS/basic256
+
+
+    # ---------------------------
+    # Packaging Linux x86_64
+    # ---------------------------
+    - name: Package Linux x86_64
+      if: matrix.os == 'ubuntu-22.04'
+      env:
+        ARTIFACT_NAME: ${{ matrix.artifact_name }}
+      run: |
+        bash .github/scripts/package_Linux_x86.sh
+
+    # ---------------------------
+    # AppImage Linux x86_64
+    # ---------------------------
+    - name: Package AppImage Linux x86_64
+      if: matrix.os == 'ubuntu-22.04'
+      env:
+        ARTIFACT_NAME: ${{ matrix.artifact_name }}
+      run: |
+        bash .github/scripts/package_Linux_x86_AppImage.sh
+
+    # ---------------------------
+    # Packaging Linux ARM
+    # ---------------------------
+    - name: Package Linux ARM
+      if: matrix.os == 'ubuntu-24.04-arm'
+      env:
+        ARTIFACT_NAME: ${{ matrix.artifact_name }}
+      run: |
+        bash .github/scripts/package_Linux_RPi_Trixie.sh
+
+    # ---------------------------
+    # AppImage Linux ARM64
+    # ---------------------------
+    - name: Package AppImage Linux ARM64
+      if: matrix.os == 'ubuntu-24.04-arm'
+      env:
+        ARTIFACT_NAME: ${{ matrix.artifact_name }}
+      run: |
+        bash .github/scripts/package_Linux_RPi_AppImage.sh
+
+    
+        
+    # ---------------------------
+    # Packaging Windows (MSVC Migration)
+    # ---------------------------
+    - name: Package Windows Build
+      if: runner.os == 'Windows'
+      shell: pwsh
+      env:
+        ARTIFACT_NAME: ${{ matrix.artifact_name }}.zip
+      run: 
+        ./.github/scripts/package_windows.ps1
+
+    # ---------------------------
+    # Build Windows Installer (NSIS)
+    # ---------------------------
+    - name: Build Windows Installer
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run:
+        ./.github/scripts/build_installer_Windows.ps1   
+
+    # ---------------------------
+    # Packaging MacOS
+    # ---------------------------
+    - name: Package macOS (${{ matrix.arch }})
+      if: runner.os == 'macOS'
+      shell: bash
+      env:
+        ARTIFACT_NAME: ${{ matrix.artifact_name }}.zip
+      run: |
+        chmod +x ./.github/scripts/package_macos.sh
+        bash ./.github/scripts/package_macos.sh
+
+    # ---------------------------
+    # Upload Artifacts Step
+    # ---------------------------
+    # Linux / macOS — single artifact, unchanged
+    - name: Upload artifacts (non-Windows)
+      if: runner.os != 'Windows'
+      uses: actions/upload-artifact@v5
+      with:
+        name: ${{ matrix.artifact_name }}
+        if-no-files-found: ignore
+        path: |
+          ${{ github.workspace }}/*.tar.gz
+          ${{ github.workspace }}/*.zip
+          ${{ github.workspace }}/*.AppImage
+
+    # Windows portable — the dist/ zip only
+    - name: Upload Windows portable
+      if: runner.os == 'Windows'
+      uses: actions/upload-artifact@v5
+      with:
+        name: ${{ matrix.artifact_name }}
+        if-no-files-found: ignore
+        path: ${{ github.workspace }}/*.zip
+
+    # Windows installer — the .exe as its own artifact
+    - name: Upload Windows installer
+      if: runner.os == 'Windows'
+      uses: actions/upload-artifact@v5
+      with:
+        name: ${{ matrix.artifact_name }}-Installer
+        if-no-files-found: ignore
+        path: ${{ github.workspace }}/*.exe
+
+  flagsoff-dress-rehearsal:
+    # Phase 3 gate: a desktop build with all six BASIC256_ENABLE_*
+    # flags OFF is a cheap simulation of the WASM feature surface. Must
+    # compile and SYSTEM must raise ERROR_NOTAVAILABLE (129) and continue
+    # normally instead of crashing/hanging/silently no-opping. One platform
+    # (Linux x86_64) is enough to prove the flag mechanism itself works --
+    # the four-target matrix above is what proves per-platform packaging,
+    # unaffected by these flags.
+    name: WASM Phase 3 dress rehearsal (all flags OFF)
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.x'
+
+    - name: Build Linux x86_64 (all BASIC256_ENABLE_* flags OFF)
+      env:
+        BASIC256_EXTRA_CMAKE_ARGS: >-
+          -DBASIC256_ENABLE_PROCESS=OFF
+          -DBASIC256_ENABLE_SERIAL=OFF
+          -DBASIC256_ENABLE_SQL=OFF
+          -DBASIC256_ENABLE_PRINTER=OFF
+          -DBASIC256_ENABLE_TCP=OFF
+          -DBASIC256_ENABLE_TTS=OFF
+      run: |
+        bash .github/scripts/build_Linux_x86.sh
+
+    - name: Run flags-off dress rehearsal (SYSTEM raises ERROR_NOTAVAILABLE)
+      timeout-minutes: 5
+      run: |
+        bash .github/scripts/run_testsuite_flagsoff.sh build/basic256
+
+  wasm:
+    # Phase 4: first WebAssembly build. Emscripten 4.0.7 (Qt 6.11.1's
+    # pinned version) + Qt's wasm_multithread SDK, all six BASIC256_ENABLE_*
+    # flags OFF (mirrors the flags-off dress rehearsal above, but for real --
+    # the wasm Qt SDK doesn't ship Sql/SerialPort/PrintSupport/TextToSpeech
+    # at all, so this isn't optional here the way it is on desktop). No
+    # TestSuite gate yet (that needs a browser + COOP/COEP headers -- Phase
+    # 4/5's "local smoke test" gate items are manual, not CI); this job only
+    # proves the toolchain links and produces a loadable artifact.
+    name: WASM Phase 4 build (Emscripten 4.0.7 + Qt 6.11.1 wasm_multithread)
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.x'
+
+    - name: Build WASM
+      run: |
+        bash .github/scripts/build_WASM.sh
+
+    # The artifact is the finished site, not the raw build output: unzip it,
+    # serve the directory, and you get the custom shell, the favicon and the
+    # example assets exactly as Pages would publish them. Assembling here
+    # rather than in pages-deploy is what makes a WASM change testable from a
+    # branch build instead of only after it reaches main.
+    - name: Assemble site
+      run: |
+        bash .github/scripts/assemble_wasm_site.sh public
+
+    - name: Upload WASM artifact
+      uses: actions/upload-artifact@v5
+      with:
+        name: BASIC256-WASM
+        if-no-files-found: error
+        # .nojekyll would be dropped otherwise -- v4 and later skip dotfiles.
+        include-hidden-files: true
+        path: public
+
+  pages-deploy:
+    # Phase 6: publish the wasm build to GitHub Pages. Gated on the
+    # full desktop matrix + wasm job succeeding (RULE 1's regression net
+    # extends to what gets deployed), and only for real pushes to this
+    # branch -- not pull_request builds, which have no gh-pages business
+    # deploying over the live site.
+    name: Deploy WASM build to GitHub Pages
+    needs: [ build, wasm ]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-22.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    # The artifact already is the site -- .github/scripts/assemble_wasm_site.sh
+    # built it in the wasm job, so there is one definition of what gets
+    # published and the artifact you can download is the same thing.
+    - name: Download WASM artifact
+      uses: actions/download-artifact@v4.3.0
+      with:
+        name: BASIC256-WASM
+        path: public
+
+    - name: Show what is being published
+      run: ls -la public
+
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@v5
+      with:
+        path: public
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v5
+
+  release:
+    name: Publish Release
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4.3.0
+    - name: Upload to GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          **/*.tar.gz
+          **/*.zip
+          **/*.exe
+          **/*.AppImage
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

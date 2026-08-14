@@ -1,8 +1,8 @@
 /** Copyright (C) 2006, Ian Paul Larsen.
  **
- **  This program is free software; you can redistribute it and/or modify
+ **  This program is free software: you can redistribute it and/or modify
  **  it under the terms of the GNU General Public License as published by
- **  the Free Software Foundation; either version 2 of the License, or
+ **  the Free Software Foundation, either version 3 of the License, or
  **  (at your option) any later version.
  **
  **  This program is distributed in the hope that it will be useful,
@@ -10,21 +10,35 @@
  **  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **  GNU General Public License for more details.
  **
- **  You should have received a copy of the GNU General Public License along
- **  with this program; if not, write to the Free Software Foundation, Inc.,
- **  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ **  You should have received a copy of the GNU General Public License
+ **  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  **/
 
 /** For statements without arguments you NEED to create rules like {stmt}":" that push back the
  ** colon.  this is so that if the stmt with a : and no space between them is not interperted
  ** as a label- flex is greedy and will match the stmt: first
  **/
- 
+
+%option nounistd
+
+%{
+#ifdef _WIN32
+#include <io.h>
+#define isatty _isatty
+#else
+#include <unistd.h>
+#endif
+%}
+
 %{
 #include "basicParse.tab.h"
-#include "../CompileErrors.h"
-#include "../WordCodes.h"
+#include "../src/core/CompileErrors.h"
+#include "../src/core/WordCodes.h"
 
+// Fix for MSVC unresolved external symbol strcasecmp
+#ifdef _MSC_VER
+#define strcasecmp _stricmp
+#endif
 
 #ifdef __cplusplus
 	extern "C" {
@@ -88,6 +102,8 @@ void count();
 void unputcolon();
 
 %}
+
+%option nounistd
 
 %x INCLUDE
 %x INCLUDE_FILE
@@ -380,11 +396,11 @@ lower [Ll][Oo][Ww][Ee][Rr]
 ltrim [Ll][Tt][Rr][Ii][Mm]
 maintoolbarvisible [Mm][Aa][Ii][Nn][Tt][Oo][Oo][Ll][Bb][Aa][Rr][Vv][Ii][Ss][Ii][Bb][Ll][Ee]
 map [Mm][Aa][Pp]
+maximize [Mm][Aa][Xx][Ii][Mm][Ii][Zz][Ee]
 md5 [Mm][Dd][5]
 mid [Mm][Ii][Dd]
 midx [Mm][Ii][Dd][Xx]
 minute [Mm][Ii][Nn][Uu][Tt][Ee]
-mkdir [Mm][Kk][Dd][Ii][Rr]
 mod ([Mm][Oo][Dd])
 month [Mm][Oo][Nn][Tt][Hh]
 mouseb [Mm][Oo][Uu][Ss][Ee][Bb]
@@ -407,7 +423,6 @@ next [Nn][Ee][Xx][Tt]
 not [Nn][Oo][Tt]
 offerror [Oo][Ff][Ff][Ee][Rr][Rr][Oo][Rr]
 onerror [Oo][Nn][Ee][Rr][Rr][Oo][Rr]
-onstop [Oo][Nn][Ss][Tt][Oo][Pp]
 open [Oo][Pp][Ee][Nn]
 openb [Oo][Pp][Ee][Nn][Bb]
 openserial [Oo][Pp][Ee][Nn][Ss][Ee][Rr][Ii][Aa][Ll]
@@ -431,7 +446,6 @@ poly [Pp][Oo][Ll][Yy]
 portin [Pp][Oo][Rr][Tt][Ii][Nn]
 portout [Pp][Oo][Rr][Tt][Oo][Uu][Tt]
 print ([Pp][Rr][Ii][Nn][Tt])
-printat ([Pp][Rr][Ii][Nn][Tt][Aa][Tt])
 printercancel [Pp][Rr][Ii][Nn][Tt][Ee][Rr][ \t]*[Cc][Aa][Nn][Cc][Ee][Ll]
 printeroff [Pp][Rr][Ii][Nn][Tt][Ee][Rr][ \t]*[Oo][Ff][Ff]
 printeron [Pp][Rr][Ii][Nn][Tt][Ee][Rr][ \t]*[Oo][Nn]
@@ -459,7 +473,6 @@ return [Rr][Ee][Tt][Uu][Rr][Nn]
 rgb [Rr][Gg][Bb]
 right [Rr][Ii][Gg][Hh][Tt]
 rjust [Rr][Jj][Uu][Ss][Tt]
-rmdir [Rr][Mm][Dd][Ii][Rr]
 round [Rr][Oo][Uu][Nn][Dd]
 rtrim [Rr][Tt][Rr][Ii][Mm]
 savefiledialog [Ss][Aa][Vv][Ee][Ff][Ii][Ll][Ee][Dd][Ii][Aa][Ll][Oo][Gg]
@@ -512,7 +525,6 @@ spriter [Ss][Pp][Rr][Ii][Tt][Ee][Rr]
 sprites [Ss][Pp][Rr][Ii][Tt][Ee][Ss]
 spriteshow [Ss][Pp][Rr][Ii][Tt][Ee][Ss][Hh][Oo][Ww]
 spriteslice [Ss][Pp][Rr][Ii][Tt][Ee][Ss][Ll][Ii][Cc][Ee]
-spritetext [Ss][Pp][Rr][Ii][Tt][Ee][Tt][Ee][Xx][Tt]
 spritev [Ss][Pp][Rr][Ii][Tt][Ee][Vv]
 spritew [Ss][Pp][Rr][Ii][Tt][Ee][Ww]
 spritex [Ss][Pp][Rr][Ii][Tt][Ee][Xx]
@@ -595,17 +607,14 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 
 {constfalse}				{ count(); return B256BOOLFALSE; }
 {consttrue}					{ count(); return B256BOOLTRUE; }
-{constinteger}				{
-								count();
-								yylval.longnum = atol(yytext);
-								//printf("constinteger %s %li\n", yytext, yylval.longnum);
-								return B256INTEGER;
-							}
-{constdecimal}				{
-								count();
-								yylval.floatnum = atof(yytext);
-								return B256FLOAT;
-							}
+{constinteger}  {
+    count();
+    errno = 0;
+    yylval.number = strtoll(yytext, NULL, 10);
+    if (errno == ERANGE) return B256ERROR_INTEGERRANGE;
+    return B256INTEGER;
+}
+{constdecimal}				{ count(); yylval.floatnum = atof(yytext); return B256FLOAT; }
 {constbinary}				{
 								count();
 								yylval.string = strdup(yytext + 2);
@@ -1073,7 +1082,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {line}						{ count(); return B256LINE; }
 {maintoolbarvisible}		{ count(); return B256MAINTOOLBARVISIBLE; }
 {map}						{ count(); return B256MAP; }
-{mkdir}						{ count(); return B256MKDIR; }
+{maximize}					{ count(); return B256MAXIMIZE; }
 {netclose}					{ count(); return B256NETCLOSE; }
 {netclose}":"				{ count(); unputcolon(); return B256NETCLOSE; }
 {netconnect}				{ count(); return B256NETCONNECT; }
@@ -1083,7 +1092,6 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {offerror}					{ count(); return B256OFFERROR; }
 {offerror}":"				{ count(); unputcolon(); return B256OFFERROR; }
 {onerror}					{ count(); return B256ONERROR; }
-{onstop}					{ count(); return B256ONSTOP; }
 {openb}						{ count(); return B256OPENB; }
 {openserial}				{ count(); return B256OPENSERIAL; }
 {open}						{ count(); return B256OPEN; }
@@ -1105,8 +1113,6 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {printerpage}":"			{ count(); unputcolon(); return B256PRINTERPAGE; }
 {print}						{ count(); return B256PRINT; }
 {print}":"					{ count(); unputcolon(); return B256PRINT; }
-{printat}					{ count(); return B256PRINTAT; }
-{printat}":"				{ count(); unputcolon(); return B256PRINTAT; }
 {prompt}					{ count(); return B256PROMPT; }
 {putslice}					{ count(); return B256PUTSLICE; }
 {rect}						{ count(); return B256RECT; }
@@ -1120,7 +1126,6 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {reset}":"					{ count(); unputcolon(); return B256RESET; }
 {return}					{ count(); return B256RETURN; }
 {return}":"					{ count(); unputcolon(); return B256RETURN; }
-{rmdir}						{ count(); return B256RMDIR; }
 {say}						{ count(); return B256SAY; }
 {seed}						{ count(); return B256SEED; }
 {seek}						{ count(); return B256SEEK; }
@@ -1156,7 +1161,6 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {spritepoly}				{ count(); return B256SPRITEPOLY; }
 {spriteshow}				{ count(); return B256SPRITESHOW; }
 {spriteslice}				{ count(); return B256SPRITESLICE; }
-{spritetext}				{ count(); return B256SPRITETEXT; }
 {stamp}						{ count(); return B256STAMP; }
 {step}						{ count(); return B256STEP; }
 {subroutine}				{ count(); return B256SUBROUTINE; }
@@ -1253,7 +1257,7 @@ mod							{ count(); return B256MOD; }
 	while (*c != ':') c++;
 	*c = 0x0;
 	//
-	yylval.intnum = getSymbol(temp); // get existing or create new
+	yylval.number = getSymbol(temp); // get existing or create new
 	free(temp);
 	//
 	return B256LABEL;
@@ -1261,7 +1265,7 @@ mod							{ count(); return B256MOD; }
 	
 {variable} {
 	count();
-	yylval.intnum = getSymbol(yytext);
+	yylval.number = getSymbol(yytext);
 	return B256VARIABLE;
 }
 
@@ -1325,12 +1329,38 @@ mod							{ count(); return B256MOD; }
 	if (!yyin) {
 		// check in the executable folder
 		char str[512];
-		strcpy(str, include_exec_path);
-		strcat(str, "/");
-		strcat(str, filename);
-		yyin = fopen( str, "r" );
+		int pathlen = snprintf(str, sizeof(str), "%s/%s", include_exec_path, filename);
+		if (pathlen >= 0 && (size_t) pathlen < sizeof(str)) {
+			yyin = fopen( str, "r" );
+		}
 		//fprintf(stderr, "real include %s\n", str);
 	}
+	if (!yyin) {
+		// check in the bundled module library, which ships next to the
+		// executable (see the packaging scripts and BASIC256.nsi). This lets a
+		// program pull in a shipped module by bare name -- e.g. include "math.kbs"
+		// -- from anywhere, not only when it sits beside the module file.
+		char str[512];
+		int pathlen = snprintf(str, sizeof(str), "%s/Modules/%s", include_exec_path, filename);
+		if (pathlen >= 0 && (size_t) pathlen < sizeof(str)) {
+			yyin = fopen( str, "r" );
+		}
+	}
+#ifdef __EMSCRIPTEN__
+	if (!yyin) {
+		// Browser build: there is no executable folder to be next to. Modules/
+		// is baked into the virtual filesystem at a fixed /Modules by the
+		// --embed-file link option (CMakeLists.txt, EMSCRIPTEN block), so look
+		// there by absolute path rather than trusting what applicationDirPath()
+		// reports under Emscripten. Keeps "include \"math.kbs\"" meaning the
+		// same thing in the browser as it does on the desktop.
+		char str[512];
+		int pathlen = snprintf(str, sizeof(str), "/Modules/%s", filename);
+		if (pathlen >= 0 && (size_t) pathlen < sizeof(str)) {
+			yyin = fopen( str, "r" );
+		}
+	}
+#endif
 	if ( ! yyin ) {
 			BEGIN(INITIAL);
 			free(filename);

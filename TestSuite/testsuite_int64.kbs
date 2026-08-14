@@ -1,0 +1,12 @@
+# testsuite_int64 for BASIC256
+#
+# Standalone runner: prints a pass/fail line for every check, so it can be
+# run from the IDE to see at a glance whether the 64 bit number handling in
+# 2.1 Beta3 is behaving. The same checks run headlessly as part of
+# testsuite_ci.kbs.
+
+include "testsuite_common_include.kbs"
+
+include "testsuite_int64_include.kbs"
+
+print "All Done"

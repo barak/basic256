@@ -1,0 +1,432 @@
+/** Copyright (C) 2006, Ian Paul Larsen, Florin Oprea
+ **
+ **  This program is free software: you can redistribute it and/or modify
+ **  it under the terms of the GNU General Public License as published by
+ **  the Free Software Foundation, either version 3 of the License, or
+ **  (at your option) any later version.
+ **
+ **  This program is distributed in the hope that it will be useful,
+ **  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ **  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ **  GNU General Public License for more details.
+ **
+ **  You should have received a copy of the GNU General Public License
+ **  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ **/
+
+
+
+#include <iostream>
+#include <locale.h>
+#if !defined(WIN32) || defined(__MINGW32__)
+#include <unistd.h>
+#endif
+#ifdef Q_OS_WIN
+#  ifndef NOMINMAX
+#  define NOMINMAX
+#  endif
+#  include <windows.h>
+#endif
+
+#include <QApplication>
+#include <QCommandLineOption>
+#include <QCommandLineParser>
+#include <QFileInfo>
+#include <QLibraryInfo>
+#include <QLocale>
+#include <QLoggingCategory>
+#include <QMessageBox>
+#include <QStatusBar>
+#include <QtPlugin>
+#include <QTranslator>
+#include <QMetaType>
+
+#include "Settings.h"
+#include "Version.h"
+#include "MainWindow.h"
+#include "MenuIndicatorStyle.h"
+#include "BasicEdit.h"
+#include "WasmSettings.h"
+#include "WasmLaunch.h"
+#include "MediaPath.h"
+#include "WasmMediaUnlock.h"
+
+
+//Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin);
+
+extern MainWindow * mainwin;
+extern BasicEdit * editwin;
+
+
+#if defined(WIN32) && !defined(WIN32PORTABLE)
+static void associateFileTypes(const QStringList &fileTypes)
+{
+    QString displayName = QGuiApplication::applicationDisplayName();
+    QString filePath    = QCoreApplication::applicationFilePath();
+    QString fileName    = QFileInfo(filePath).fileName();
+
+    // Application entry: registers the exe itself and its supported types
+    QSettings s("HKEY_CURRENT_USER\\Software\\Classes\\Applications\\" + fileName,
+                QSettings::NativeFormat);
+    s.setValue("FriendlyAppName", displayName);
+
+    s.beginGroup("SupportedTypes");
+        foreach (const QString &fileType, fileTypes)
+            s.setValue(fileType, QString());
+    s.endGroup();                   // SupportedTypes
+
+    s.beginGroup("shell");
+        s.beginGroup("open");
+            s.setValue("FriendlyAppName", displayName);
+            s.beginGroup("Command");
+                s.setValue(".", QChar('"') + QDir::toNativeSeparators(filePath)
+                                           + QString("\" \"%1\""));
+            s.endGroup();           // Command
+        s.endGroup();               // open
+    s.endGroup();                   // shell
+
+    // Associate .kbs extension → BASIC-256 (per-user, no admin required)
+    QSettings ss("HKEY_CURRENT_USER\\Software\\Classes\\",
+                 QSettings::NativeFormat);
+
+    ss.beginGroup(".kbs");
+        ss.setValue(".", fileName + QString(".kbs"));
+    ss.endGroup();                  // .kbs
+
+    ss.beginGroup(fileName + QString(".kbs"));
+        ss.beginGroup("shell");
+
+            ss.beginGroup("open");
+                ss.beginGroup("Command");
+                    ss.setValue(".", QChar('"') + QDir::toNativeSeparators(filePath)
+                                               + QString("\" \"%1\""));
+                ss.endGroup();      // Command
+            ss.endGroup();          // open
+
+            ss.beginGroup("run");
+                ss.setValue(".", QString("&Run"));
+                ss.beginGroup("Command");
+                    ss.setValue(".", QChar('"') + QDir::toNativeSeparators(filePath)
+                                               + QString("\" -r \"%1\""));
+                ss.endGroup();      // Command
+            ss.endGroup();          // run
+
+        ss.endGroup();              // shell
+    ss.endGroup();                  // fileName+".kbs"
+}
+#endif
+
+int main(int argc, char *argv[]) {
+#ifdef Q_OS_WIN
+    // With /SUBSYSTEM:WINDOWS there is no console window, but if the user
+    // launched us from cmd.exe or a batch file we should still be able to
+    // write --help / --version / error output to that existing window.
+    // AttachConsole fails silently when there is no parent console
+    // (e.g. double-click from Explorer or a -g / -t shortcut) — exactly
+    // what we want.
+    //
+    // Skip this entirely if stdout is already redirected to a pipe or file
+    // (e.g. `basic256.exe -s script.kbs > out.txt`, or a CI runner capturing
+    // output via a pipe): AttachConsole+freopen would reopen stdout onto the
+    // parent's console device (CONOUT$), silently discarding that
+    // redirection so nothing the process prints ever reaches the file/pipe
+    // the caller was trying to capture.
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD stdoutType = (hStdOut != NULL && hStdOut != INVALID_HANDLE_VALUE)
+        ? GetFileType(hStdOut) : FILE_TYPE_UNKNOWN;
+    bool stdoutAlreadyRedirected = (stdoutType == FILE_TYPE_DISK || stdoutType == FILE_TYPE_PIPE);
+    if (!stdoutAlreadyRedirected && AttachConsole(ATTACH_PARENT_PROCESS)) {
+        FILE *fp;
+        freopen_s(&fp, "CONOUT$", "w", stdout);
+        freopen_s(&fp, "CONOUT$", "w", stderr);
+        freopen_s(&fp, "CONIN$",  "r", stdin);
+    }
+#endif
+
+    // Enable per-monitor DPI awareness so Windows text-size settings are
+    // reflected in Qt's system font. Must be set before QApplication is created.
+    // QT_ENABLE_HIGHDPI_SCALING is the non-deprecated Qt 5.14+ replacement for
+    // the Qt::AA_EnableHighDpiScaling attribute that was removed in commit e673dad.
+    qputenv("QT_ENABLE_HIGHDPI_SCALING", "1");
+
+    // Silence Qt Multimedia's informational FFmpeg banner ("Using Qt
+    // multimedia with FFmpeg version ...") that the FFmpeg backend prints to
+    // stderr the first time SOUND initialises it. Only the .info level is
+    // disabled, so genuine warnings/errors from this category still surface.
+    QLoggingCategory::setFilterRules(QStringLiteral("qt.multimedia.ffmpeg.info=false"));
+
+    QApplication qapp(argc, argv);
+
+    // Every checkable menu item gets a check box (or a radio button, inside an
+    // exclusive group) drawn in its left column, on or off. Wraps whichever
+    // style the platform would have used, so nothing else changes appearance.
+    // Must be set before the first menu is built.
+    QApplication::setStyle(new MenuIndicatorStyle);
+
+#ifdef Q_OS_WIN
+    // Qt 5 reads QApplication::font() from SPI_GETICONTITLELOGFONT (icon
+    // title font). On some Windows builds this source does not reliably
+    // reflect the text-size accessibility setting (TextScaleFactor), while
+    // SPI_GETNONCLIENTMETRICS::lfMessageFont always does (Windows 10 RS4+).
+    // Explicitly override the default app font so that toolbar buttons and
+    // every other widget that inherits the app font scale correctly.
+    {
+        NONCLIENTMETRICSW ncm = {};
+        ncm.cbSize = sizeof(ncm);
+        if (SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0)) {
+            HDC hdc = GetDC(nullptr);
+            const int dpi = hdc ? GetDeviceCaps(hdc, LOGPIXELSY) : 96;
+            if (hdc) ReleaseDC(nullptr, hdc);
+            const LOGFONTW &lf = ncm.lfMessageFont;
+            if (lf.lfHeight < 0 && dpi > 0) {
+                QFont f(QString::fromWCharArray(lf.lfFaceName));
+                f.setPointSizeF(-lf.lfHeight * 72.0 / dpi);
+                qapp.setFont(f);
+            }
+        }
+    }
+#endif
+
+    qRegisterMetaType<std::vector<std::vector<double>>>("std::vector<std::vector<double>>");
+    int guimode = 0;		// 0=normal, 1- r option, 2- app option, 3=-g graph-only, 4=-t text-only, 5=-s silent (no GUI)
+    bool fullScreen = false;
+    QString localecode;		// either lang or the system localle - stored on mainwin for help display
+
+    QCoreApplication::setOrganizationName(SETTINGSORG);
+    QCoreApplication::setApplicationName(SETTINGSAPP);
+    QCoreApplication::setApplicationVersion(VERSION);
+
+#ifdef Q_OS_WASM
+    // WASM persistence. The Emscripten FS is ephemeral MEMFS;
+    // wasm-deploy/idbfs.js (--pre-js) has already mounted IDBFS at /persist and
+    // synced it in (main() is gated on that). Point NativeFormat QSettings at
+    // /persist so preferences and SETSETTING data land in the persisted mount,
+    // and flush it back to IndexedDB after changes / on quit via WasmSettings.
+    // This must run before the first QSettings is constructed (MainWindow reads
+    // settings during construction below).
+    QSettings::setDefaultFormat(QSettings::NativeFormat);
+    QSettings::setPath(QSettings::NativeFormat, QSettings::UserScope, "/persist");
+    WasmSettings::init();
+    QObject::connect(&qapp, &QCoreApplication::aboutToQuit, [](){ WasmSettings::persistNow(); });
+
+    // Capture location.href for resolving a program's relative media paths
+    // (SOUNDLOAD "./sounds/x.mp3", IMGLOAD "test.bmp"). Must happen here, on the
+    // main thread: `location` in a worker refers to the worker script, and the
+    // interpreter -- which is what asks -- runs on one.
+    MediaPath::init();
+
+    // Arm the audio/speech unlock on the first interaction with the page. Must
+    // be installed before any program can run: iOS only starts an AudioContext
+    // or accepts a speechSynthesis utterance from inside a gesture handler, and
+    // by the time SOUND or SAY executes there is no gesture left to use.
+    WasmMediaUnlock::install();
+#endif
+
+#if defined(WIN32) && !defined(WIN32PORTABLE)
+    associateFileTypes(QStringList(".kbs"));
+#endif
+
+    // Command Line Parser
+    QCommandLineParser parser;
+    parser.setApplicationDescription(QObject::tr("BASIC-256 is an easy to use version of BASIC designed to teach anybody (especially middle and high-school students) the basics of computer programming."));
+    parser.addHelpOption();
+    parser.addVersionOption();
+    parser.addPositionalArgument("file", QObject::tr("BASIC file in format <name.kbs>"));
+    // Run option
+    QCommandLineOption setRunOption(QStringList() << "r" << "run", QObject::tr("Run specified file in IDE"));
+    parser.addOption(setRunOption);
+    // Application option
+    QCommandLineOption setAppOption(QStringList() << "a" << "app" << "application", QObject::tr("Run specified file as an application (No Edit window)"));
+    parser.addOption(setAppOption);
+    // Graphics-only option 
+    QCommandLineOption setGraphOption(QStringList() << "g" << "graph", QObject::tr("Run specified file showing only the Graphics Output window."));
+    parser.addOption(setGraphOption);
+    // Text-only option   (NEW)
+    QCommandLineOption setTextOption(QStringList() << "t" << "text", QObject::tr("Run specified file showing only the Text Output window."));
+    parser.addOption(setTextOption);
+    // Silent option (no GUI at all)
+    QCommandLineOption setSilentOption(QStringList() << "s" << "silent",
+        QObject::tr("Run specified file with no GUI at all: PRINT output goes to stdout, "
+                    "errors go to stderr, and the process exit code reflects success/failure. "
+                    "Requires a filename argument. Cannot be combined with -r, -a, -g, or -t "
+                    "(that combination is a hard error)."));
+    parser.addOption(setSilentOption);
+    // Full-screen option
+    QCommandLineOption setFullOption(QStringList() << "f" << "full",
+        QObject::tr("With -r, -a, -g, or -t: resize window to full available screen. "
+                    "Ignored when used without -r, -a, -g, or -t."));
+    parser.addOption(setFullOption);
+    // Language option
+    QCommandLineOption setLanguageOption(QStringList() << "l" << "lang" << "language", QObject::tr("Set language to <language>."), QObject::tr("language"));
+    parser.addOption(setLanguageOption);
+    // Process the actual command line arguments given by the user
+    parser.process(qapp);
+    fullScreen = parser.isSet(setFullOption);
+    const QStringList args = parser.positionalArguments();
+
+    // file is args.at(0)
+    QString fileName;
+    if(args.size()>0)
+    if (!args.at(0).isEmpty())
+        fileName=args.at(0);
+
+    localecode = parser.value(setLanguageOption);
+    if(localecode.isEmpty())
+        localecode = QLocale::system().name();
+
+    // -s/--silent is mutually exclusive with -r, -a, -g, and -t: fail fast,
+    // before any window/interpreter setup begins.
+    if (parser.isSet(setSilentOption)) {
+        if (parser.isSet(setRunOption) || parser.isSet(setAppOption) ||
+            parser.isSet(setGraphOption) || parser.isSet(setTextOption)) {
+            std::cerr << QObject::tr(
+                "Error: -s/--silent cannot be combined with -r, -a, -g, or -t.")
+                .toStdString() << std::endl;
+            return 1;
+        }
+        if (fileName.isEmpty()) {
+            std::cerr << QObject::tr(
+                "Error: -s/--silent requires a filename argument.")
+                .toStdString() << std::endl;
+            return 1;
+        }
+    }
+
+    if (parser.isSet(setRunOption) and !fileName.isEmpty()) {
+        guimode=1;
+    }
+
+    if (parser.isSet(setAppOption) and !fileName.isEmpty()) {
+        guimode=2;
+    }
+    if (parser.isSet(setGraphOption) && !fileName.isEmpty()) {
+        guimode = 3;
+    }
+    if (parser.isSet(setTextOption) && !fileName.isEmpty()) {
+        guimode = 4;
+    }
+    if (parser.isSet(setSilentOption)) {
+        guimode = GUISTATESILENT;
+        // Suppress Qt's own internal diagnostic output (e.g. "Painter not active"
+        // warnings from graphics calls that are intentionally no-ops in this mode)
+        // so stderr carries only script/runtime errors for automated test runners.
+        qInstallMessageHandler([](QtMsgType, const QMessageLogContext &, const QString &) {});
+    }
+
+#ifdef Q_OS_WASM
+    // A browser hands main() no argv, so none of the switches above can ever
+    // fire on WASM. Take the same two decisions from the page URL instead: which
+    // program to run (?run=/?src=/?url=) and which GUI to show it in (?mode=,
+    // defaulting to the full IDE, running). guimode is a MainWindow constructor
+    // argument, which is why parseQuery() is synchronous; only a ?url= program's
+    // *fetch* is async, and that happens further down.
+    WasmLaunch::Request launch = WasmLaunch::parseQuery();
+    if (launch.source != WasmLaunch::Source::None) {
+        // ?mode= (ide|edit|graph|text|app); ide -- the -r full IDE, running -- is
+        // the default. The chrome-free player is &mode=graph.
+        guimode = launch.guimode;
+    }
+#endif
+
+    QTranslator qtTranslator;
+#ifdef WIN32
+    qtTranslator.load("qt_" + localecode);
+#else
+    qtTranslator.load("qt_" + localecode, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+#endif
+    qapp.installTranslator(&qtTranslator);
+
+    QTranslator kbTranslator;
+#ifdef WIN32
+    kbTranslator.load("basic256_" + localecode, qApp->applicationDirPath() + "/Translations/");
+#else
+    bool ok;
+    ok = kbTranslator.load("basic256_" + localecode, "/usr/share/basic256/");
+    if (!ok) ok = kbTranslator.load("basic256_" + localecode, "/usr/local/share/basic256/");  // alternative location
+#endif
+    qapp.installTranslator(&kbTranslator);
+
+    MainWindow mainwin(nullptr, Qt::WindowFlags(), localecode, guimode, fullScreen);
+    mainwin.setObjectName( "mainwin" );
+
+#ifdef Q_OS_WASM
+    // An embedded demo shows its output and nothing else. GUISTATEGRAPH/TEXT/APP
+    // still leave a menu bar (File/Help), a status bar and the output toolbars
+    // up; strip those here rather than in configureGuiState(), so desktop
+    // -g/-t/-a are left exactly as they were. The ide/edit modes are meant to be
+    // worked in, so they keep the full IDE furniture.
+    if (launch.source != WasmLaunch::Source::None && launch.playerChrome) {
+        mainwin.hidePlayerChrome();
+    }
+#endif
+    // --silent: MainWindow and its child windows (Edit/Graphics/Text Output) are
+    // still constructed internally (the interpreter is wired to them), but they
+    // are never shown, so no window ever appears on screen.
+    if (guimode != GUISTATESILENT) {
+        mainwin.statusBar()->showMessage(QObject::tr("Ready."));
+        mainwin.show();
+    }
+
+    bool loaded=false;
+
+#ifdef Q_OS_WASM
+    // Deep-link launch. This bypasses the filename path below entirely -- there
+    // is no argv and no real filesystem to load from. The source arrives as
+    // bytes (a qrc example, base64 out of the URL, or a fetch()) and goes in
+    // through loadFileContent(), the same entry point the browser's file picker
+    // uses, then ifGuiStateRun() starts it exactly as -g would have.
+    //
+    // resolve() completes inline for ?run=/?src= (so the run is already under
+    // way when exec() is entered, as on desktop) but only calls back later for
+    // ?url=, once the event loop is turning and the fetch has landed.
+    if (launch.source != WasmLaunch::Source::None) {
+        MainWindow *mw = &mainwin;
+        const QString title = launch.title;
+        WasmLaunch::resolve(launch, [mw, title](bool ok, QByteArray src) {
+            if (!ok) {
+                // Nothing was loaded, so no editor tab exists -- this branch
+                // skips the newProgram() call at the bottom of main(). Harmless
+                // in the player modes (no editor is shown), but ?mode=ide/edit
+                // would come up as an IDE with no document at all.
+                mw->newProgram();
+                // RULE 2: exec() never returns on the WASM main thread, so the
+                // box has to be shown non-modally.
+                QMessageBox *msgBox = new QMessageBox(mw);
+                msgBox->setAttribute(Qt::WA_DeleteOnClose);
+                msgBox->setIcon(QMessageBox::Warning);
+                msgBox->setWindowTitle(QObject::tr("Run Program"));
+                msgBox->setText(QObject::tr("Unable to load the program requested in the page address (%1).").arg(title));
+                msgBox->setStandardButtons(QMessageBox::Ok);
+                msgBox->show();
+                return;
+            }
+            mw->loadFileContent(title, src);
+            mw->ifGuiStateRun();
+        });
+        setlocale(LC_ALL, "C");
+        return qapp.exec();
+    }
+#endif
+
+    // load initial file and optionally start
+    if (!fileName.isEmpty()) {
+            QFileInfo fi(fileName);
+        loaded = mainwin.loadFile(fi.absoluteFilePath());
+        if (guimode == GUISTATESILENT && !loaded) {
+            std::cerr << QObject::tr("Error: unable to load file '%1'.").arg(fileName).toStdString() << std::endl;
+            return 1;
+        }
+        if(guimode!=0 && !loaded){
+            return 0;
+        }
+        mainwin.ifGuiStateRun();
+    }else if(guimode!=0){
+        return 0;
+    }
+
+    setlocale(LC_ALL,"C");
+
+    if(!loaded) mainwin.newProgram();
+    return qapp.exec();
+}
+
