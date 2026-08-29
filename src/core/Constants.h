@@ -53,7 +53,7 @@
 	#define RUNSTATESTOP 0
 	#define RUNSTATERUN 1
 	#define RUNSTATEDEBUG 2
-	#define RUNSTATESTOPING 3
+	#define RUNSTATESTOPPING 3
 	#define RUNSTATERUNDEBUG 4
 
 	// imagesave valid image types

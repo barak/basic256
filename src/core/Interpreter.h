@@ -81,7 +81,7 @@ class QTcpServer;
     #include <QSerialPort>
 #endif
 
-enum run_status {R_STOPPED, R_RUNNING, R_STOPING, R_PRESTOPING};
+enum run_status {R_STOPPED, R_RUNNING, R_STOPPING, R_PRESTOPPING};
 
 #define NUMFILES 8
 #define NUMSOCKETS 8
@@ -303,7 +303,11 @@ class Interpreter : public QThread
 		forframe *forstack;                     // stack FOR/NEXT for current recurse level
 		std::vector <forframe*> forstacklevel;  // stack FOR/NEXT for each recurse level
 		int forstacklevelsize;                  // size for forstacklevel stack
-		run_status status;
+		// set from the GUI thread (Stop button) and read by the interpreter loop
+		// - volatile so that loop re-reads it every opcode rather than caching
+		// it in a register, which it is now free to do since the loop no longer
+		// returns to runLoop() between opcodes
+		volatile run_status status;
 		bool fastgraphics;
 		QString inputString;        // input string from user
 		int inputType;				// data type to convert the input into

@@ -1,7 +1,7 @@
 name: Build BASIC-256_2.1.Beta CMake
 on:
   push:
-    branches: [ main, v2.1.Beta03 ]
+    branches: [ main, v2.1.1.Beta01 ]
     # Pushes to either branch build/test the full matrix, but only main
     # deploys to GitHub Pages -- the pages-deploy job below stays gated to
     # refs/heads/main, so breaking changes on the beta branch can't
@@ -11,7 +11,9 @@ on:
     #
     # Note a push only ever consults the workflow file on the branch being
     # pushed, so the beta entry here is documentation of what is active --
-    # v2.1.Beta03's own copy is what actually builds that branch.
+    # v2.1.1.Beta01's own copy is what actually builds that branch, and a
+    # new beta branch has to add itself to its own copy or a push to it
+    # triggers nothing at all.
   pull_request:
   release:
     types: [created]
@@ -253,14 +255,17 @@ jobs:
         if-no-files-found: ignore
         path: ${{ github.workspace }}/*.zip
 
-    # Windows installer — the .exe as its own artifact
+    # Windows installer — the .exe as its own artifact. Matched by name, not
+    # by *.exe: build_installer_Windows.ps1 leaves vc_redist.x64.exe in the
+    # workspace root, which NSIS bundles INTO the installer, so a bare *.exe
+    # ships Microsoft's 25 MB redistributable as a download of its own.
     - name: Upload Windows installer
       if: runner.os == 'Windows'
       uses: actions/upload-artifact@v5
       with:
         name: ${{ matrix.artifact_name }}-Installer
         if-no-files-found: ignore
-        path: ${{ github.workspace }}/*.exe
+        path: ${{ github.workspace }}/BASIC256-*.exe
 
   flagsoff-dress-rehearsal:
     # Phase 3 gate: a desktop build with all six BASIC256_ENABLE_*
@@ -394,10 +399,14 @@ jobs:
     - name: Upload to GitHub Release
       uses: softprops/action-gh-release@v2
       with:
+        # BASIC256-*.exe rather than *.exe, for the same reason as the
+        # installer upload above: only our own installer belongs on the
+        # release page, never a bundled third-party redistributable that
+        # happened to be downloaded alongside it.
         files: |
           **/*.tar.gz
           **/*.zip
-          **/*.exe
+          **/BASIC256-*.exe
           **/*.AppImage
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

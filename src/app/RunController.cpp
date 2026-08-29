@@ -595,9 +595,9 @@ void RunController::stopRun() {
 	//qDebug() << "in RunController::stopRun()";
 	if(!i->isStopping()){
 		// event when the user clicks on the stop button
-		//mainwin->setRunState(RUNSTATESTOPING);
+		//mainwin->setRunState(RUNSTATESTOPPING);
 
-		i->setStatus(R_STOPING);//no more ops
+		i->setStatus(R_STOPPING);//no more ops
 		
 		// wait for speech to stop
 #ifdef Q_OS_WASM
