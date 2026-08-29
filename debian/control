@@ -2,7 +2,7 @@ Source: basic256
 Section: devel
 Priority: optional
 Maintainer: Barak A. Pearlmutter <bap@debian.org>
-Build-Depends: debhelper-compat (= 13),
+Build-Depends: debhelper-compat (= 14),
  bison,
  cmake,
  flex,
