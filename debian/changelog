@@ -1,3 +1,11 @@
+basic256 (2.2.0-1) unstable; urgency=medium
+
+  * new upstream release
+  * remove unneeded dependency variables from debian/control
+  * rephrase package description per upstream request
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Wed, 16 Sep 2026 13:33:45 +0100
+
 basic256 (2.1.1-1) unstable; urgency=medium
 
   * new upstream release

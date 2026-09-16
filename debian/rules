@@ -6,7 +6,7 @@ include /usr/share/dpkg/architecture.mk
 BUILDDIR = obj-$(DEB_HOST_GNU_TYPE)
 
 %:
-	dh $@
+	dh $@ --with=single-binary
 
 # We need to deal with installing icons CMakeLists.txt doesn't, and
 # build-time-generated *.qm files (as opposed to the prebuilt ones)

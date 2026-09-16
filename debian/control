@@ -20,13 +20,13 @@ Vcs-Git: https://salsa.debian.org/debian/basic256.git
 
 Package: basic256
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: qt6-speech-speechd-plugin
-Description: educational BASIC programming environment for children
- BASIC-256 is an easy to use version of BASIC designed to teach young
- children the basics of computer programming. It uses traditional
- control structures like gosub, for/next, and goto, which helps kids
- easily see how program flow-control works. It has a built-in graphics
- mode which lets them draw pictures on screen in minutes, and a set
- of detailed, easy-to-follow tutorials that introduce programming
- concepts through fun exercises.
+Description: BASIC programming environment for students and hobbyists
+ BASIC256 is an easy to use version of the classic BASIC programming
+ language, designed to make learning programming fun through graphics,
+ animation, sound and experimentation. It uses traditional control
+ structures like gosub, for/next, and goto, which helps novice
+ programmers easily see how program flow-control works. It also has a
+ built-in graphics mode which lets them draw pictures on screen in
+ minutes, and a set of detailed, easy-to-follow tutorials that
+ introduce programming concepts through fun exercises.
