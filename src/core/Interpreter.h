@@ -423,6 +423,8 @@ class Interpreter : public QThread
 		// gate every path a program names; true when the operation may proceed
 		QString resolvePath(const QString &path);
 		bool allowPath(const QString &path, const QString &what);
+		bool allowDbTarget(const QString &target);
+		bool allowSql(const QString &stmt);
 };
 
 

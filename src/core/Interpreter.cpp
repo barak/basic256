@@ -1347,6 +1347,112 @@ Interpreter::resolvePath(const QString &path) {
 }
 
 
+// --- A very small SQL scanner.  It reads only far enough to find the leading
+// keyword and any file name that follows it, which is all that is needed to
+// stop SQLite reaching outside the program's folder.  Qt's SQLite driver
+// prepares exactly one statement per exec(), so there is no "; DROP ..."
+// chaining to unpick here.
+
+static void sqlSkipNoise(const QString &s, int &i) {
+	while (i < s.length()) {
+		if (s.at(i).isSpace()) {
+			i++;
+		} else if (s.at(i) == '-' && i + 1 < s.length() && s.at(i + 1) == '-') {
+			while (i < s.length() && s.at(i) != '\n') i++;
+		} else if (s.at(i) == '/' && i + 1 < s.length() && s.at(i + 1) == '*') {
+			i += 2;
+			while (i + 1 < s.length() && !(s.at(i) == '*' && s.at(i + 1) == '/')) i++;
+			i = qMin(i + 2, s.length());
+		} else {
+			break;
+		}
+	}
+}
+
+static QString sqlWord(const QString &s, int &i) {
+	sqlSkipNoise(s, i);
+	int start = i;
+	while (i < s.length() && (s.at(i).isLetter() || s.at(i) == '_')) i++;
+	return s.mid(start, i - start);
+}
+
+// Read one single quoted literal, '' meaning an embedded quote.  False when
+// the next token is not a literal at all - an expression, a bound parameter -
+// in which case the target cannot be known before SQLite resolves it.
+static bool sqlLiteral(const QString &s, int &i, QString &out) {
+	sqlSkipNoise(s, i);
+	if (i >= s.length() || s.at(i) != '\'') return false;
+	i++;
+	out.clear();
+	while (i < s.length()) {
+		if (s.at(i) == '\'') {
+			if (i + 1 < s.length() && s.at(i + 1) == '\'') {
+				out += '\'';
+				i += 2;
+				continue;
+			}
+			i++;
+			return true;
+		}
+		out += s.at(i++);
+	}
+	return false;			// unterminated
+}
+
+// A database file named by a statement, held to the same rule as any other path.
+bool
+Interpreter::allowDbTarget(const QString &target) {
+	if (target.isEmpty()) return true;			// private temporary file, removed on detach
+	if (target.compare(":memory:", Qt::CaseInsensitive) == 0) return true;
+	if (target.startsWith("file:", Qt::CaseInsensitive)) {
+		// The URI form carries its own mode=rwc and can name a vfs, so the
+		// plain path rules do not describe what it would do.
+		error->q(ERROR_PERMISSION, target);
+		return false;
+	}
+	return allowPath(target, tr("open the database"));
+}
+
+// DBOPEN is gated, but that only covers the first file: ATTACH and VACUUM INTO
+// name further files from an already open connection, which is how a program
+// would otherwise write anywhere on the disk through SQLite.  Everything else
+// is ordinary SQL and passes through untouched.
+bool
+Interpreter::allowSql(const QString &stmt) {
+	int i = 0;
+	QString kw = sqlWord(stmt, i).toUpper();
+
+	if (kw == QLatin1String("ATTACH")) {
+		int save = i;
+		if (sqlWord(stmt, i).toUpper() != QLatin1String("DATABASE")) i = save;	// DATABASE is optional
+		QString target;
+		if (!sqlLiteral(stmt, i, target)) {
+			error->q(ERROR_PERMISSION, stmt.trimmed());
+			return false;
+		}
+		return allowDbTarget(target);
+	}
+
+	if (kw == QLatin1String("VACUUM")) {
+		// Only the INTO form writes a new file; a plain VACUUM rewrites the
+		// database that is already open.
+		while (true) {
+			QString w = sqlWord(stmt, i).toUpper();
+			if (w.isEmpty()) return true;
+			if (w == QLatin1String("INTO")) break;
+		}
+		QString target;
+		if (!sqlLiteral(stmt, i, target)) {
+			error->q(ERROR_PERMISSION, stmt.trimmed());
+			return false;
+		}
+		return allowDbTarget(target);
+	}
+
+	return true;
+}
+
+
 // Gate for every path a program names.  Anything at or below the folder the
 // program was loaded from is its own business and passes silently; anything
 // outside is a decision for the person at the keyboard.  "what" is a short
@@ -6396,6 +6502,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						QString dbconnection = QStringLiteral("DBCONNECTION") + QString::number(n);
 						QSqlDatabase db = QSqlDatabase::database(dbconnection);
 						if(db.isValid()) {
+							if (!allowSql(stmt)) break;
+							
 							QSqlQuery *q = new QSqlQuery(db);
 							bool ok = q->exec(stmt);
 							if (!ok) {
@@ -6428,6 +6536,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 							QString dbconnection = QStringLiteral("DBCONNECTION") + QString::number(n);
 							QSqlDatabase db = QSqlDatabase::database(dbconnection);
 							if(db.isValid()) {
+								if (!allowSql(stmt)) break;
+								
 								if (dbSet[n][set]) {
 									dbSet[n][set]->clear();
 									delete dbSet[n][set];
