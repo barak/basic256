@@ -418,6 +418,7 @@ md5 [Mm][Dd][5]
 mid [Mm][Ii][Dd]
 midx [Mm][Ii][Dd][Xx]
 minute [Mm][Ii][Nn][Uu][Tt][Ee]
+mkdir [Mm][Kk][Dd][Ii][Rr]
 mod ([Mm][Oo][Dd])
 month [Mm][Oo][Nn][Tt][Hh]
 mouseb [Mm][Oo][Uu][Ss][Ee][Bb]
@@ -1114,6 +1115,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {matmul}					{ count(); return B256MATMUL; }
 {matsub}					{ count(); return B256MATSUB; }
 {mattrn}					{ count(); return B256MATTRN; }
+{mkdir}						{ count(); return B256MKDIR; }
 {netclose}					{ count(); return B256NETCLOSE; }
 {netclose}":"				{ count(); unputcolon(); return B256NETCLOSE; }
 {netconnect}				{ count(); return B256NETCONNECT; }

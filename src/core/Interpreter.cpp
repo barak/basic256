@@ -400,7 +400,6 @@ QString Interpreter::opname(int op) {
 	case OP_RETURN : return QString("OP_RETURN");
 	case OP_RGB : return QString("OP_RGB");
 	case OP_RIGHT : return QString("OP_RIGHT");
-	case OP_RMDIR : return QString("OP_RMDIR");
 	case OP_ROUNDEDRECT : return QString("OP_ROUNDEDRECT");
 	case OP_RTRIM : return QString("OP_RTRIM");
 	case OP_SAVEFILEDIALOG : return QString("OP_SAVEFILEDIALOG");
@@ -8961,17 +8960,6 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					if (!dir.exists(name)) {
 						if(!dir.mkdir(name)) {
 							error->q(ERROR_MKDIR);
-						}
-					}
-				}
-				break;
-
-				case OP_RMDIR: {
-					QString name = stack->popQString();
-					QDir dir = QDir::current();
-					if (dir.exists(name)) {
-						if(!dir.rmdir(name)) {
-							error->q(ERROR_RMDIR);
 						}
 					}
 				}

@@ -297,7 +297,6 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "rgb"								//rgb
 			<< "right"								//right
 			<< "rjust"
-			<< "rmdir"
 			<< "round"
 			<< "savefiledialog"
 			<< "say"								//say

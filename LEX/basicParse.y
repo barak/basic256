@@ -720,6 +720,7 @@
 %token B256MID
 %token B256MIDX
 %token B256MINUTE
+%token B256MKDIR
 %token B256MOD
 %token B256MONTH
 %token B256MOUSEB
@@ -2536,6 +2537,7 @@ statement:
 	| mapstmt
 	| maximizestmt
 	| matstmt
+	| mkdirstmt
 	| netclosestmt
 	| netconnectstmt
 	| netlistenstmt
@@ -4279,6 +4281,11 @@ netclosestmt:
 
 killstmt: 	B256KILL expr {
 				addOp(OP_KILL);
+			}
+			;
+
+mkdirstmt: 	B256MKDIR expr {
+				addOp(OP_MKDIR);
 			}
 			;
 

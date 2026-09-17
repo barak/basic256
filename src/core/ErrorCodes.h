@@ -128,7 +128,7 @@
 #define ERROR_NOTMAP					124
 #define ERROR_ARRAYORMAPEXPR			125
 #define ERROR_MAPKEY					126
-#define ERROR_RMDIR						127
+// 127 retired (was ERROR_RMDIR, removed 2026-09-17)
 #define ERROR_MKDIR						128
 #define ERROR_NOTAVAILABLE				129
 #define ERROR_WINDOWSIZE				130
