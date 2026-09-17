@@ -78,6 +78,7 @@ class RunController : public QObject
   void dialogPrompt(QString, QString);
   void dialogAllowPortInOut(QString);
   void dialogAllowSystem(QString);
+  void dialogAllowFile(QString, QString);
   void dialogOpenFileDialog(QString, QString, QString);
   void dialogSaveFileDialog(QString, QString, QString);
   void playSound(QString, bool);

@@ -25,6 +25,7 @@
 #include <QDir>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
+#include <QtWidgets/QPushButton>
 #include <QtWidgets/QInputDialog>
 #include <QtWidgets/QApplication>
 #include <QFileDialog>
@@ -246,6 +247,7 @@ RunController::RunController() {
 	QObject::connect(i, SIGNAL(dialogPrompt(QString, QString)), this, SLOT(dialogPrompt(QString, QString)));
 	QObject::connect(i, SIGNAL(dialogAllowPortInOut(QString)), this, SLOT(dialogAllowPortInOut(QString)));
 	QObject::connect(i, SIGNAL(dialogAllowSystem(QString)), this, SLOT(dialogAllowSystem(QString)));
+	QObject::connect(i, SIGNAL(dialogAllowFile(QString,QString)), this, SLOT(dialogAllowFile(QString,QString)));
 	QObject::connect(i, SIGNAL(dialogOpenFileDialog(QString,QString,QString)), this, SLOT(dialogOpenFileDialog(QString,QString,QString)));
 	QObject::connect(i, SIGNAL(dialogSaveFileDialog(QString,QString,QString)), this, SLOT(dialogSaveFileDialog(QString,QString,QString)));
 
@@ -1089,6 +1091,34 @@ void RunController::dialogAllowPortInOut(QString msg) {
 //  } else if (ret==QMessageBox::Ignore){
 //      i->returnInt = -1;
 //      if(message.checkBox()->isChecked()) i->settingsAllowPort = -1;
+	} else {
+		i->returnInt = SETTINGSALLOWNO;
+	}
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+void RunController::dialogAllowFile(QString what, QString path) {
+	mymutex->lock();
+	QMessageBox message(mainwin);
+	message.setWindowTitle(tr("Confirmation"));
+	message.setText(tr("This program wants to %1 a location outside its own folder.").arg(what));
+	message.setInformativeText(path);
+	message.setIcon(QMessageBox::Warning);
+	// Deliberately no "do not ask me again": that writes a permanent global
+	// yes, and one careless click would open every future program's access to
+	// the whole disk.  A lasting answer belongs in Preferences, which can be
+	// password protected.  The widest answer offered here ends with the run.
+	QPushButton *no = message.addButton(tr("Don't allow"), QMessageBox::RejectRole);
+	QPushButton *once = message.addButton(tr("Allow once"), QMessageBox::AcceptRole);
+	QPushButton *run = message.addButton(tr("Allow for this run"), QMessageBox::AcceptRole);
+	message.setDefaultButton(no);
+	message.setEscapeButton(no);
+	message.exec();
+	if (message.clickedButton() == once) {
+		i->returnInt = SETTINGSALLOWYES;
+	} else if (message.clickedButton() == run) {
+		i->returnInt = SETTINGSALLOWRUN;
 	} else {
 		i->returnInt = SETTINGSALLOWNO;
 	}

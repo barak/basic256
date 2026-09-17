@@ -1327,6 +1327,86 @@ Interpreter::initialize() {
 }
 
 
+// Turn whatever a program wrote into one canonical absolute path.  The target
+// often does not exist yet and canonicalFilePath() returns nothing in that
+// case, so canonicalise the nearest ancestor that does exist and re-attach the
+// rest -- without that a program escapes with "../.." or a symlinked folder.
+QString
+Interpreter::resolvePath(const QString &path) {
+	QString wanted = QDir::cleanPath(QFileInfo(path).absoluteFilePath());
+	QString tail;
+	QDir probe(wanted);
+	while (!probe.exists() && !probe.isRoot()) {
+		tail = probe.dirName() + (tail.isEmpty() ? QString() : "/" + tail);
+		if (!probe.cdUp()) break;
+	}
+	QString resolved = probe.canonicalPath();
+	if (resolved.isEmpty()) resolved = probe.absolutePath();
+	if (!tail.isEmpty()) resolved += "/" + tail;
+	return resolved;
+}
+
+
+// Gate for every path a program names.  Anything at or below the folder the
+// program was loaded from is its own business and passes silently; anything
+// outside is a decision for the person at the keyboard.  "what" is a short
+// verb phrase naming the operation, shown in the prompt.
+bool
+Interpreter::allowPath(const QString &path, const QString &what) {
+#ifdef Q_OS_WASM
+	// The browser filesystem is already sandboxed to this origin and a modal
+	// cannot block the WASM main thread, so there is nothing to gate and no
+	// way to ask.
+	(void) path; (void) what;
+	return true;
+#else
+	if (path.isEmpty()) return true;			// the caller reports its own error
+	if (path.compare("STDOUT", Qt::CaseInsensitive) == 0) return true;
+
+	QString resolved = resolvePath(path);
+
+	// Windows and macOS compare paths without regard to case
+#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+	const Qt::CaseSensitivity cs = Qt::CaseInsensitive;
+#else
+	const Qt::CaseSensitivity cs = Qt::CaseSensitive;
+#endif
+	if (!programRoot.isEmpty() &&
+		(resolved.compare(programRoot, cs) == 0 ||
+		 resolved.startsWith(programRoot + "/", cs))) return true;
+
+	// The user picked this one in a file dialog, which is consent enough
+	if (userChosenPaths.contains(resolved)) return true;
+
+	if (allowFileThisRun) return true;
+
+	int doit = settingsAllowFile;
+	if (doit == SETTINGSALLOWASK) {
+		if (guiState == GUISTATESILENT) {
+			// --silent: nobody to ask, so fail closed
+			doit = SETTINGSALLOWNO;
+		} else {
+			mymutex->lock();
+			emit(dialogAllowFile(what, resolved));
+			waitCond->wait(mymutex);
+			mymutex->unlock();
+			doit = returnInt;
+		}
+	}
+
+	if (doit == SETTINGSALLOWRUN) {
+		// remembered for this run only, never written to settings
+		allowFileThisRun = true;
+		return true;
+	}
+	if (doit == SETTINGSALLOWYES) return true;
+
+	error->q(ERROR_PERMISSION, resolved);
+	return false;
+#endif
+}
+
+
 void
 Interpreter::cleanup() {
 	// cleanup that MUST happen for run to early terminate is in runHalted
@@ -1482,6 +1562,15 @@ Interpreter::run() {
 	settingsAllowSystem = settings.value(SETTINGSALLOWSYSTEM, SETTINGSALLOWSYSTEMDEFAULT).toInt();
 	settingsAllowSetting = settings.value(SETTINGSALLOWSETTING, SETTINGSALLOWSETTINGDEFAULT).toBool();
 	settingsAllowPort = settings.value(SETTINGSALLOWPORT, SETTINGSALLOWPORTDEFAULT).toInt();
+	settingsAllowFile = settings.value(SETTINGSALLOWFILE, SETTINGSALLOWFILEDEFAULT).toInt();
+	settingsNetListenAny = settings.value(SETTINGSNETLISTENANY, SETTINGSNETLISTENANYDEFAULT).toBool();
+	// The gate is anchored here, not on the live working directory: CHANGEDIR
+	// moves the cwd, and a cwd-relative jail would walk itself open in one line.
+	// RunController has already set the cwd to the program's own folder.
+	programRoot = QDir(QDir::currentPath()).canonicalPath();
+	if (programRoot.isEmpty()) programRoot = QDir::currentPath();
+	allowFileThisRun = false;
+	userChosenPaths.clear();
 	settingsSettingsAccess = settings.value(SETTINGSSETTINGSACCESS, SETTINGSSETTINGSACCESSDEFAULT).toInt();
 	settingsSettingsMax = settings.value(SETTINGSSETTINGSMAX, SETTINGSSETTINGSMAXDEFAULT).toInt();
 	programName.clear();
@@ -2892,6 +2981,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					QString name = stack->popQString();
 					int fn = stack->popInt();
 
+					if (!allowPath(name, tr("open the file"))) break;
+					
 					if (fn<0||fn>=NUMFILES) {
 						error->q(ERROR_FILENUMBER);
 					} else {
@@ -2940,6 +3031,10 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					emit(dialogOpenFileDialog(prompt, path, filter));
 					waitCond->wait(mymutex);
 					mymutex->unlock();
+					// consent by selection: the user chose this path themselves
+					if (!inputString.isEmpty()) {
+						userChosenPaths.insert(resolvePath(inputString));
+					}
 					stack->pushQString(inputString);
 				}
 				break;
@@ -2956,6 +3051,10 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					emit(dialogSaveFileDialog(prompt, path, filter));
 					waitCond->wait(mymutex);
 					mymutex->unlock();
+					// consent by selection: the user chose this path themselves
+					if (!inputString.isEmpty()) {
+						userChosenPaths.insert(resolvePath(inputString));
+					}
 					stack->pushQString(inputString);
 				}
 				break;
@@ -6253,6 +6352,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						error->q(ERROR_DBCONNNUMBER);
 					} else {
 #ifdef BASIC256_ENABLE_SQL
+						if (!allowPath(file, tr("open the database"))) break;
+						
 						closeDatabase(n);
 						QString dbconnection = QStringLiteral("DBCONNECTION") + QString::number(n);
 						QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE",dbconnection);
@@ -6519,7 +6620,10 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
         				}
 
         				QTcpServer server;
-        				if (!server.listen(QHostAddress::Any, port)) {
+        				// Loopback by default: an inbound port open on every interface is a
+        				// backdoor on this machine, and classroom use only needs this host.
+        				QHostAddress bindto = settingsNetListenAny ? QHostAddress::Any : QHostAddress::LocalHost;
+        				if (!server.listen(bindto, port)) {
             				error->q(ERROR_NETBIND, server.errorString());
         				} else {
             				// Block here waiting for one incoming connection
@@ -6731,6 +6835,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_KILL: {
 					QString name = stack->popQString();
+					if (!allowPath(name, tr("delete the file"))) break;
+					
 					if(!QFile::remove(name)) {
 						error->q(ERROR_FILEOPEN);
 					}
@@ -7039,6 +7145,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					// Image Save - Save image
 					QString type = stack->popQString();
 					QString file = stack->popQString();
+					if (!allowPath(file, tr("save an image to"))) break;
+					
 					QStringList validtypes;
 					validtypes << IMAGETYPE_BMP << IMAGETYPE_JPG << IMAGETYPE_JPEG << IMAGETYPE_PNG ;
 					if (validtypes.contains(type, Qt::CaseInsensitive)) {
@@ -8956,6 +9064,8 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				case OP_MKDIR: {
 					QString name = stack->popQString();
 					//fprintf(stderr,"mkdir %s\n",name.toUtf8().data());
+					if (!allowPath(name, tr("create the folder"))) break;
+					
 					QDir dir = QDir::current();
 					if (!dir.exists(name)) {
 						if(!dir.mkdir(name)) {
