@@ -703,6 +703,7 @@
 %token B256LET
 %token B256LINE
 %token B256LJUST
+%token B256LOCATE
 %token B256LOG
 %token B256LOGTEN
 %token B256LOWER
@@ -864,6 +865,10 @@
 %token B256SYSTEM
 %token B256TAN
 %token B256TEXT
+%token B256TEXTCOLOR
+%token B256TEXTCOL
+%token B256TEXTFONT
+%token B256TEXTROW
 %token B256TEXTHEIGHT
 %token B256TEXTWIDTH
 %token B256THEN
@@ -1981,6 +1986,8 @@ expr_numeric:
 	| B256SECOND args_none { addOp(OP_SECOND); }
 	| B256GRAPHWIDTH args_none { addOp(OP_GRAPHWIDTH); }
 	| B256GRAPHHEIGHT args_none { addOp(OP_GRAPHHEIGHT); }
+	| B256TEXTCOL args_none { addOp(OP_TEXTCOL); }
+	| B256TEXTROW args_none { addOp(OP_TEXTROW); }
 	| B256SIZE args_none {
 		addIntOp(OP_PUSHINT, 0);
 		addOp(OP_SIZE);
@@ -2533,6 +2540,7 @@ statement:
 	| killstmt
 	| letstmt
 	| linestmt
+	| locatestmt
 	| maintoolbarvisiblestmt
 	| mapstmt
 	| maximizestmt
@@ -2598,6 +2606,8 @@ statement:
 	| subroutinestmt
 	| systemstmt
 	| textstmt
+	| textcolorstmt
+	| textfontstmt
 	| throwerrorstmt
 	| trystmt
 	| unassignstmt
@@ -3721,6 +3731,48 @@ fontstmt:
 		addIntOp(OP_PUSHINT, -1); // default weight
 		addIntOp(OP_PUSHINT, 0); // font is not italic
 		addOp(OP_FONT);
+	}
+	;
+
+/* LOCATE, TEXTCOLOR and TEXTFONT drive the text output pane. They deliberately
+   mirror the graphics FONT and COLOR statements so the argument lists are
+   learned once, but they are separate keywords because the panes keep separate
+   state. */
+
+locatestmt:
+	B256LOCATE args_ee {
+		addOp(OP_LOCATE);
+	}
+	;
+
+textcolorstmt:
+	B256TEXTCOLOR args_ee {
+		addOp(OP_TEXTCOLOR);
+	}
+	| B256TEXTCOLOR expr {
+		addIntOp(OP_PUSHINT, 0);	// no background - transparent
+		addOp(OP_TEXTCOLOR);
+	}
+	;
+
+textfontstmt:
+	B256TEXTFONT args_eeee {
+		addOp(OP_TEXTFONT);
+	}
+	| B256TEXTFONT args_eee {
+		addIntOp(OP_PUSHINT, 0);	// font is not italic
+		addOp(OP_TEXTFONT);
+	}
+	| B256TEXTFONT args_ee {
+		addIntOp(OP_PUSHINT, -1);	// default weight
+		addIntOp(OP_PUSHINT, 0);	// font is not italic
+		addOp(OP_TEXTFONT);
+	}
+	| B256TEXTFONT expr {
+		addIntOp(OP_PUSHINT, -1);	// default size
+		addIntOp(OP_PUSHINT, -1);	// default weight
+		addIntOp(OP_PUSHINT, 0);	// font is not italic
+		addOp(OP_TEXTFONT);
 	}
 	;
 

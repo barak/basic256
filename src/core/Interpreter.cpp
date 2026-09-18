@@ -310,6 +310,7 @@ QString Interpreter::opname(int op) {
 	case OP_LINE : return QString("OP_LINE");
 	case OP_LIST2ARRAY : return QString("OP_LIST2ARRAY");
 	case OP_LIST2MAP : return QString("OP_LIST2MAP");
+	case OP_LOCATE : return QString("OP_LOCATE");
 	case OP_LOG : return QString("OP_LOG");
 	case OP_LOGTEN : return QString("OP_LOGTEN");
 	case OP_LOWER : return QString("OP_LOWER");
@@ -371,7 +372,6 @@ QString Interpreter::opname(int op) {
 	case OP_PORTIN : return QString("OP_PORTIN");
 	case OP_PORTOUT : return QString("OP_PORTOUT");
 	case OP_PRINT : return QString("OP_PRINT");
-	case OP_PRINTAT : return QString("OP_PRINTAT");
 	case OP_PRINTERCANCEL : return QString("OP_PRINTERCANCEL");
 	case OP_PRINTEROFF : return QString("OP_PRINTEROFF");
 	case OP_PRINTERON : return QString("OP_PRINTERON");
@@ -471,6 +471,10 @@ QString Interpreter::opname(int op) {
 	case OP_TEXT : return QString("OP_TEXT");
 	case OP_TEXTBOXHEIGHT : return QString("OP_TEXTBOXHEIGHT");
 	case OP_TEXTBOXWIDTH : return QString("OP_TEXTBOXWIDTH");
+	case OP_TEXTCOLOR : return QString("OP_TEXTCOLOR");
+	case OP_TEXTCOL : return QString("OP_TEXTCOL");
+	case OP_TEXTFONT : return QString("OP_TEXTFONT");
+	case OP_TEXTROW : return QString("OP_TEXTROW");
 	case OP_TEXTHEIGHT : return QString("OP_TEXTHEIGHT");
 	case OP_TEXTWIDTH : return QString("OP_TEXTWIDTH");
 	case OP_THROWERROR : return QString("OP_THROWERROR");
@@ -5968,14 +5972,56 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 
-				case OP_PRINTAT: {
-					QString s = stack->popQString();
-					int y = stack->popInt();
-					int x = stack->popInt();
+				case OP_LOCATE: {
+					// LOCATE column, row - zero based, matching the graphics pane
+					int row = stack->popInt();
+					int col = stack->popInt();
 					mymutex->lock();
-					emit(outputTextAt(x, y, s));
+					emit(outputLocate(col, row));
 					waitCond->wait(mymutex);
 					mymutex->unlock();
+				}
+				break;
+
+				case OP_TEXTCOLOR: {
+					QColor bg = stack->popQColor();
+					QColor fg = stack->popQColor();
+					mymutex->lock();
+					emit(outputColor((int) fg.rgba(), (int) bg.rgba()));
+					waitCond->wait(mymutex);
+					mymutex->unlock();
+				}
+				break;
+
+				case OP_TEXTFONT: {
+					bool italic = stack->popBool();
+					int weight = stack->popInt();
+					int size = stack->popInt();
+					QString family = stack->popQString().trimmed();
+					mymutex->lock();
+					emit(outputFont(family, size, weight, italic));
+					waitCond->wait(mymutex);
+					mymutex->unlock();
+				}
+				break;
+
+				// TEXTCOL and TEXTROW report where the next PRINT will land, so
+				// LOCATE TEXTCOL, TEXTROW is a statement that does nothing.
+				case OP_TEXTCOL: {
+					mymutex->lock();
+					emit(getTextCol());
+					waitCond->wait(mymutex);
+					mymutex->unlock();
+					stack->pushInt(returnInt);
+				}
+				break;
+
+				case OP_TEXTROW: {
+					mymutex->lock();
+					emit(getTextRow());
+					waitCond->wait(mymutex);
+					mymutex->unlock();
+					stack->pushInt(returnInt);
 				}
 				break;
 

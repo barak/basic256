@@ -402,6 +402,7 @@ length [Ll][Ee][Nn][Gg][Tt][Hh]
 let [Ll][Ee][Tt]
 line [Ll][Ii][Nn][Ee]
 ljust [Ll][Jj][Uu][Ss][Tt]
+locate [Ll][Oo][Cc][Aa][Tt][Ee]
 log [Ll][Oo][Gg]
 logten [Ll][Oo][Gg][1][0]
 lower [Ll][Oo][Ww][Ee][Rr]
@@ -557,7 +558,11 @@ subroutine [Ss][Uu][Bb][Rr][Oo][Uu][Tt][Ii][Nn][Ee]
 system [Ss][Yy][Ss][Tt][Ee][Mm]
 tan [Tt][Aa][Nn]
 text [Tt][Ee][Xx][Tt]
+textcol [Tt][Ee][Xx][Tt][Cc][Oo][Ll]
+textcolor [Tt][Ee][Xx][Tt][Cc][Oo][Ll][Oo][Uu]?[Rr]
+textfont [Tt][Ee][Xx][Tt][Ff][Oo][Nn][Tt]
 textheight [Tt][Ee][Xx][Tt][Hh][Ee][Ii][Gg][Hh][Tt]
+textrow [Tt][Ee][Xx][Tt][Rr][Oo][Ww]
 textwidth [Tt][Ee][Xx][Tt][Ww][Ii][Dd][Tt][Hh]
 then [Tt][Hh][Ee][Nn]
 throwerror [Tt][Hh][Rr][Oo][Ww][Ee][Rr][Rr][Oo][Rr]
@@ -960,6 +965,8 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {sqr}						{ count(); return B256SQR; }
 {tan}						{ count(); return B256TAN; }
 {textheight}				{ count(); return B256TEXTHEIGHT; }
+{textcol}					{ count(); return B256TEXTCOL; }
+{textrow}					{ count(); return B256TEXTROW; }
 {textwidth}					{ count(); return B256TEXTWIDTH; }
 {tobinary}					{ count(); return B256TOBINARY; }
 {tofloat}					{ count(); return B256TOFLOAT; }
@@ -1107,6 +1114,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {kill}						{ count(); return B256KILL; }
 {let}						{ count(); return B256LET; }
 {line}						{ count(); return B256LINE; }
+{locate}					{ count(); return B256LOCATE; }
 {maintoolbarvisible}		{ count(); return B256MAINTOOLBARVISIBLE; }
 {map}						{ count(); return B256MAP; }
 {maximize}					{ count(); return B256MAXIMIZE; }
@@ -1199,6 +1207,8 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {subroutine}				{ count(); return B256SUBROUTINE; }
 {system}					{ count(); return B256SYSTEM; }
 {text}						{ count(); return B256TEXT; }
+{textcolor}				{ count(); return B256TEXTCOLOR; }
+{textfont}				{ count(); return B256TEXTFONT; }
 {then}						{ count(); return B256THEN; }
 {then}":"					{ count(); unputcolon(); return B256THEN; }
 {throwerror}				{ count(); return B256THROWERROR; }

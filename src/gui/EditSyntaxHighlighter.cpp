@@ -218,6 +218,7 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "let"								//let
 			<< "line"								//line
 			<< "ljust"
+			<< "locate"							//locate
 			<< "log"								//log
 			<< "log10"								//log10
 			<< "lower"								//lower
@@ -359,7 +360,12 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "system"								//system
 			<< "tan"								//tan
 			<< "text"								//text
+			<< "textcolor"						//textcolor
+			<< "textcolour"						//textcolour
+			<< "textcol"							//textcol
+			<< "textfont"						//textfont
 			<< "textheight"							//textheight
+			<< "textrow"							//textrow
 			<< "textwidth"							//textwidth
 			<< "then"								//then
 			<< "throwerror"							//throwerror

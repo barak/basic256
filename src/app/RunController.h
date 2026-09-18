@@ -56,7 +56,11 @@ class RunController : public QObject
   void outputReady(QString text);
   void outputError(QString text);
   void outputClear();
-  void outputTextAt(int, int, QString);
+  void outputLocate(int, int);
+  void outputColor(int, int);
+  void outputFont(QString, int, int, bool);
+  void getTextCol();
+  void getTextRow();
   void goutputReady();
   void resizeGraphWindow(int, int, qreal);
   void startDebug();

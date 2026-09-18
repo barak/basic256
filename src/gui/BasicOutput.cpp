@@ -57,6 +57,8 @@ BasicOutput::BasicOutput( ) : QTextEdit () {
 	// role turns near-black and the text disappears into it.
 	setStyleSheet(EditorTheme::current().paneStyleSheet("QTextEdit"));
 	gettingInput = false;
+	outFormatColored = false;
+	resetOutputFormat();
 	saveLastPosition();
 
 }
@@ -73,6 +75,7 @@ void BasicOutput::getInput() {
 	emit(mainWindowsVisible(2,true));
 	restoreLastPosition();
 	inputPosition = lastPosition;
+	setCurrentCharFormat(normalFormat());
 	setReadOnly(false);
 	updatePasteButton();
 }
@@ -290,20 +293,9 @@ void BasicOutput::applyTheme() {
 		cur.mergeCharFormat(fmt);
 	}
 
-	// Anything printed from here on uses the new normal colour.
-	setTextColor(normal);
-}
-
-void BasicOutput::outputText(QString text) {
-	outputText(text, EditorTheme::current().outputText);
-}
-
-void BasicOutput::outputText(QString text, QColor color) {
-	this->setTextColor(color); //back to black color
-	restoreLastPosition();
-	this->insertPlainText(text);
-	this->ensureCursorVisible();
-	saveLastPosition();
+	// Anything printed from here on uses the new normal colour, unless the
+	// program picked one of its own with TEXTCOLOR.
+	setCurrentCharFormat(normalFormat());
 }
 
 int BasicOutput::getCurrentPosition() {
@@ -327,83 +319,149 @@ void BasicOutput::moveToPosition(int pos) {
 	setTextCursor(t);
 }
 
-void BasicOutput::outputTextAt(int col, int row, QString s) {
-	//fprintf(stderr, "moveToPosition = col %i row %i\n", col, row);
+// Program output is written in outFormat, which TEXTCOLOR and TEXTFONT change
+// and resetOutputFormat() puts back. A program that never touches either gets
+// the pane font and the theme's normal output colour, exactly as before.
 
-	QTextCursor t(textCursor());
-	t.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
-
-	//fprintf(stderr, "moveToPosition start=%i\n", t.position());
-
-	// move to the begining of the sprecified line or append lines
-	int lines = toPlainText().count("\n");
-	//fprintf(stderr, "moveToPosition lines=%i\n", lines);
-	if (row>lines) {
-		// go to end and append
-		for (; lines < row; lines++) {
-			t.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
-			this->setTextCursor(t);
-			insertPlainText("\n");
-			//fprintf(stderr, "moveToPosition add line\n", lines);
-		}
-	} else {
-		// go down to the row
-		for (int i=0; i < row; i++) {
-			t.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor);
-			//fprintf(stderr, "moveToPosition down line\n", lines);
-		}
-		this->setTextCursor(t);
+QTextCharFormat BasicOutput::normalFormat() {
+	QTextCharFormat fmt = outFormat;
+	if (!outFormatColored) {
+		fmt.setForeground(EditorTheme::current().outputText);
 	}
-	//fprintf(stderr, "moveToPosition after position=%i\n", t.position());
-
-	// move to the specified character on the current line or append
-	t.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
-	int lineStart = t.position();
-	t.movePosition(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
-	int lineEnd = t.position();
-	//fprintf(stderr, "moveToPosition = ls %i le %i\n", lineStart, lineEnd);
-
-
-	if (col <= lineEnd-lineStart) {
-		// line is long enough to start - replace mode
-		t.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
-		t.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, col);
-		this->setTextCursor(t);
-		
-		// replace text at cursor
-		int startText = t.position();
-		t.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, s.length());
-		int endLength = t.position();
-		t.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
-		t.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, startText);
-		t.movePosition(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
-		int endLine = t.position();
-
-		int replaceLen= (endLine<endLength?endLine:endLength) - startText;
-		//fprintf(stderr, "moveToPosition = replace s %i len %i line %i replaceLen %i\n", startText, endLength, endLine, replaceLen);
-		
-		t.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
-		t.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, startText);
-		t.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, replaceLen);
-		this->setTextCursor(t);
-		this->insertPlainText(s);
-		
-	} else {
-		// line is not long enough - insert spaces and insert
-		t.movePosition(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
-		this->setTextCursor(t);
-		for (int i=lineEnd-lineStart; i<col; i++) {
-			insertPlainText(" ");
-		}
-		this->insertPlainText(s);
-	}
-
-	saveLastPosition();	
-	//fprintf(stderr, "moveToPosition = -----------------------------------\n");
-
+	return fmt;
 }
 
+void BasicOutput::resetOutputFormat() {
+	outFormat = QTextCharFormat();
+	outFormatColored = false;
+	setCurrentCharFormat(normalFormat());
+}
 
+void BasicOutput::setOutputColor(QColor fg, QColor bg) {
+	outFormat.setForeground(fg);
+	// A fully transparent background means "no background", which is how the
+	// one argument form of TEXTCOLOR clears one that was set earlier.
+	if (bg.alpha() == 0) {
+		outFormat.clearBackground();
+	} else {
+		outFormat.setBackground(bg);
+	}
+	outFormatColored = true;
+	setCurrentCharFormat(outFormat);
+}
 
+void BasicOutput::setOutputFont(QString family, int size, int weight, bool italic) {
+	// Same argument list as the graphics FONT statement: an empty family, or a
+	// size of -1, falls back to the font the pane was given in preferences.
+	const QFont base = font();
+	family = family.trimmed();
+	outFormat.setFont(QFont(family.isEmpty() ? base.family() : family,
+							size > 0 ? size : base.pointSize(),
+							weight, italic));
+	setCurrentCharFormat(outFormat);
+}
 
+void BasicOutput::outputText(QString text) {
+	writeText(text, normalFormat());
+}
 
+void BasicOutput::outputText(QString text, QColor color) {
+	// An explicit colour - error text - overrides whatever TEXTCOLOR set.
+	QTextCharFormat fmt = outFormat;
+	fmt.setForeground(color);
+	writeText(text, fmt);
+}
+
+void BasicOutput::writeText(const QString &text, const QTextCharFormat &fmt) {
+	restoreLastPosition();
+	writeTerminalText(text, fmt);
+	ensureCursorVisible();
+	saveLastPosition();
+}
+
+// Write text the way a terminal does: characters replace whatever they land on
+// up to the end of the row, and a newline moves to the start of the next row
+// instead of splitting the current one. With the cursor at the end of the
+// document - where PRINT leaves it - there is nothing to replace and no next
+// row, so this is identical to inserting. Only LOCATE can move the cursor
+// somewhere that makes the difference visible.
+//
+// A row is a block (a real newline), not a wrapped visual line, so row numbers
+// mean the same thing whether or not word wrap is turned on.
+void BasicOutput::writeTerminalText(const QString &text, const QTextCharFormat &fmt) {
+	QTextCursor t(textCursor());
+	int from = 0;
+
+	while (true) {
+		const int nl = text.indexOf(QChar::LineFeed, from);
+		const QString seg = (nl < 0 ? text.mid(from) : text.mid(from, nl - from));
+
+		if (!seg.isEmpty()) {
+			const int start = t.position();
+			t.movePosition(QTextCursor::EndOfBlock, QTextCursor::MoveAnchor);
+			const int room = t.position() - start;
+			t.setPosition(start);
+			if (room > 0) {
+				t.setPosition(start + qMin(room, (int) seg.length()), QTextCursor::KeepAnchor);
+			}
+			t.insertText(seg, fmt);
+		}
+
+		if (nl < 0) {
+			break;
+		}
+
+		if (t.blockNumber() + 1 < document()->blockCount()) {
+			t.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor);
+		} else {
+			t.movePosition(QTextCursor::EndOfBlock, QTextCursor::MoveAnchor);
+			t.insertText(QString(QChar::LineFeed), fmt);
+		}
+		from = nl + 1;
+	}
+
+	setTextCursor(t);
+}
+
+// Move the cursor to a column and row, both zero based. Rows past the end of
+// the document and columns past the end of a row are filled in with blanks, so
+// LOCATE always lands where it was asked to.
+void BasicOutput::moveCursorToColRow(int col, int row) {
+	if (col < 0) col = 0;
+	if (row < 0) row = 0;
+
+	QTextCursor t(textCursor());
+
+	while (document()->blockCount() <= row) {
+		t.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
+		t.insertText(QString(QChar::LineFeed), outFormat);
+	}
+
+	const QTextBlock block = document()->findBlockByNumber(row);
+	const int length = block.length() - 1;		// less the block separator
+	t.setPosition(block.position());
+	if (length < col) {
+		t.movePosition(QTextCursor::EndOfBlock, QTextCursor::MoveAnchor);
+		t.insertText(QString(col - length, ' '), outFormat);
+	} else {
+		t.setPosition(block.position() + col);
+	}
+
+	setTextCursor(t);
+	saveLastPosition();
+}
+
+void BasicOutput::locateCursor(int col, int row) {
+	moveCursorToColRow(col, row);
+	ensureCursorVisible();
+}
+
+// Report the column and row the next PRINT will use. That is the saved output
+// position, not the live text cursor, which the user can move by clicking in
+// the pane without affecting where the program prints.
+void BasicOutput::cursorColRow(int *col, int *row) {
+	QTextCursor t(document());
+	t.setPosition(qBound(0, lastPosition, document()->characterCount() - 1));
+	*col = t.positionInBlock();
+	*row = t.blockNumber();
+}

@@ -19,6 +19,7 @@
 #define __BASICOUTPUT_H
 
 #include <QKeyEvent>
+#include <QTextCharFormat>
 #include <QPaintEvent>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QToolBar>
@@ -39,7 +40,11 @@ class BasicOutput : public QTextEdit, public ViewWidgetIFace
 		void inputStart();
 		void outputText(QString);
 		void outputText(QString, QColor);
-		void outputTextAt(int, int, QString);
+		void locateCursor(int, int);
+		void cursorColRow(int *, int *);
+		void setOutputColor(QColor, QColor);
+		void setOutputFont(QString, int, int, bool);
+		void resetOutputFormat();
 		QAction *copyAct;
 		QAction *pasteAct;
 		QAction *printAct;
@@ -83,7 +88,16 @@ class BasicOutput : public QTextEdit, public ViewWidgetIFace
 		bool gettingInput;
 		QString inputText;
 
-		void changeFontSize(unsigned int);
+
+		// Format program output is written in - the state behind TEXTCOLOR and
+		// TEXTFONT. outFormatColored says whether a program set the foreground,
+		// in which case it wins over the theme's normal output colour.
+		QTextCharFormat outFormat;
+		bool outFormatColored;
+		QTextCharFormat normalFormat();
+		void writeText(const QString &, const QTextCharFormat &);
+		void writeTerminalText(const QString &, const QTextCharFormat &);
+		void moveCursorToColRow(int, int);
 };
 
 

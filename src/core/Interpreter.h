@@ -230,7 +230,11 @@ class Interpreter : public QThread
 		void goutputReady();
 		void outputReady(QString);
 		void outputError(QString);
-		void outputTextAt(int, int, QString);
+		void outputLocate(int, int);
+		void outputColor(int, int);
+		void outputFont(QString, int, int, bool);
+		void getTextCol();
+		void getTextRow();
 		void getInput();
 		void outputClear();
 		void getKey();
