@@ -23,6 +23,11 @@ This project is the actively maintained continuation of the original BASIC256, b
 - Simple BASIC syntax  
 - Free and open source (GPL3)  
 
+## What's new in BASIC256 2.3.0
+
+- A few potentially backward compatibility breaking changes regarding what is allowed with creating/deleting files and folders, establishing network connections, writing/dropping SQLite tables etc. All to keep system-corrupting programs at bay. For details, see the documentation site under "File and Folder Permissions"
+- Retro console abilities for the Text Output window: LOCATE puts the cursor at a column and row, TEXTCOLOR, TEXTBACKGROUND and TEXTFONT colour and style it, and TEXTCOL/TEXTROW read the cursor back. Printing at a LOCATE overwrites rather than inserts, so a program can rewrite one spot without redrawing the rest. See Examples/Console/ConsoleStatementDemo.kbs.
+
 ## What's new in BASIC256 2.2.0
 
 - A classic BASIC command WINDOW to set the logical coordinates of the canvas.
