@@ -44,6 +44,7 @@ class BasicOutput : public QTextEdit, public ViewWidgetIFace
 		void cursorColRow(int *, int *);
 		void setOutputColor(QColor, QColor);
 		void setOutputFont(QString, int, int, bool);
+		void setOutputBackground(QColor);
 		void resetOutputFormat();
 		QAction *copyAct;
 		QAction *pasteAct;
@@ -94,6 +95,10 @@ class BasicOutput : public QTextEdit, public ViewWidgetIFace
 		// in which case it wins over the theme's normal output colour.
 		QTextCharFormat outFormat;
 		bool outFormatColored;
+		// Whole-pane background from TEXTBACKGROUND. Invalid means the theme's
+		// own background, which is how a program starts.
+		QColor paneBackground;
+		void applyPaneStyle();
 		QTextCharFormat normalFormat();
 		void writeText(const QString &, const QTextCharFormat &);
 		void writeTerminalText(const QString &, const QTextCharFormat &);

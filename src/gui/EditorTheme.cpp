@@ -25,9 +25,10 @@
 static EditorTheme::Mode s_mode = EditorTheme::System;
 static bool s_modeLoaded = false;
 
-QString EditorTheme::paneStyleSheet(const QString &widgetClass) const {
+QString EditorTheme::paneStyleSheet(const QString &widgetClass, const QColor &backgroundOverride) const {
+	const QColor bg = backgroundOverride.isValid() ? backgroundOverride : background;
 	return widgetClass + "{"
-		"  background-color:" + background.name() + ";"
+		"  background-color:" + bg.name() + ";"
 		"  color:" + foreground.name() + ";"
 		"  selection-background-color:" + selectionBackground.name() + ";"
 		"  selection-color:" + selectionForeground.name() + ";"

@@ -360,6 +360,7 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "system"								//system
 			<< "tan"								//tan
 			<< "text"								//text
+			<< "textbackground"				//textbackground
 			<< "textcolor"						//textcolor
 			<< "textcolour"						//textcolour
 			<< "textcol"							//textcol

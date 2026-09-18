@@ -473,6 +473,7 @@ QString Interpreter::opname(int op) {
 	case OP_TEXTBOXWIDTH : return QString("OP_TEXTBOXWIDTH");
 	case OP_TEXTCOLOR : return QString("OP_TEXTCOLOR");
 	case OP_TEXTCOL : return QString("OP_TEXTCOL");
+	case OP_TEXTBACKGROUND : return QString("OP_TEXTBACKGROUND");
 	case OP_TEXTFONT : return QString("OP_TEXTFONT");
 	case OP_TEXTROW : return QString("OP_TEXTROW");
 	case OP_TEXTHEIGHT : return QString("OP_TEXTHEIGHT");
@@ -6022,6 +6023,15 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					waitCond->wait(mymutex);
 					mymutex->unlock();
 					stack->pushInt(returnInt);
+				}
+				break;
+
+				case OP_TEXTBACKGROUND: {
+					QColor bg = stack->popQColor();
+					mymutex->lock();
+					emit(outputBackground((int) bg.rgba()));
+					waitCond->wait(mymutex);
+					mymutex->unlock();
 				}
 				break;
 

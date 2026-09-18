@@ -865,6 +865,7 @@
 %token B256SYSTEM
 %token B256TAN
 %token B256TEXT
+%token B256TEXTBACKGROUND
 %token B256TEXTCOLOR
 %token B256TEXTCOL
 %token B256TEXTFONT
@@ -2607,6 +2608,7 @@ statement:
 	| systemstmt
 	| textstmt
 	| textcolorstmt
+	| textbackgroundstmt
 	| textfontstmt
 	| throwerrorstmt
 	| trystmt
@@ -3752,6 +3754,16 @@ textcolorstmt:
 	| B256TEXTCOLOR expr {
 		addIntOp(OP_PUSHINT, 0);	// no background - transparent
 		addOp(OP_TEXTCOLOR);
+	}
+	;
+
+textbackgroundstmt:
+	B256TEXTBACKGROUND expr {
+		addOp(OP_TEXTBACKGROUND);
+	}
+	| B256TEXTBACKGROUND args_none {
+		addIntOp(OP_PUSHINT, 0);	// transparent - back to the theme colour
+		addOp(OP_TEXTBACKGROUND);
 	}
 	;
 

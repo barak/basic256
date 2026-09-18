@@ -558,6 +558,7 @@ subroutine [Ss][Uu][Bb][Rr][Oo][Uu][Tt][Ii][Nn][Ee]
 system [Ss][Yy][Ss][Tt][Ee][Mm]
 tan [Tt][Aa][Nn]
 text [Tt][Ee][Xx][Tt]
+textbackground [Tt][Ee][Xx][Tt][Bb][Aa][Cc][Kk][Gg][Rr][Oo][Uu][Nn][Dd]
 textcol [Tt][Ee][Xx][Tt][Cc][Oo][Ll]
 textcolor [Tt][Ee][Xx][Tt][Cc][Oo][Ll][Oo][Uu]?[Rr]
 textfont [Tt][Ee][Xx][Tt][Ff][Oo][Nn][Tt]
@@ -1207,6 +1208,8 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {subroutine}				{ count(); return B256SUBROUTINE; }
 {system}					{ count(); return B256SYSTEM; }
 {text}						{ count(); return B256TEXT; }
+{textbackground}			{ count(); return B256TEXTBACKGROUND; }
+{textbackground}":"		{ count(); unputcolon(); return B256TEXTBACKGROUND; }
 {textcolor}				{ count(); return B256TEXTCOLOR; }
 {textfont}				{ count(); return B256TEXTFONT; }
 {then}						{ count(); return B256THEN; }

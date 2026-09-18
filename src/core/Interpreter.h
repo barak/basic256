@@ -235,6 +235,7 @@ class Interpreter : public QThread
 		void outputFont(QString, int, int, bool);
 		void getTextCol();
 		void getTextRow();
+		void outputBackground(int);
 		void getInput();
 		void outputClear();
 		void getKey();

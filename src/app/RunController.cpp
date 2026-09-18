@@ -265,6 +265,7 @@ RunController::RunController() {
 	QObject::connect(i, SIGNAL(outputFont(QString, int, int, bool)), this, SLOT(outputFont(QString, int, int, bool)));
 	QObject::connect(i, SIGNAL(getTextCol()), this, SLOT(getTextCol()));
 	QObject::connect(i, SIGNAL(getTextRow()), this, SLOT(getTextRow()));
+	QObject::connect(i, SIGNAL(outputBackground(int)), this, SLOT(outputBackground(int)));
 
 	QObject::connect(i, SIGNAL(playSound(QString, bool)), this, SLOT(playSound(QString, bool)));
 	QObject::connect(i, SIGNAL(playSound(std::vector<std::vector<double>>, bool)), this, SLOT(playSound(std::vector<std::vector<double>>, bool)));
@@ -439,6 +440,7 @@ RunController::startDebug() {
 		QObject::connect(i, SIGNAL(seekLine(int)), currentEditor, SLOT(seekLine(int)), Qt::BlockingQueuedConnection);
 
 		i->debugMode = 1;
+		outwin->resetOutputFormat();
 		outputClear();
 		QDir::setCurrent(currentEditor->path);
 		int result = i->compileProgram((currentEditor->toPlainText() + "\n").toUtf8().data());
@@ -492,6 +494,7 @@ RunController::startRun() {
 		QObject::connect(i, SIGNAL(seekLine(int)), currentEditor, SLOT(seekLine(int)), Qt::BlockingQueuedConnection);
 
 		i->debugMode = 0;
+		outwin->resetOutputFormat();
 		outputClear();
 		if (!currentEditor->path.isEmpty())
     		QDir::setCurrent(currentEditor->path);
@@ -542,7 +545,6 @@ void
 RunController::outputClear() {
 	mymutex->lock();
 	outwin->clear();
-	outwin->resetOutputFormat();
 	waitCond->wakeAll();
 	mymutex->unlock();
 }
@@ -1247,6 +1249,15 @@ void RunController::getTextRow(){
 		outwin->cursorColRow(&col, &row);
 	}
 	i->returnInt = row;
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+void RunController::outputBackground(int bg){
+	mymutex->lock();
+	if (guiState != GUISTATESILENT) {
+		outwin->setOutputBackground(QColor::fromRgba((QRgb) bg));
+	}
 	waitCond->wakeAll();
 	mymutex->unlock();
 }

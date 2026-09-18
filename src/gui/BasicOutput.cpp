@@ -55,7 +55,7 @@ BasicOutput::BasicOutput( ) : QTextEdit () {
 	// colour scheme. Text is emitted with an explicit colour and no background
 	// is ever set, so on Qt 6.5+ under a dark desktop theme the widget's Base
 	// role turns near-black and the text disappears into it.
-	setStyleSheet(EditorTheme::current().paneStyleSheet("QTextEdit"));
+	applyPaneStyle();
 	gettingInput = false;
 	outFormatColored = false;
 	resetOutputFormat();
@@ -212,7 +212,9 @@ void BasicOutput::paintEvent(QPaintEvent* event) {
 	QRect cursor = cursorRect();
 	cursor.setWidth(2);
 	QPainter p(viewport());
-	p.fillRect(cursor, Qt::SolidPattern);
+	// Follow the text colour rather than painting a black bar, which would be
+	// all but invisible on a pane TEXTBACKGROUND has made dark.
+	p.fillRect(cursor, normalFormat().foreground().color());
 }
 
 // Ensure that drag and drop is allowed only in permitted area when BASIC-256 wait for input
@@ -264,7 +266,7 @@ void BasicOutput::slotWrap(bool checked) {
 }
 
 void BasicOutput::applyTheme() {
-	setStyleSheet(EditorTheme::current().paneStyleSheet("QTextEdit"));
+	applyPaneStyle();
 
 	// Text already on screen keeps the colour it was written with, so output
 	// from before the switch would stay dark on a dark page. Repaint only the
@@ -331,9 +333,25 @@ QTextCharFormat BasicOutput::normalFormat() {
 	return fmt;
 }
 
+void BasicOutput::applyPaneStyle() {
+	setStyleSheet(EditorTheme::current().paneStyleSheet("QTextEdit", paneBackground));
+}
+
+void BasicOutput::setOutputBackground(QColor bg) {
+	// A fully transparent colour - TEXTBACKGROUND with no argument - hands the
+	// pane back to the theme.
+	paneBackground = (bg.alpha() == 0 ? QColor() : bg);
+	applyPaneStyle();
+}
+
+// Called when a program starts, not by CLS: a program may clear the screen as
+// often as it likes without losing the colours it chose, but it can never hand
+// the pane on to the next program in a state where text is invisible.
 void BasicOutput::resetOutputFormat() {
 	outFormat = QTextCharFormat();
 	outFormatColored = false;
+	paneBackground = QColor();
+	applyPaneStyle();
 	setCurrentCharFormat(normalFormat());
 }
 
