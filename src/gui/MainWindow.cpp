@@ -79,7 +79,7 @@ BasicIcons *basicIcons;
 // the three main components of the UI (define globally)
 MainWindow * mainwin;
 BasicEdit * editwin;
-BasicOutput * outwin;
+BasicOutputPane * outwin;
 BasicGraph * graphwin;
 VariableWin * varwin;
 BasicKeyboard * basicKeyboard;
@@ -149,7 +149,7 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f, QString localestring
     // Basic* *win go into BasicWidget *win_widget to get menus and toolbars
     // *win_widget go into BasicDock *win_dock to create the GUI docks
 
-    outwin = new BasicOutput();
+    outwin = new BasicOutputPane();
     outwin->setObjectName( "outwin" );
     outwin_widget = new BasicWidget(QObject::tr("Text Output"), "outwin_widget", outwin);
     outwin_dock = new BasicDock();
@@ -658,7 +658,7 @@ void MainWindow::loadCustomizations() {
     } else {
         editorFont = defaultEditorFont();
     }
-    outwin->setFont(editorFont);
+    outwin->setPaneFont(editorFont);
 }
 
 
@@ -1151,7 +1151,7 @@ void MainWindow::setRunState(int state) {
     clearbreakpointsact->setEnabled(state!=RUNSTATERUN && isEditorWindowActive);
 
     // Clear command for toolbars
-    outwin->clearAct->setEnabled(userCanInteractWithGUI && !outwin->toPlainText().isEmpty());
+    outwin->clearAct->setEnabled(userCanInteractWithGUI && !outwin->isEmpty());
     graphwin->clearAct->setEnabled(userCanInteractWithGUI);
     
     // Change display of word state
@@ -1349,7 +1349,7 @@ void MainWindow::dialogFontSelect() {
                 ((BasicEdit*)editwintabs->widget(i))->setFont(editorFont);
             }
         }
-        outwin->setFont(editorFont);
+        outwin->setPaneFont(editorFont);
         waitCond->wakeAll();
         mymutex->unlock();
     }

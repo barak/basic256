@@ -40,7 +40,7 @@
 
 #include "BasicDock.h"
 #include "BasicWidget.h"
-#include "BasicOutput.h"
+#include "BasicOutputPane.h"
 #include "BasicEdit.h"
 #include "BasicGraph.h"
 #include "VariableWin.h"

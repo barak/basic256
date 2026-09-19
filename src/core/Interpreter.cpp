@@ -311,6 +311,8 @@ QString Interpreter::opname(int op) {
 	case OP_LIST2ARRAY : return QString("OP_LIST2ARRAY");
 	case OP_LIST2MAP : return QString("OP_LIST2MAP");
 	case OP_LOCATE : return QString("OP_LOCATE");
+	case OP_TEXTSCREEN : return QString("OP_TEXTSCREEN");
+	case OP_TEXTCHAR : return QString("OP_TEXTCHAR");
 	case OP_LOG : return QString("OP_LOG");
 	case OP_LOGTEN : return QString("OP_LOGTEN");
 	case OP_LOWER : return QString("OP_LOWER");
@@ -6032,6 +6034,31 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					emit(outputBackground((int) bg.rgba()));
 					waitCond->wait(mymutex);
 					mymutex->unlock();
+				}
+				break;
+
+				case OP_TEXTSCREEN: {
+					// TEXTSCREEN columns, rows - the same order as LOCATE. Zero
+					// for either drops back to the flowing pane.
+					int rows = stack->popInt();
+					int cols = stack->popInt();
+					mymutex->lock();
+					emit(outputScreen(cols, rows));
+					waitCond->wait(mymutex);
+					mymutex->unlock();
+				}
+				break;
+
+				case OP_TEXTCHAR: {
+					// TEXTCHAR(column, row) reads a character back off the
+					// screen, the way SCREEN$ did on the Spectrum.
+					int row = stack->popInt();
+					int col = stack->popInt();
+					mymutex->lock();
+					emit(getTextChar(col, row));
+					waitCond->wait(mymutex);
+					mymutex->unlock();
+					stack->pushQString(returnString);
 				}
 				break;
 

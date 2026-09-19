@@ -77,13 +77,11 @@ void BasicOutput::getInput() {
 	inputPosition = lastPosition;
 	setCurrentCharFormat(normalFormat());
 	setReadOnly(false);
-	updatePasteButton();
 }
 
 void BasicOutput::stopInput() {
 	gettingInput = false;
 	setReadOnly(true);
-    updatePasteButton();
 }
 
 
@@ -134,57 +132,6 @@ void BasicOutput::keyReleaseEvent(QKeyEvent *e) {
 void BasicOutput::focusOutEvent(QFocusEvent* ){
     //clear pressed keys list when lose focus to avoid detecting still pressed keys
     basicKeyboard->reset();
-}
-
-bool BasicOutput::initActions(QMenu * vMenu, QToolBar * vToolBar) {
-	if ((NULL == vMenu) || (NULL == vToolBar)) {
-		return false;
-	}
-
-	vToolBar->setObjectName("outtoolbar");
-
-
-    QIcon copyIcon, pasteIcon, printIcon, clearIcon;
-    copyIcon.addFile(":icons/16x16/copy.png",  QSize(16, 16));
-    copyIcon.addFile(":icons/22x22/copy.png",  QSize(22, 22));
-    pasteIcon.addFile(":icons/16x16/paste.png", QSize(16, 16));
-    pasteIcon.addFile(":icons/22x22/paste.png", QSize(22, 22));
-    printIcon.addFile(":icons/16x16/print.png", QSize(16, 16));
-    printIcon.addFile(":icons/22x22/print.png", QSize(22, 22));
-    clearIcon.addFile(":icons/16x16/clear.png", QSize(16, 16));
-    clearIcon.addFile(":icons/24x24/clear.png", QSize(24, 24));
-
-    copyAct = vMenu->addAction(copyIcon, QObject::tr("Copy"));
-    copyAct->setShortcutContext(Qt::WidgetShortcut);
-    copyAct->setShortcuts(QKeySequence::keyBindings(QKeySequence::Copy));
-    copyAct->setEnabled(false);
-    pasteAct = vMenu->addAction(pasteIcon, QObject::tr("Paste"));
-    pasteAct->setShortcutContext(Qt::WidgetShortcut);
-    pasteAct->setShortcuts(QKeySequence::keyBindings(QKeySequence::Paste));
-    pasteAct->setEnabled(false);
-    printAct = vMenu->addAction(printIcon, QObject::tr("Print"));
-    printAct->setShortcutContext(Qt::WidgetShortcut);
-    printAct->setShortcuts(QKeySequence::keyBindings(QKeySequence::Print));
-    clearAct = vMenu->addAction(clearIcon, QObject::tr("Clear"));
-    clearAct->setEnabled(false);
-
-    vToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-	vToolBar->addAction(copyAct);
-	vToolBar->addAction(pasteAct);
-    vToolBar->addAction(printAct);
-    vToolBar->addAction(clearAct);
-
-	QObject::connect(copyAct, SIGNAL(triggered()), this, SLOT(copy()));
-	QObject::connect(pasteAct, SIGNAL(triggered()), this, SLOT(paste()));
-	QObject::connect(printAct, SIGNAL(triggered()), this, SLOT(slotPrint()));
-    QObject::connect(this, SIGNAL(copyAvailable(bool)), copyAct, SLOT(setEnabled(bool)));
-    QObject::connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(updatePasteButton()));
-    QObject::connect(clearAct, SIGNAL(triggered()), this, SLOT(slotClear()));
-
-	m_usesToolBar = true;
-	m_usesMenu = true;
-
-	return true;
 }
 
 void BasicOutput::slotPrint() {
@@ -247,12 +194,7 @@ void BasicOutput::insertFromMimeData(const QMimeData* source)
 	}
 }
 
-void BasicOutput::updatePasteButton(){
-     pasteAct->setEnabled(this->canPaste());
-}
-
 void BasicOutput::slotClear(){
-     clearAct->setEnabled(false);
      clear();
      lastPosition = 0;
 }

@@ -33,7 +33,7 @@ class QTextToSpeech;
 class QTimer;   // guiHeartbeat below is only ever a pointer
 
 #include "BasicEdit.h"
-#include "BasicOutput.h"
+#include "BasicOutputPane.h"
 #include "BasicGraph.h"
 #include "Interpreter.h"
 #include "ReplaceWin.h"
@@ -62,6 +62,8 @@ class RunController : public QObject
   void getTextCol();
   void getTextRow();
   void outputBackground(int);
+  void outputScreen(int, int);
+  void getTextChar(int, int);
   void goutputReady();
   void resizeGraphWindow(int, int, qreal);
   void startDebug();

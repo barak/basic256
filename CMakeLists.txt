@@ -110,6 +110,8 @@ set(SOURCES_GUI
     src/gui/BasicGraph.cpp
     src/gui/BasicIcons.cpp
     src/gui/BasicOutput.cpp
+    src/gui/BasicOutputPane.cpp
+    src/gui/BasicOutputGrid.cpp
     src/gui/BasicWidget.cpp
     src/gui/EditSyntaxHighlighter.cpp
     src/gui/EditorTheme.cpp
@@ -128,6 +130,8 @@ set(HEADERS_GUI
     src/gui/BasicGraph.h
     src/gui/BasicIcons.h
     src/gui/BasicOutput.h
+    src/gui/BasicOutputPane.h
+    src/gui/BasicOutputGrid.h
     src/gui/BasicWidget.h
     src/gui/EditSyntaxHighlighter.h
     src/gui/EditorTheme.h

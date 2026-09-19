@@ -211,6 +211,7 @@ class Interpreter : public QThread
 		int debugMode;					// 0=normal run, 1=step execution, 2=run to breakpoint
 		QList<int> *debugBreakPoints;	// map of line numbers where break points ( pointer to breakpoint list in basicedit)
 		int returnInt;					// return value from runcontroller emit
+		QString returnString;			// string return value, for TEXTCHAR
 		QImage returnImage;				// return value from runcontroller emit
 		int settingsAllowPort;
 		int settingsAllowSystem;
@@ -236,6 +237,8 @@ class Interpreter : public QThread
 		void getTextCol();
 		void getTextRow();
 		void outputBackground(int);
+		void outputScreen(int, int);
+		void getTextChar(int, int);
 		void getInput();
 		void outputClear();
 		void getKey();

@@ -564,6 +564,8 @@ textcolor [Tt][Ee][Xx][Tt][Cc][Oo][Ll][Oo][Uu]?[Rr]
 textfont [Tt][Ee][Xx][Tt][Ff][Oo][Nn][Tt]
 textheight [Tt][Ee][Xx][Tt][Hh][Ee][Ii][Gg][Hh][Tt]
 textrow [Tt][Ee][Xx][Tt][Rr][Oo][Ww]
+textscreen [Tt][Ee][Xx][Tt][Ss][Cc][Rr][Ee][Ee][Nn]
+textchar [Tt][Ee][Xx][Tt][Cc][Hh][Aa][Rr]
 textwidth [Tt][Ee][Xx][Tt][Ww][Ii][Dd][Tt][Hh]
 then [Tt][Hh][Ee][Nn]
 throwerror [Tt][Hh][Rr][Oo][Ww][Ee][Rr][Rr][Oo][Rr]
@@ -968,6 +970,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {textheight}				{ count(); return B256TEXTHEIGHT; }
 {textcol}					{ count(); return B256TEXTCOL; }
 {textrow}					{ count(); return B256TEXTROW; }
+{textchar}					{ count(); return B256TEXTCHAR; }
 {textwidth}					{ count(); return B256TEXTWIDTH; }
 {tobinary}					{ count(); return B256TOBINARY; }
 {tofloat}					{ count(); return B256TOFLOAT; }
@@ -1208,6 +1211,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {subroutine}				{ count(); return B256SUBROUTINE; }
 {system}					{ count(); return B256SYSTEM; }
 {text}						{ count(); return B256TEXT; }
+{textscreen}				{ count(); return B256TEXTSCREEN; }
 {textbackground}			{ count(); return B256TEXTBACKGROUND; }
 {textbackground}":"		{ count(); unputcolon(); return B256TEXTBACKGROUND; }
 {textcolor}				{ count(); return B256TEXTCOLOR; }

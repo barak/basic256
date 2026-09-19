@@ -26,9 +26,10 @@
 
 #include <qglobal.h>
 
-#include "ViewWidgetIFace.h"
-
-class BasicOutput : public QTextEdit, public ViewWidgetIFace
+// The flowing text pane: a rich text document with terminal write semantics
+// laid over it. It is one page of BasicOutputPane, which owns the dock's menu
+// and toolbar and forwards the interpreter's statements here.
+class BasicOutput : public QTextEdit
 {
   Q_OBJECT
 	public:
@@ -46,19 +47,12 @@ class BasicOutput : public QTextEdit, public ViewWidgetIFace
 		void setOutputFont(QString, int, int, bool);
 		void setOutputBackground(QColor);
 		void resetOutputFormat();
-		QAction *copyAct;
-		QAction *pasteAct;
-		QAction *printAct;
-		QAction *clearAct;
-
-	virtual bool initActions(QMenu *, QToolBar *);
 
 	public slots:
 		void getInput();
 		void stopInput();
 		void slotPrint();					// sent output to printer
 		void paintEvent(QPaintEvent*);		// display cursor on redraw
-		void updatePasteButton();
 		void slotClear();
 		void slotWrap(bool);
 		// Repaint the pane and any text already in it from EditorTheme.

@@ -75,7 +75,7 @@ extern QWaitCondition* waitDebugCond;
 extern MainWindow * mainwin;
 extern int guiState;
 extern BasicEdit * editwin;
-extern BasicOutput * outwin;
+extern BasicOutputPane * outwin;
 extern BasicGraph * graphwin;
 extern VariableWin * varwin;
 extern BasicKeyboard * basicKeyboard;
@@ -266,6 +266,8 @@ RunController::RunController() {
 	QObject::connect(i, SIGNAL(getTextCol()), this, SLOT(getTextCol()));
 	QObject::connect(i, SIGNAL(getTextRow()), this, SLOT(getTextRow()));
 	QObject::connect(i, SIGNAL(outputBackground(int)), this, SLOT(outputBackground(int)));
+	QObject::connect(i, SIGNAL(outputScreen(int, int)), this, SLOT(outputScreen(int, int)));
+	QObject::connect(i, SIGNAL(getTextChar(int, int)), this, SLOT(getTextChar(int, int)));
 
 	QObject::connect(i, SIGNAL(playSound(QString, bool)), this, SLOT(playSound(QString, bool)));
 	QObject::connect(i, SIGNAL(playSound(std::vector<std::vector<double>>, bool)), this, SLOT(playSound(std::vector<std::vector<double>>, bool)));
@@ -544,7 +546,7 @@ RunController::inputEntered(QString text) {
 void
 RunController::outputClear() {
 	mymutex->lock();
-	outwin->clear();
+	outwin->clearOutput();
 	waitCond->wakeAll();
 	mymutex->unlock();
 }
@@ -1258,6 +1260,30 @@ void RunController::outputBackground(int bg){
 	if (guiState != GUISTATESILENT) {
 		outwin->setOutputBackground(QColor::fromRgba((QRgb) bg));
 	}
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+// TEXTSCREEN. Under --silent there is no pane to turn into a screen, so it is
+// accepted and ignored like the rest of the text output statements.
+void RunController::outputScreen(int cols, int rows){
+	mymutex->lock();
+	if (guiState != GUISTATESILENT) {
+		outwin->setScreenSize(cols, rows);
+	}
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+// TEXTCHAR. Empty off the screen, and empty whenever there is no screen to
+// read - under --silent, or in the flowing pane, which has no cells.
+void RunController::getTextChar(int col, int row){
+	mymutex->lock();
+	QString ch;
+	if (guiState != GUISTATESILENT) {
+		ch = outwin->charAt(col, row);
+	}
+	i->returnString = ch;
 	waitCond->wakeAll();
 	mymutex->unlock();
 }

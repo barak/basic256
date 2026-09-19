@@ -870,6 +870,8 @@
 %token B256TEXTCOL
 %token B256TEXTFONT
 %token B256TEXTROW
+%token B256TEXTSCREEN
+%token B256TEXTCHAR
 %token B256TEXTHEIGHT
 %token B256TEXTWIDTH
 %token B256THEN
@@ -2272,6 +2274,7 @@ expr_string:
 	| B256MIDX '(' expr ',' expr ')' { addIntOp(OP_PUSHINT, 1); addOp(OP_MIDX); }
 	| B256MIDX '(' expr ',' expr ',' expr ')' { addOp(OP_MIDX); }
 	| B256LEFT '(' expr ',' expr ')' { addOp(OP_LEFT); }
+	| B256TEXTCHAR '(' expr ',' expr ')' { addOp(OP_TEXTCHAR); }
 	| B256RIGHT '(' expr ',' expr ')' { addOp(OP_RIGHT); }
 	| B256READ args_none { addIntOp(OP_PUSHINT, 0); addOp(OP_READ); }
 	| B256READ '(' expr ')' { addOp(OP_READ); }
@@ -2609,6 +2612,7 @@ statement:
 	| textstmt
 	| textcolorstmt
 	| textbackgroundstmt
+	| textscreenstmt
 	| textfontstmt
 	| throwerrorstmt
 	| trystmt
@@ -3754,6 +3758,20 @@ textcolorstmt:
 	| B256TEXTCOLOR expr {
 		addIntOp(OP_PUSHINT, 0);	// no background - transparent
 		addOp(OP_TEXTCOLOR);
+	}
+	;
+
+/* TEXTSCREEN cols, rows turns the pane into a fixed character grid. The
+   argument order is the same as LOCATE and the graphics pane: column first.
+   With no arguments it hands the dock back to the flowing pane. */
+textscreenstmt:
+	B256TEXTSCREEN args_ee {
+		addOp(OP_TEXTSCREEN);
+	}
+	| B256TEXTSCREEN args_none {
+		addIntOp(OP_PUSHINT, 0);	// leave grid mode
+		addIntOp(OP_PUSHINT, 0);
+		addOp(OP_TEXTSCREEN);
 	}
 	;
 
