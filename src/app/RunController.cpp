@@ -266,7 +266,7 @@ RunController::RunController() {
 	QObject::connect(i, SIGNAL(getTextCol()), this, SLOT(getTextCol()));
 	QObject::connect(i, SIGNAL(getTextRow()), this, SLOT(getTextRow()));
 	QObject::connect(i, SIGNAL(outputBackground(int)), this, SLOT(outputBackground(int)));
-	QObject::connect(i, SIGNAL(outputScreen(int, int)), this, SLOT(outputScreen(int, int)));
+	QObject::connect(i, SIGNAL(outputScreen(int, int, bool)), this, SLOT(outputScreen(int, int, bool)));
 	QObject::connect(i, SIGNAL(getTextChar(int, int)), this, SLOT(getTextChar(int, int)));
 
 	QObject::connect(i, SIGNAL(playSound(QString, bool)), this, SLOT(playSound(QString, bool)));
@@ -1266,10 +1266,10 @@ void RunController::outputBackground(int bg){
 
 // TEXTSCREEN. Under --silent there is no pane to turn into a screen, so it is
 // accepted and ignored like the rest of the text output statements.
-void RunController::outputScreen(int cols, int rows){
+void RunController::outputScreen(int cols, int rows, bool square){
 	mymutex->lock();
 	if (guiState != GUISTATESILENT) {
-		outwin->setScreenSize(cols, rows);
+		outwin->setScreenSize(cols, rows, square);
 	}
 	waitCond->wakeAll();
 	mymutex->unlock();

@@ -58,7 +58,9 @@ class BasicOutputGrid : public QWidget
 			Cell() : ch(QLatin1Char(' ')), fg(0), bg(0) {}
 		};
 
-		void setScreenSize(int cols, int rows);
+		// square: cells as tall as they are wide, the way an eighties screen
+		// was drawn, rather than cells the shape of the font's own line box.
+		void setScreenSize(int cols, int rows, bool square);
 		int screenCols() const { return m_cols; }
 		int screenRows() const { return m_rows; }
 
@@ -110,10 +112,17 @@ class BasicOutputGrid : public QWidget
 	private:
 		int m_cols;
 		int m_rows;
+		bool m_square;				// TEXTSCREEN's third argument
 		QVector<Cell> m_cells;
 
 		int m_col;					// the cursor: where the next PRINT lands
 		int m_row;
+		// The character that fills the last column does not scroll the screen
+		// by itself: the cursor rests past the end of the row and the wrap
+		// happens when there is another character to put down. Wrapping at
+		// once would throw the top row away the moment a program filled the
+		// bottom one, which is why terminals and the 8 bit machines both
+		// deferred it. m_col == m_cols is that resting place.
 
 		QRgb m_fg;					// TEXTCOLOR
 		QRgb m_bg;
@@ -124,12 +133,19 @@ class BasicOutputGrid : public QWidget
 		bool m_italic;
 		QFont m_paneFont;			// what Preferences chose, for the family
 
-		// Cell geometry, recomputed on every resize: the grid always fills the
+		// Cell geometry, recomputed on every resize: the grid is fitted to the
 		// pane, so the font size follows the window rather than the statement.
+		// The cell keeps the font's own width to height ratio and the grid is
+		// centred in whatever is left over, so a character stays the shape the
+		// designer drew it however the dock is dragged. Filling the pane in
+		// both directions instead would stretch every glyph with the window.
 		qreal m_cellW;
 		qreal m_cellH;
+		qreal m_originX;			// the grid's top left corner within the pane
+		qreal m_originY;
 		QFont m_cellFont;
 		void recomputeCellMetrics();
+		qreal cellAspect(const QFont &) const;
 
 		QColor normalFg() const;
 		QColor paneColor() const;
@@ -138,6 +154,7 @@ class BasicOutputGrid : public QWidget
 			return col >= 0 && col < m_cols && row >= 0 && row < m_rows;
 		}
 		void putChar(QChar, QRgb fg, QRgb bg);
+		void applyPendingWrap();
 		void newLine();
 		void scrollUp();
 		void advanceCursor();

@@ -36,12 +36,14 @@ extern BasicKeyboard *basicKeyboard;
 BasicOutputGrid::BasicOutputGrid() : QWidget() {
 	m_cols = GRID_DEFAULT_COLS;
 	m_rows = GRID_DEFAULT_ROWS;
+	m_square = false;
 	m_col = m_row = 0;
 	m_fg = m_bg = 0;
 	m_colored = false;
 	m_weight = QFont::Normal;
 	m_italic = false;
 	m_cellW = m_cellH = 1.0;
+	m_originX = m_originY = 0.0;
 	m_gettingInput = false;
 	m_inputCol = m_inputRow = 0;
 	m_inputCaret = 0;
@@ -76,7 +78,8 @@ QColor BasicOutputGrid::paneColor() const {
 	return EditorTheme::current().background;
 }
 
-void BasicOutputGrid::setScreenSize(int cols, int rows) {
+void BasicOutputGrid::setScreenSize(int cols, int rows, bool square) {
+	m_square = square;
 	if (cols <= 0) cols = GRID_DEFAULT_COLS;
 	if (rows <= 0) rows = GRID_DEFAULT_ROWS;
 	if (cols > GRID_MAX_COLS) cols = GRID_MAX_COLS;
@@ -92,18 +95,51 @@ void BasicOutputGrid::setScreenSize(int cols, int rows) {
 	update();
 }
 
-// The grid always fills the pane, so the cell size comes from the window and
+// The shape of a cell: the family's own width to height ratio, measured big so
+// that hinting at small sizes cannot skew it. A cell that is not this shape is
+// a character stretched out of shape, which is what turns a circle into an egg.
+qreal BasicOutputGrid::cellAspect(const QFont &family) const {
+	QFont f = family;
+	f.setStretch(QFont::AnyStretch);
+	f.setPixelSize(100);
+	const QFontMetricsF fm(f);
+	const qreal h = fm.height();
+	if (h <= 0.0) return 0.6;
+	// 'W' is the widest letter, so in a monospaced family it is the cell and in
+	// a proportional one it is the character that has to fit. Bounded because a
+	// decorative face can report an advance that would leave the grid a row of
+	// slivers or a handful of slabs.
+	const qreal w = fm.horizontalAdvance(QLatin1Char('W'));
+	if (w <= 0.0) return 0.6;
+	return qBound(0.25, w / h, 1.5);
+}
+
+// The grid is fitted to the pane, so the cell size comes from the window and
 // the font is fitted into it. TEXTFONT therefore chooses the family, weight and
 // slant here and its size argument is ignored -- there is nowhere for a fixed
 // point size to go when the screen has to be cols x rows whatever the dock.
 void BasicOutputGrid::recomputeCellMetrics() {
-	m_cellW = (qreal) width() / (qreal) m_cols;
-	m_cellH = (qreal) height() / (qreal) m_rows;
-
 	QFont f = m_family.isEmpty() ? m_paneFont : QFont(m_family);
 	f.setWeight((QFont::Weight) m_weight);
 	f.setItalic(m_italic);
 	f.setStretch(QFont::AnyStretch);
+
+	// Fit cols x rows cells of the font's own shape inside the pane and centre
+	// what is left over, the way a screen sits in its bezel. Taking the cell as
+	// width/cols by height/rows instead only draws true when the dock happens
+	// to be exactly as square as the screen asked for.
+	// A square screen is the one the eighties machines actually had: their
+	// cell was 8 by 8 and a character drawn in it was as far from the one
+	// below as from the one beside it. The font is not stretched to fill it --
+	// that would undo the whole point of keeping a glyph its own shape -- so
+	// the character is simply centred in a wider cell.
+	const qreal aspect = m_square ? 1.0 : cellAspect(f);
+	const qreal availW = qMax(1.0, (qreal) width());
+	const qreal availH = qMax(1.0, (qreal) height());
+	m_cellH = qMax(1.0, qMin(availH / (qreal) m_rows, availW / (qreal) m_cols / aspect));
+	m_cellW = qMax(1.0, m_cellH * aspect);
+	m_originX = qMax(0.0, (availW - m_cellW * m_cols) / 2.0);
+	m_originY = qMax(0.0, (availH - m_cellH * m_rows) / 2.0);
 
 	// Size by the cell height, which is what makes the text as large as the
 	// screen allows.
@@ -115,15 +151,19 @@ void BasicOutputGrid::recomputeCellMetrics() {
 	}
 	f.setPixelSize(px);
 
-	// Then stretch the glyphs to fill the cell across. Sizing by height alone
-	// leaves the characters narrower than their cells, which opens gaps that
-	// break exactly the box art and aligned columns grid mode exists for. The
-	// stretch also condenses a family whose natural advance is too wide, so a
-	// proportional face still lands on the grid rather than overflowing it.
+	// Then nudge the glyphs to the cell width. The cell was cut to the font's
+	// own ratio, so this is the rounding of a whole pixel size and no more --
+	// but without it the last pixel of a box drawing character does not meet
+	// the next one and the joins in the art come apart.
 	const qreal advance = QFontMetricsF(f).horizontalAdvance(QLatin1Char('W'));
 	if (advance > 0.0) {
-		const int stretch = qBound(25, (int) qRound(m_cellW / advance * 100.0), 400);
-		f.setStretch(stretch);
+		int stretch = (int) qRound(m_cellW / advance * 100.0);
+		// A square cell is wider than the font asks for, and the glyph is left
+		// its own shape and centred in it rather than pulled out to the edges.
+		// It is still condensed when the family is wider than the cell, or a
+		// broad face would spill into the square beside it.
+		if (m_square) stretch = qMin(stretch, 100);
+		f.setStretch(qBound(25, stretch, 400));
 	}
 	m_cellFont = f;
 }
@@ -155,10 +195,19 @@ void BasicOutputGrid::resetOutputFormat() {
 }
 
 void BasicOutputGrid::setOutputColor(QColor fg, QColor bg) {
-	m_fg = fg.rgba();
+	// A transparent foreground is TEXTCOLOR with no arguments: the theme
+	// decides the colour again, which is what m_colored being false means.
+	if (fg.alpha() == 0) {
+		m_fg = 0;
+		m_colored = false;
+	} else {
+		m_fg = fg.rgba();
+		m_colored = true;
+	}
 	// Alpha 0 is the one argument form of TEXTCOLOR clearing the background.
 	m_bg = (bg.alpha() == 0 ? 0 : bg.rgba());
-	m_colored = true;
+	// The cursor is drawn in the text colour, so it changes with it.
+	update();
 }
 
 void BasicOutputGrid::setOutputBackground(QColor bg) {
@@ -204,20 +253,27 @@ void BasicOutputGrid::scrollUp() {
 	clearSelection();
 }
 
-void BasicOutputGrid::advanceCursor() {
-	m_col++;
-	if (m_col >= m_cols) {
-		// Wrap at the column, which on a real grid is where it belongs.
-		m_col = 0;
-		m_row++;
-		if (m_row >= m_rows) {
-			m_row = m_rows - 1;
-			scrollUp();
-		}
+// The wrap the last column leaves owing, paid the moment another character
+// arrives. Nothing happens if the program stops there, so a PRINT that fills
+// the screen exactly leaves the whole screen on show.
+void BasicOutputGrid::applyPendingWrap() {
+	if (m_col < m_cols) return;
+	m_col = 0;
+	m_row++;
+	if (m_row >= m_rows) {
+		m_row = m_rows - 1;
+		scrollUp();
 	}
 }
 
+void BasicOutputGrid::advanceCursor() {
+	// Past the last column the cursor rests rather than wraps: see the header.
+	m_col++;
+}
+
 void BasicOutputGrid::newLine() {
+	// A line ending settles the owed wrap rather than adding to it, so the row
+	// a full line ends on is not followed by a blank one.
 	m_col = 0;
 	m_row++;
 	if (m_row >= m_rows) {
@@ -227,6 +283,7 @@ void BasicOutputGrid::newLine() {
 }
 
 void BasicOutputGrid::putChar(QChar ch, QRgb fg, QRgb bg) {
+	applyPendingWrap();
 	if (!inRange(m_col, m_row)) return;
 	Cell &cell = m_cells[index(m_col, m_row)];
 	cell.ch = ch;
@@ -248,7 +305,10 @@ void BasicOutputGrid::outputText(QString text, QColor color) {
 		} else if (ch == QChar::CarriageReturn) {
 			m_col = 0;
 		} else if (ch == QLatin1Char('\t')) {
-			// Tab stops every 8 columns, the console convention.
+			// Tab stops every 8 columns, the console convention. A tab that is
+			// owed a wrap takes it first, so it counts from the new row's own
+			// stops rather than from the end of the row before.
+			applyPendingWrap();
 			const int next = ((m_col / 8) + 1) * 8;
 			while (m_col < next && m_col < m_cols) putChar(QLatin1Char(' '), fg, m_bg);
 		} else {
@@ -266,7 +326,9 @@ void BasicOutputGrid::locateCursor(int col, int row) {
 }
 
 void BasicOutputGrid::cursorColRow(int *col, int *row) {
-	*col = m_col;
+	// TEXTCOL never reports a column that is not on the screen, so a cursor
+	// resting past the last one reads as the last one.
+	*col = qMin(m_col, m_cols - 1);
 	*row = m_row;
 }
 
@@ -284,10 +346,10 @@ void BasicOutputGrid::paintEvent(QPaintEvent *) {
 	const QColor fallbackFg = theme.outputText;
 
 	for (int r = 0; r < m_rows; r++) {
-		const qreal y = r * m_cellH;
+		const qreal y = m_originY + r * m_cellH;
 		for (int c = 0; c < m_cols; c++) {
 			const Cell &cell = m_cells.at(index(c, r));
-			const QRectF box(c * m_cellW, y, m_cellW, m_cellH);
+			const QRectF box(m_originX + c * m_cellW, y, m_cellW, m_cellH);
 			const bool sel = cellSelected(c, r);
 
 			if (sel) {
@@ -311,17 +373,22 @@ void BasicOutputGrid::paintEvent(QPaintEvent *) {
 
 	// The cursor, drawn the way the flowing pane draws it: a bar in the text
 	// colour, so it stays visible on a dark TEXTBACKGROUND.
-	if (inRange(m_col, m_row)) {
-		const QRectF caret(m_col * m_cellW, m_row * m_cellH, 2.0, m_cellH);
-		p.fillRect(caret, normalFg());
+	// A cursor resting past the last column is drawn against the right hand
+	// edge of the screen, which reads as "this row is full" rather than
+	// sitting on top of the character that filled it.
+	if (m_row >= 0 && m_row < m_rows) {
+		const bool resting = m_col >= m_cols;
+		const int caretCol = resting ? m_cols - 1 : m_col;
+		const qreal x = m_originX + caretCol * m_cellW + (resting ? m_cellW - 2.0 : 0.0);
+		p.fillRect(QRectF(x, m_originY + m_row * m_cellH, 2.0, m_cellH), normalFg());
 	}
 }
 
 // --------------------------------------------------------------- selection
 
 void BasicOutputGrid::cellAt(const QPoint &pt, int *col, int *row) const {
-	*col = qBound(0, (int) (pt.x() / m_cellW), m_cols - 1);
-	*row = qBound(0, (int) (pt.y() / m_cellH), m_rows - 1);
+	*col = qBound(0, (int) ((pt.x() - m_originX) / m_cellW), m_cols - 1);
+	*row = qBound(0, (int) ((pt.y() - m_originY) / m_cellH), m_rows - 1);
 }
 
 bool BasicOutputGrid::cellSelected(int col, int row) const {
@@ -436,6 +503,9 @@ void BasicOutputGrid::startInput() {
 	m_gettingInput = true;
 	m_inputText.clear();
 	m_inputCaret = 0;
+	// The typed line starts on the screen, never on the resting place past the
+	// last column, or redrawing it would count from a row it is not on.
+	applyPendingWrap();
 	m_inputCol = m_col;
 	m_inputRow = m_row;
 	setFocus();

@@ -3759,17 +3759,33 @@ textcolorstmt:
 		addIntOp(OP_PUSHINT, 0);	// no background - transparent
 		addOp(OP_TEXTCOLOR);
 	}
+	| B256TEXTCOLOR args_none {
+		// TEXTCOLOR on its own hands the text back to the theme, the way
+		// TEXTBACKGROUND on its own hands back the background. A fully
+		// transparent foreground is what says so.
+		addIntOp(OP_PUSHINT, 0);	// no foreground - back to the theme
+		addIntOp(OP_PUSHINT, 0);	// and no background of its own
+		addOp(OP_TEXTCOLOR);
+	}
 	;
 
 /* TEXTSCREEN cols, rows turns the pane into a fixed character grid. The
    argument order is the same as LOCATE and the graphics pane: column first.
-   With no arguments it hands the dock back to the flowing pane. */
+   A third argument asks for square cells -- as tall as they are wide, the
+   shape the eighties machines drew -- rather than cells the shape of the
+   font's own line box. With no arguments it hands the dock back to the
+   flowing pane. */
 textscreenstmt:
-	B256TEXTSCREEN args_ee {
+	B256TEXTSCREEN args_eee {
+		addOp(OP_TEXTSCREEN);
+	}
+	| B256TEXTSCREEN args_ee {
+		addIntOp(OP_PUSHINT, 0);	// cells the shape of the font
 		addOp(OP_TEXTSCREEN);
 	}
 	| B256TEXTSCREEN args_none {
 		addIntOp(OP_PUSHINT, 0);	// leave grid mode
+		addIntOp(OP_PUSHINT, 0);
 		addIntOp(OP_PUSHINT, 0);
 		addOp(OP_TEXTSCREEN);
 	}

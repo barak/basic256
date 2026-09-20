@@ -100,7 +100,11 @@ while key = 0
    pause .05
 end while
 textbackground
-textcolor rgb(0,128,0)
+# The colour goes back as well as the background: the green belonged to the
+# green screen, and leaving it set would print the last line in it. TEXTCOLOR
+# on its own hands it to the theme -- black on a light one, white on a dark
+# one -- rather than naming a colour that only suits one of them.
+textcolor
 textfont ""
 cls
 print "back to the normal Text Output window."

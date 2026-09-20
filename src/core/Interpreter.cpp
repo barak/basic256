@@ -6039,11 +6039,13 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 
 				case OP_TEXTSCREEN: {
 					// TEXTSCREEN columns, rows - the same order as LOCATE. Zero
-					// for either drops back to the flowing pane.
+					// for either drops back to the flowing pane. The third
+					// argument, when it is there, asks for square cells.
+					int square = stack->popInt();
 					int rows = stack->popInt();
 					int cols = stack->popInt();
 					mymutex->lock();
-					emit(outputScreen(cols, rows));
+					emit(outputScreen(cols, rows, square != 0));
 					waitCond->wait(mymutex);
 					mymutex->unlock();
 				}

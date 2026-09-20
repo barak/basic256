@@ -298,7 +298,16 @@ void BasicOutput::resetOutputFormat() {
 }
 
 void BasicOutput::setOutputColor(QColor fg, QColor bg) {
-	outFormat.setForeground(fg);
+	// A fully transparent foreground - TEXTCOLOR with no arguments at all -
+	// gives the text back to the theme, so it is white on a dark one and black
+	// on a light one, exactly as it is before a program has said anything.
+	if (fg.alpha() == 0) {
+		outFormat.clearForeground();
+		outFormatColored = false;
+	} else {
+		outFormat.setForeground(fg);
+		outFormatColored = true;
+	}
 	// A fully transparent background means "no background", which is how the
 	// one argument form of TEXTCOLOR clears one that was set earlier.
 	if (bg.alpha() == 0) {
@@ -306,8 +315,7 @@ void BasicOutput::setOutputColor(QColor fg, QColor bg) {
 	} else {
 		outFormat.setBackground(bg);
 	}
-	outFormatColored = true;
-	setCurrentCharFormat(outFormat);
+	setCurrentCharFormat(normalFormat());
 }
 
 void BasicOutput::setOutputFont(QString family, int size, int weight, bool italic) {

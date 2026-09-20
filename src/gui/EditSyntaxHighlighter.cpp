@@ -223,7 +223,7 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "log10"								//log10
 			<< "lower"								//lower
 			<< "ltrim"								//ltrim
-			<< "ltrim"								//ltrim
+			<< "rtrim"								//rtrim
 			<< "maintoolbarvisible"
 			<< "map"
 			<< "maximize"
@@ -333,7 +333,7 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "soundvolume"						//soundvolume
 			<< "soundwait"                  		//soundwait
 			<< "soundwaveform"                  	//soundwaveform
-			<< "spritedcollide"						//spritedcollide
+			<< "spritecollide"						//spritecollide
 			<< "spritedim"							//spritedim
 			<< "spriteh"							//spriteh
 			<< "spritehide"							//spritehide
@@ -361,12 +361,14 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "tan"								//tan
 			<< "text"								//text
 			<< "textbackground"				//textbackground
+			<< "textchar"							//textchar
 			<< "textcolor"						//textcolor
 			<< "textcolour"						//textcolour
 			<< "textcol"							//textcol
 			<< "textfont"						//textfont
 			<< "textheight"							//textheight
 			<< "textrow"							//textrow
+			<< "textscreen"						//textscreen
 			<< "textwidth"							//textwidth
 			<< "then"								//then
 			<< "throwerror"							//throwerror

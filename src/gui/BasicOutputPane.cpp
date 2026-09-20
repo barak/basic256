@@ -70,12 +70,12 @@ void BasicOutputPane::setGridMode(bool on) {
 	updatePasteButton();
 }
 
-void BasicOutputPane::setScreenSize(int cols, int rows) {
+void BasicOutputPane::setScreenSize(int cols, int rows, bool square) {
 	if (cols <= 0 || rows <= 0) {
 		setGridMode(false);
 		return;
 	}
-	m_grid->setScreenSize(cols, rows);
+	m_grid->setScreenSize(cols, rows, square);
 	setGridMode(true);
 }
 

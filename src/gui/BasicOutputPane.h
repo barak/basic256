@@ -56,7 +56,7 @@ class BasicOutputPane : public QStackedWidget, public ViewWidgetIFace
 
 		// TEXTSCREEN: cols or rows of zero leaves grid mode and hands the dock
 		// back to the flowing pane.
-		void setScreenSize(int cols, int rows);
+		void setScreenSize(int cols, int rows, bool square);
 		// TEXTCHAR: the character at a cell. Empty off screen, and always empty
 		// in the flowing pane, which has no cells to read.
 		QString charAt(int col, int row);
