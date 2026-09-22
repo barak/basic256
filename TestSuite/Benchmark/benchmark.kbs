@@ -1,0 +1,748 @@
+# BASIC256 Benchmark
+#
+# Modification History
+# date		programmer	description
+# 20260922	m.vilain	original coding
+#
+# Times each part of the interpreter separately and prints one table at the
+# end. The point is comparison -- between two builds, two machines, or the
+# same machine before and after a change -- so every line reports a rate as
+# well as a time, and the iteration counts are fixed rather than calibrated so
+# that two runs are directly comparable.
+#
+# It ships beside the TestSuite in every BASIC256 release, so anyone can run it
+# on their own machine and compare: open it, press Run, and read the table. See
+# README.md in this folder.
+#
+# Run it from the IDE. The graphics, sprite and text output sections need real
+# windows: under --silent the drawing is skipped by design and those three
+# sections would report the speed of doing nothing. It still runs under
+# --silent and the rest of the table is meaningful there, so it is a fair way
+# to compare two builds of the interpreter on its own.
+#
+# It takes about half a minute on a current desktop. If that is too long on a
+# slow machine (a Raspberry Pi, say), turn benchscale down; on a very fast one,
+# turn it up. Only compare runs that used the same scale.
+#
+# The counts are chosen so that no one section dominates the run, which is not
+# the same as giving every section the same count: printing a line to the
+# flowing text pane costs tens of milliseconds and an insert that commits on
+# its own costs about a hundred, while an integer loop turns over in well
+# under a microsecond. Where two lines measure related things at different
+# counts, the comment above them says so.
+
+benchscale = 1.0
+
+# Results are collected as they are measured and the table is printed at the
+# end, so that the text output section is not measuring the benchmark's own
+# report.
+benchmax = 64
+dim benchname$(benchmax)
+dim benchops(benchmax)
+dim benchms(benchmax)
+benchcount = 0
+
+global benchname$, benchops, benchms, benchcount
+
+subroutine record(name$, ops, ms)
+   benchname$[benchcount] = name$
+   benchops[benchcount] = ops
+   benchms[benchcount] = ms
+   benchcount = benchcount + 1
+   print ". " + name$ + " - " + ms + "ms"
+end subroutine
+
+# Scaled repeat counts, never less than one: turning benchscale right down
+# must make a section quicker, not skip it.
+function reps(v)
+   if v < 1 then return 1
+   return int(v)
+end function
+
+function pad$(v$, w)
+   blanks$ = "                                                  "
+   if length(v$) >= w then return v$
+   return right(blanks$ + v$, w)
+end function
+
+function padright$(v$, w)
+   blanks$ = "                                                  "
+   if length(v$) >= w then return v$
+   return left(v$ + blanks$, w)
+end function
+
+# A whole number with thousands separators, so that seven and eight figure
+# rates can be told apart at a glance.
+function grouped$(v)
+   whole$ = string(int(v))
+   out$ = ""
+   while length(whole$) > 3
+      out$ = "," + right(whole$, 3) + out$
+      whole$ = left(whole$, length(whole$) - 3)
+   end while
+   return whole$ + out$
+end function
+
+print "BASIC256 benchmark"
+print "version " + version + "   ostype " + ostype + "   scale " + benchscale
+print "started " + year + "-" + right(month + 101, 2) + "-" + right(day + 100, 2) + " " + right(hour + 100, 2) + ":" + right(minute + 100, 2)
+print
+
+# Ask whether there is a text output pane at all. With no windows -- under
+# --silent -- a character screen cannot be made, so the cursor never leaves the
+# origin. The graphics, sprite and text output sections still run in that case
+# but the drawing they ask for is skipped, so their timings mean nothing and
+# the table says so rather than leaving someone to read them as real.
+textscreen 40, 25
+locate 9999, 9999
+benchhaspane = textcol > 0
+textscreen
+
+if not benchhaspane then
+   print "No windows: the graphics, sprite and text output timings will not be real."
+endif
+print "working"
+
+benchwall = msec
+
+###################################################
+# loops and arithmetic
+###################################################
+
+benchn = reps(2000000 * benchscale)
+
+benchstart = msec
+benchint = 0
+for benchk = 1 to benchn
+   benchint = benchint + 1
+next benchk
+call record("integer loop (for/next)", benchn, msec - benchstart)
+
+benchstart = msec
+benchint = 0
+benchk = 0
+while benchk < benchn
+   benchint = benchint + 1
+   benchk = benchk + 1
+end while
+call record("integer loop (while)", benchn, msec - benchstart)
+
+benchstart = msec
+benchfloat = 0.0
+for benchk = 1 to benchn
+   benchfloat = benchfloat + 1.5
+next benchk
+call record("floating point loop (add)", benchn, msec - benchstart)
+
+benchstart = msec
+benchfloat = 1.0
+for benchk = 1 to benchn
+   benchfloat = benchfloat * 1.000001 / 1.0000005
+next benchk
+call record("floating point loop (multiply and divide)", benchn, msec - benchstart)
+
+benchstart = msec
+benchint = 0
+for benchk = 1 to benchn
+   benchint = benchint + benchk % 7
+next benchk
+call record("integer modulo", benchn, msec - benchstart)
+
+benchn = reps(300000 * benchscale)
+benchstart = msec
+benchfloat = 0.0
+for benchk = 1 to benchn
+   benchfloat = benchfloat + sin(benchk) + cos(benchk) + sqr(benchk)
+next benchk
+call record("math functions (sin, cos, sqr)", benchn * 3, msec - benchstart)
+
+###################################################
+# calls
+###################################################
+
+function benchadd(a)
+   return a + 1
+end function
+
+subroutine benchsub(a)
+   benchsubresult = a + 1
+end subroutine
+
+benchn = reps(500000 * benchscale)
+
+benchstart = msec
+benchint = 0
+for benchk = 1 to benchn
+   benchint = benchadd(benchk)
+next benchk
+call record("function calls", benchn, msec - benchstart)
+
+benchstart = msec
+for benchk = 1 to benchn
+   call benchsub(benchk)
+next benchk
+call record("subroutine calls", benchn, msec - benchstart)
+
+# Recursion is timed on a plain function; how many calls that came to is
+# counted separately by a second function that is not timed, so that the
+# counter never shows up in the measurement.
+global benchfibcalls
+
+function benchfib(m)
+   if m < 2 then return m
+   return benchfib(m - 1) + benchfib(m - 2)
+end function
+
+function benchfibcounted(m)
+   benchfibcalls = benchfibcalls + 1
+   if m < 2 then return m
+   return benchfibcounted(m - 1) + benchfibcounted(m - 2)
+end function
+
+benchdepth = 21
+benchfibcalls = 0
+benchignore = benchfibcounted(benchdepth)
+benchstart = msec
+benchignore = benchfib(benchdepth)
+call record("recursion (fibonacci " + benchdepth + ")", benchfibcalls, msec - benchstart)
+
+###################################################
+# arrays
+###################################################
+
+benchsize = reps(200000 * benchscale)
+dim bencharray(benchsize)
+
+benchstart = msec
+for benchk = 0 to benchsize - 1
+   bencharray[benchk] = benchk
+next benchk
+call record("array assignment (one dimension)", benchsize, msec - benchstart)
+
+benchstart = msec
+benchint = 0
+for benchk = 0 to benchsize - 1
+   benchint = benchint + bencharray[benchk]
+next benchk
+call record("array indexing (one dimension)", benchsize, msec - benchstart)
+
+benchrows = reps(400 * benchscale)
+dim benchgrid(benchrows, benchrows)
+
+benchstart = msec
+for benchr = 0 to benchrows - 1
+   for benchc = 0 to benchrows - 1
+      benchgrid[benchr, benchc] = benchr + benchc
+   next benchc
+next benchr
+call record("array assignment (two dimensions)", benchrows * benchrows, msec - benchstart)
+
+benchstart = msec
+benchint = 0
+for benchr = 0 to benchrows - 1
+   for benchc = 0 to benchrows - 1
+      benchint = benchint + benchgrid[benchr, benchc]
+   next benchc
+next benchr
+call record("array indexing (two dimensions)", benchrows * benchrows, msec - benchstart)
+
+# An insertion sort: array reads, writes and comparisons together, which is
+# closer to what a real program does than any of them on their own.
+benchsortsize = 2000
+dim benchsort(benchsortsize)
+seed 20260922
+for benchk = 0 to benchsortsize - 1
+   benchsort[benchk] = rand
+next benchk
+
+benchstart = msec
+for benchk = 1 to benchsortsize - 1
+   benchvalue = benchsort[benchk]
+   benchj = benchk - 1
+   while benchj >= 0 and benchsort[benchj] > benchvalue
+      benchsort[benchj + 1] = benchsort[benchj]
+      benchj = benchj - 1
+   end while
+   benchsort[benchj + 1] = benchvalue
+next benchk
+call record("insertion sort (" + benchsortsize + " elements)", benchsortsize, msec - benchstart)
+
+###################################################
+# MAT and vectors
+###################################################
+
+# The matrix sizes are fixed rather than scaled: benchscale changes how long a
+# section takes, not what it measures, and a 6x6 multiply is a different thing
+# from a 60x60 one.
+benchmatn = 60
+dim benchmata(benchmatn, benchmatn)
+dim benchmatb(benchmatn, benchmatn)
+for benchr = 0 to benchmatn - 1
+   for benchc = 0 to benchmatn - 1
+      benchmata[benchr, benchc] = benchr + benchc + 1
+      benchmatb[benchr, benchc] = benchr - benchc + 1
+   next benchc
+next benchr
+
+benchn = reps(200 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   mat add benchmatc = benchmata + benchmatb
+next benchk
+call record("MAT ADD (" + benchmatn + "x" + benchmatn + ")", benchn * benchmatn * benchmatn, msec - benchstart)
+
+benchn = reps(200 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   mat trn benchmatc = benchmata
+next benchk
+call record("MAT TRN (" + benchmatn + "x" + benchmatn + ")", benchn * benchmatn * benchmatn, msec - benchstart)
+
+# One multiply of an n by n matrix is n cubed multiply-and-adds, which is what
+# the rate below counts.
+benchn = reps(10 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   mat mul benchmatc = benchmata * benchmatb
+next benchk
+call record("MAT MUL (" + benchmatn + "x" + benchmatn + ")", benchn * benchmatn * benchmatn * benchmatn, msec - benchstart)
+
+# A matrix that is certainly not singular: dominant down the diagonal.
+benchinvn = 30
+dim benchinv(benchinvn, benchinvn)
+for benchr = 0 to benchinvn - 1
+   for benchc = 0 to benchinvn - 1
+      if benchr = benchc then
+         benchinv[benchr, benchc] = benchinvn + 1
+      else
+         benchinv[benchr, benchc] = 1
+      endif
+   next benchc
+next benchr
+
+benchn = reps(500 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   mat inv benchmatc = benchinv
+next benchk
+call record("MAT INV (" + benchinvn + "x" + benchinvn + ")", benchn, msec - benchstart)
+
+benchn = reps(200000 * benchscale)
+benchvr = {1, 2, 3}
+benchvs = {4, 5, 6}
+
+benchstart = msec
+benchfloat = 0
+for benchk = 1 to benchn
+   # the brackets are needed: + binds tighter than DOT, so without them this
+   # reads as (benchfloat + benchvr) dot benchvs
+   benchfloat = benchfloat + (benchvr dot benchvs)
+next benchk
+call record("vector DOT", benchn, msec - benchstart)
+
+benchstart = msec
+for benchk = 1 to benchn
+   benchvx = benchvr cross benchvs
+next benchk
+call record("vector CROSS", benchn, msec - benchstart)
+
+benchstart = msec
+benchfloat = 0
+for benchk = 1 to benchn
+   benchfloat = benchfloat + norm(benchvr)
+next benchk
+call record("vector NORM", benchn, msec - benchstart)
+
+benchstart = msec
+for benchk = 1 to benchn
+   benchvx = unit(benchvr)
+next benchk
+call record("vector UNIT", benchn, msec - benchstart)
+
+###################################################
+# strings
+###################################################
+
+benchn = reps(100000 * benchscale)
+
+# Growing a string a piece at a time is the thing beginners write, and the
+# thing that gets slow first, so it is worth its own line.
+benchstart = msec
+benchtext$ = ""
+for benchk = 1 to benchn
+   benchtext$ = benchtext$ + "x"
+next benchk
+call record("string concatenation (grow by one)", benchn, msec - benchstart)
+
+benchhaystack$ = ""
+for benchk = 1 to 200
+   benchhaystack$ = benchhaystack$ + "the quick brown fox jumps over the lazy dog. "
+next benchk
+
+benchn = reps(20000 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   benchint = instr(benchhaystack$, "lazy")
+next benchk
+call record("string search (instr)", benchn, msec - benchstart)
+
+benchn = reps(2000 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   benchtext$ = replace(benchhaystack$, "fox", "cat")
+next benchk
+call record("string replace", benchn, msec - benchstart)
+
+benchn = reps(200000 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   benchtext$ = mid(benchhaystack$, benchk % 100 + 1, 20)
+next benchk
+call record("string slicing (mid)", benchn, msec - benchstart)
+
+benchn = reps(20000 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   benchtext$ = upper(benchhaystack$)
+next benchk
+call record("string case conversion (upper)", benchn, msec - benchstart)
+
+benchn = reps(100000 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   benchtext$ = string(benchk) + ""
+next benchk
+call record("number to string conversion", benchn, msec - benchstart)
+
+###################################################
+# maps
+###################################################
+
+benchn = reps(50000 * benchscale)
+map benchmap
+
+benchstart = msec
+for benchk = 1 to benchn
+   benchmap["key" + benchk] = benchk
+next benchk
+call record("map insert", benchn, msec - benchstart)
+
+benchstart = msec
+benchint = 0
+for benchk = 1 to benchn
+   benchint = benchint + benchmap["key" + benchk]
+next benchk
+call record("map lookup", benchn, msec - benchstart)
+
+###################################################
+# noise and random
+###################################################
+
+benchn = reps(200000 * benchscale)
+seed 20260922
+
+benchstart = msec
+benchfloat = 0
+for benchk = 1 to benchn
+   benchfloat = benchfloat + noise(benchk * 0.01)
+next benchk
+call record("noise (one dimension)", benchn, msec - benchstart)
+
+benchstart = msec
+benchfloat = 0
+for benchk = 1 to benchn
+   benchfloat = benchfloat + noise(benchk * 0.01, benchk * 0.02)
+next benchk
+call record("noise (two dimensions)", benchn, msec - benchstart)
+
+benchn = reps(1000000 * benchscale)
+benchstart = msec
+benchfloat = 0
+for benchk = 1 to benchn
+   benchfloat = benchfloat + rand
+next benchk
+call record("random", benchn, msec - benchstart)
+
+###################################################
+# file input and output
+###################################################
+
+benchn = reps(100000 * benchscale)
+benchfile$ = "benchmark_scratch.txt"
+try
+   kill(benchfile$)
+catch
+end try
+
+benchstart = msec
+open 1, benchfile$
+reset 1
+for benchk = 1 to benchn
+   writeline 1, "line " + benchk + " of the benchmark scratch file"
+next benchk
+close 1
+call record("file output (writeline)", benchn, msec - benchstart)
+
+benchstart = msec
+open 1, benchfile$
+benchint = 0
+while not eof(1)
+   benchtext$ = readline(1)
+   benchint = benchint + 1
+end while
+close 1
+call record("file input (readline)", benchint, msec - benchstart)
+
+kill(benchfile$)
+
+###################################################
+# database
+###################################################
+
+benchdb$ = "benchmark_scratch.db"
+try
+   kill(benchdb$)
+catch
+end try
+
+dbopen benchdb$
+dbexecute "create table b (i integer primary key, d text);"
+
+# Each DBEXECUTE outside a transaction is its own commit, and a commit waits
+# for the disk, so a bare insert loop measures the drive rather than anything
+# in BASIC256 -- about a hundred milliseconds each here. Both numbers are
+# worth having, so the slow form is timed over a handful of rows and the fast
+# one over a great many, and neither is reported as a rate the other could be
+# compared against.
+benchn = reps(20 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   dbexecute "insert into b (i,d) values (" + benchk + ",'row " + benchk + "');"
+next benchk
+call record("database insert (commit every row)", benchn, msec - benchstart)
+benchfirst = benchn
+
+benchn = reps(20000 * benchscale)
+benchstart = msec
+dbexecute "begin;"
+for benchk = benchfirst + 1 to benchfirst + benchn
+   dbexecute "insert into b (i,d) values (" + benchk + ",'row " + benchk + "');"
+next benchk
+dbexecute "commit;"
+call record("database insert (one transaction)", benchn, msec - benchstart)
+benchn = benchfirst + benchn
+
+benchstart = msec
+benchint = 0
+dbopenset "select i, d from b order by i;"
+while dbrow()
+   benchint = benchint + dbint(0)
+end while
+dbcloseset
+call record("database select", benchn, msec - benchstart)
+
+dbclose
+kill(benchdb$)
+
+###################################################
+# graphics
+###################################################
+
+graphsize 400, 400
+fastgraphics
+clg black
+
+# Raw drawing with a single refresh at the end: how fast shapes go into the
+# image, with no frame cost at all.
+benchn = reps(20000 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   color rgb(benchk % 256, 128, 255 - benchk % 256)
+   plot benchk % 400, (benchk * 7) % 400
+next benchk
+refresh
+call record("graphics plot", benchn, msec - benchstart)
+
+benchn = reps(20000 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   color rgb(benchk % 256, 200, 100)
+   line benchk % 400, 0, 400 - benchk % 400, 399
+next benchk
+refresh
+call record("graphics line", benchn, msec - benchstart)
+
+benchn = reps(10000 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   color rgb(30, benchk % 256, 200), rgb(benchk % 256, 30, 60)
+   rect benchk % 350, (benchk * 3) % 350, 40, 40
+next benchk
+refresh
+call record("graphics rect", benchn, msec - benchstart)
+
+benchn = reps(10000 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   color rgb(200, benchk % 256, 30), rgb(60, 30, benchk % 256)
+   circle benchk % 380, (benchk * 5) % 380, 15
+next benchk
+refresh
+call record("graphics circle", benchn, msec - benchstart)
+
+benchpoints = {10, 0, 20, 10, 15, 25, 5, 25, 0, 10}
+benchn = reps(5000 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   color rgb(benchk % 256, 60, 200), rgb(20, benchk % 256, 90)
+   stamp benchk % 380, (benchk * 11) % 380, 1, benchpoints[]
+next benchk
+refresh
+call record("graphics stamp (five sided poly)", benchn, msec - benchstart)
+
+# The same drawing with a refresh every time round: the frame rate a program
+# that redraws the whole screen each pass would actually see.
+benchn = reps(300 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   clg black
+   color rgb(benchk % 256, 128, 200), rgb(40, 40, 80)
+   circle 200, 200, 50 + benchk % 100
+   refresh
+next benchk
+call record("graphics frames (clear, draw, refresh)", benchn, msec - benchstart)
+
+benchstart = msec
+benchslice = getslice(0, 0, 400, 400)
+call record("graphics getslice (400x400)", 400 * 400, msec - benchstart)
+
+benchstart = msec
+putslice 0, 0, benchslice[]
+refresh
+call record("graphics putslice (400x400)", 400 * 400, msec - benchstart)
+
+###################################################
+# sprites
+###################################################
+
+benchsprites = 16
+spritedim benchsprites
+benchsquare = {0, 0, 16, 0, 16, 16, 0, 16}
+for benchk = 0 to benchsprites - 1
+   color rgb(benchk * 15, 200, 255 - benchk * 15), rgb(255 - benchk * 15, 60, benchk * 15)
+   spritepoly benchk, benchsquare[]
+   spriteplace benchk, benchk * 20 + 20, benchk * 20 + 20, 1, 0
+   spriteshow benchk
+next benchk
+
+benchn = reps(2000 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   for benchs = 0 to benchsprites - 1
+      spriteplace benchs, (benchk + benchs * 20) % 380, (benchk * 3 + benchs * 20) % 380, 1, 0
+   next benchs
+next benchk
+call record("sprite place (no refresh)", benchn * benchsprites, msec - benchstart)
+
+benchn = reps(20000 * benchscale)
+benchstart = msec
+benchint = 0
+for benchk = 1 to benchn
+   if spritecollide(0, 1) then benchint = benchint + 1
+next benchk
+call record("sprite collision test", benchn, msec - benchstart)
+
+# Moving every sprite and showing the result, which is what a game does.
+benchn = reps(300 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   for benchs = 0 to benchsprites - 1
+      spritemove benchs, 1, 1
+   next benchs
+   refresh
+next benchk
+call record("sprite frames (move all, refresh)", benchn, msec - benchstart)
+
+for benchk = 0 to benchsprites - 1
+   spritehide benchk
+next benchk
+refresh
+
+###################################################
+# text output
+###################################################
+
+# Printing to the flowing pane is the slowest thing in this whole file -- tens
+# of milliseconds a line, against roughly one on the character screen -- so it
+# is given far fewer lines than the two screen sections below it. Read the
+# three rates on their own terms rather than against each other.
+benchn = reps(500 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   print "benchmark text output line " + benchk
+next benchk
+benchtextms = msec - benchstart
+cls
+call record("text output (flowing pane)", benchn, benchtextms)
+
+# The same lines onto a character screen, which keeps no scrollback at all.
+benchn = reps(5000 * benchscale)
+textscreen 80, 25
+benchstart = msec
+for benchk = 1 to benchn
+   print "benchmark text output line " + benchk
+next benchk
+benchtextms = msec - benchstart
+textscreen
+cls
+call record("text output (TEXTSCREEN grid)", benchn, benchtextms)
+
+# Placing single characters around a screen, the way a text mode game draws.
+textscreen 80, 25
+benchn = reps(5000 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   locate benchk % 80, (benchk * 7) % 25
+   print "*";
+next benchk
+benchtextms = msec - benchstart
+textscreen
+cls
+print
+call record("text output (LOCATE and one character)", benchn, benchtextms)
+
+benchwall = msec - benchwall
+
+###################################################
+# the table
+###################################################
+
+print
+print "BASIC256 benchmark results"
+print "version " + version + "   ostype " + ostype + "   scale " + benchscale
+if not benchhaspane then
+   print
+   print "NO WINDOWS: this run had no graphics or text output pane, so the drawing"
+   print "was skipped and the graphics, sprite and text output rows below are not"
+   print "real measurements. Every other row is sound."
+endif
+print
+print padright$("test", 42) + pad$("operations", 14) + pad$("ms", 9) + pad$("per second", 16)
+print "-------------------------------------------------------------------------------"
+
+for benchk = 0 to benchcount - 1
+   if benchms[benchk] > 0 then
+      benchrate$ = grouped$(benchops[benchk] * 1000 / benchms[benchk])
+   else
+      benchrate$ = "too fast"
+   endif
+   print padright$(benchname$[benchk], 42) + pad$(grouped$(benchops[benchk]), 14) + pad$(string(benchms[benchk]), 9) + pad$(benchrate$, 16)
+next benchk
+
+print "-------------------------------------------------------------------------------"
+print padright$("total run time", 42) + pad$("", 14) + pad$(string(benchwall), 9) + pad$(string(benchwall / 1000) + "s", 16)
+print
+print "Rates are operations per second and are only comparable between runs that"
+print "used the same scale. The graphics, sprite and text output lines depend on the"
+print "windowing system as much as on the interpreter."
+end
