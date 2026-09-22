@@ -205,6 +205,29 @@ call section("Console Printing")
 ###################################################
 include "testsuite_print_include.kbs"
 
+section_textscreen:
+###################################################
+call section("Text Output Screen")
+###################################################
+# Needs a real text output pane: TEXTCHAR, TEXTCOL and TEXTROW have nothing to
+# read without one. Run under -s the same file checks the no-pane contract
+# instead, which is how testsuite_ci.kbs uses it.
+include "testsuite_textscreen_include.kbs"
+
+section_filegate:
+###################################################
+call section("File and SQLite Permission Gates")
+###################################################
+# Every refusal in these two raises the Allow dialog, so they need a person
+# answering "Don't allow" to each one -- answering "Allow for this run" even
+# once opens everything after it and the rest of the section will fail. Under
+# -s there is nobody to ask, the gate fails closed, and testsuite_ci.kbs runs
+# both of these unattended.
+if yn("Do file-permission testing? (you must answer 'Don't allow' to every prompt that follows)") then
+   include "testsuite_filegate_include.kbs"
+   include "testsuite_sqlgate_include.kbs"
+endif
+
 
 
 

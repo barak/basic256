@@ -171,6 +171,30 @@ call section("Frame Rate Limiting")
 include "testsuite_framerate_include.kbs"
 
 ###################################################
+call section("Text Output Screen")
+###################################################
+# Under -s there is no text output pane, so every TEXTSCREEN/LOCATE/TEXTCOLOR
+# statement is accepted and ignored and TEXTCOL/TEXTROW/TEXTCHAR read back the
+# documented empty answers. The include notices that and checks that contract
+# instead of the screen itself -- which still catches a statement that stops
+# parsing, takes the wrong arguments, or unbalances the stack. The screen's
+# own behaviour (wrapping, scrolling, the bottom right cell) is checked by the
+# same file when testsuite.kbs runs it in front of a real pane.
+include "testsuite_textscreen_include.kbs"
+
+###################################################
+call section("File Permission Gate")
+###################################################
+# This is the better home for the gate: -s has nobody to ask, so the gate
+# fails closed and every refusal is exact, with no dialog to answer.
+include "testsuite_filegate_include.kbs"
+
+###################################################
+call section("SQLite File-Path Gate")
+###################################################
+include "testsuite_sqlgate_include.kbs"
+
+###################################################
 ###################################################
 ###################################################
 print "BASIC256_TESTSUITE_CI_PASSED"

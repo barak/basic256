@@ -1,2 +1,6 @@
 # Local build tree (CMake / Visual Studio generator output, deployed app, packages)
 build/
+
+# Left behind by TestSuite/testsuite_filegate_include.kbs: the gate test has to
+# make a folder inside the program folder, and there is no RMDIR to remove it.
+TestSuite/filegatesub/

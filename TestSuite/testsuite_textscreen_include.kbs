@@ -1,0 +1,413 @@
+# testsuite_textscreen_include section for BASIC256
+
+# Modification History
+# date		programmer	description
+# 20260922	m.vilain	original coding
+
+currentsuite = "textscreen"
+
+# TEXTSCREEN turns the text output pane into a fixed character grid, and
+# TEXTCHAR, TEXTCOL and TEXTROW read it back, so nearly all of it can be
+# checked by the program itself.
+#
+# Two things shape this file.
+#
+# First, there has to be a pane. Under --silent every text output statement is
+# deliberately accepted and ignored, TEXTCOL and TEXTROW read zero and TEXTCHAR
+# reads empty. So the file asks the screen how big it is, and if the answer is
+# "there is no screen at all" it checks that documented contract instead --
+# which still catches a statement that stops parsing, takes the wrong number of
+# arguments, or leaves the stack unbalanced.
+#
+# Second, the test helpers PRINT, and in grid mode a PRINT goes onto the grid
+# and moves the cursor. So every block below does its work on the screen, reads
+# what it needs into variables, leaves grid mode, and only then asserts.
+
+###################################################
+# is there a screen to test?
+###################################################
+
+textscreen 40, 25
+locate 9999, 9999
+screenprobecol = textcol
+screenproberow = textrow
+textscreen
+screenthere = screenprobecol > 0
+
+if not screenthere then
+   ###################################################
+   # no pane: check the documented --silent contract
+   ###################################################
+   call n("with no pane TEXTCOL stays at the origin", screenprobecol, 0)
+   call n("with no pane TEXTROW stays at the origin", screenproberow, 0)
+
+   # every form of every statement, purely to prove each still compiles and runs
+   textscreen 40, 25
+   textscreen 40, 25, true
+   textscreen 0, 0
+   textscreen
+   locate 3, 4
+   textcolor rgb(255, 0, 0)
+   textcolor rgb(255, 0, 0), rgb(0, 0, 255)
+   textcolor
+   textbackground rgb(0, 255, 0)
+   textbackground
+   cls
+   call s("with no pane TEXTCHAR is empty", textchar(0, 0), "")
+   call n("with no pane TEXTCOL is zero", textcol, 0)
+   call n("with no pane TEXTROW is zero", textrow, 0)
+   call n("the text output statements leave the stack as they found it", 1 + 1, 2)
+endif
+
+if screenthere then
+
+   ###################################################
+   # the size of the screen, and LOCATE
+   ###################################################
+
+   # There is no statement that reports the size, so ask for a cell that cannot
+   # exist: LOCATE clamps to the screen rather than growing it.
+   textscreen 40, 25
+   locate 9999, 9999
+   screenmaxcol = textcol
+   screenmaxrow = textrow
+   locate -5, -7
+   screenmincol = textcol
+   screenminrow = textrow
+   locate 7, 3
+   screenatcol = textcol
+   screenatrow = textrow
+   textscreen
+
+   call n("TEXTSCREEN 40,25 is forty columns wide", screenmaxcol, 39)
+   call n("TEXTSCREEN 40,25 is twenty five rows deep", screenmaxrow, 24)
+   call n("LOCATE clamps a column before the first one", screenmincol, 0)
+   call n("LOCATE clamps a row above the first one", screenminrow, 0)
+   call n("TEXTCOL reads back the column LOCATE set", screenatcol, 7)
+   call n("TEXTROW reads back the row LOCATE set", screenatrow, 3)
+
+   textscreen 20, 10
+   locate 9999, 9999
+   screensmallcol = textcol
+   screensmallrow = textrow
+   textscreen
+   call n("TEXTSCREEN 20,10 is twenty columns wide", screensmallcol, 19)
+   call n("TEXTSCREEN 20,10 is ten rows deep", screensmallrow, 9)
+
+   # a screen bigger than the largest one is cut down to it, not refused
+   textscreen 9999, 9999
+   locate 9999, 9999
+   screenbigcol = textcol
+   screenbigrow = textrow
+   textscreen
+   call n("TEXTSCREEN cuts the columns down to the largest screen", screenbigcol, 511)
+   call n("TEXTSCREEN cuts the rows down to the largest screen", screenbigrow, 255)
+
+   ###################################################
+   # TEXTCHAR
+   ###################################################
+
+   textscreen 40, 25
+   locate 0, 0
+   print "HELLO";
+   screenfirst$ = textchar(0, 0)
+   screenlast$ = textchar(4, 0)
+   screenblank$ = textchar(5, 0)
+   screenleft$ = textchar(-1, 0)
+   screenright$ = textchar(40, 0)
+   screenbelow$ = textchar(0, 25)
+   textscreen
+   screennone$ = textchar(0, 0)
+
+   call s("TEXTCHAR reads the first character written", screenfirst$, "H")
+   call s("TEXTCHAR reads the last character written", screenlast$, "O")
+   call s("a cell nothing was written to holds a space", screenblank$, " ")
+   call s("TEXTCHAR left of the screen is empty", screenleft$, "")
+   call s("TEXTCHAR right of the screen is empty", screenright$, "")
+   call s("TEXTCHAR below the screen is empty", screenbelow$, "")
+   call s("TEXTCHAR with no screen showing is empty", screennone$, "")
+
+   ###################################################
+   # wrapping: the wrap the last column leaves owing
+   ###################################################
+
+   # A line that fills the screen exactly leaves the whole line on show: the
+   # cursor rests past the last column and the wrap is only paid when another
+   # character arrives. Without that, a full line would always be followed by a
+   # blank one, and a full screen would always scroll its top row away.
+   screenline40$ = ""
+   for screencount = 1 to 40
+      screenline40$ = screenline40$ + "#"
+   next screencount
+
+   textscreen 40, 25
+   locate 0, 0
+   print "TOP";
+   locate 0, 5
+   print screenline40$;
+   screenrestcol = textcol
+   screenrestrow = textrow
+   screenlastcell$ = textchar(39, 5)
+   print "X";
+   screenwrapcol = textcol
+   screenwraprow = textrow
+   screenwrapcell$ = textchar(0, 6)
+   screentopstill$ = textchar(0, 0)
+   textscreen
+
+   call n("a full line leaves the cursor reading as the last column", screenrestcol, 39)
+   call n("a full line does not move down a row until it has to", screenrestrow, 5)
+   call s("the last column holds the last character of the line", screenlastcell$, "#")
+   call n("the next character pays the wrap and starts column one", screenwrapcol, 1)
+   call n("the next character pays the wrap and moves down a row", screenwraprow, 6)
+   call s("the wrapped character lands on the new row", screenwrapcell$, "X")
+   call s("nothing scrolled while the wrap was still owed", screentopstill$, "T")
+
+   # a line ending settles the owed wrap rather than adding to it
+   textscreen 40, 25
+   locate 0, 5
+   print screenline40$
+   screennewlinecol = textcol
+   screennewlinerow = textrow
+   textscreen
+   call n("a line ending puts the cursor at column zero", screennewlinecol, 0)
+   call n("a full line is not followed by a blank row", screennewlinerow, 6)
+
+   ###################################################
+   # multiline output inside a single PRINT
+   ###################################################
+
+   textscreen 40, 25
+   locate 0, 8
+   print "abcdef" + chr(13) + "XY";
+   screencrcol = textcol
+   screencrrow = textrow
+   screencrfirst$ = textchar(0, 8)
+   screencrkept$ = textchar(2, 8)
+   locate 0, 10
+   print "one" + chr(10) + "two";
+   screenlfcol = textcol
+   screenlfrow = textrow
+   screenlffirst$ = textchar(0, 10)
+   screenlfsecond$ = textchar(0, 11)
+   textscreen
+
+   call n("a carriage return goes back to column zero", screencrcol, 2)
+   call n("a carriage return stays on the same row", screencrrow, 8)
+   call s("what follows a carriage return overwrites the row", screencrfirst$, "X")
+   call s("a carriage return does not erase the rest of the row", screencrkept$, "c")
+   call n("a line feed inside one PRINT moves down a row", screenlfrow, 11)
+   call n("and what follows it starts from column zero", screenlfcol, 3)
+   call s("the text before the line feed stays where it was", screenlffirst$, "o")
+   call s("the text after the line feed starts the next row", screenlfsecond$, "t")
+
+   ###################################################
+   # TAB - stops every eight columns
+   ###################################################
+
+   textscreen 40, 25
+   locate 0, 13
+   print "ab" + chr(9) + "c";
+   screentabcol = textcol
+   screentabfill$ = textchar(5, 13)
+   screentabchar$ = textchar(8, 13)
+   locate 8, 14
+   print chr(9) + "z";
+   screenstopcol = textcol
+   screenstopchar$ = textchar(16, 14)
+   locate 39, 16
+   print "Q" + chr(9) + "w";
+   screentabwrapcol = textcol
+   screentabwraprow = textrow
+   screentabwrapq$ = textchar(39, 16)
+   screentabwrapw$ = textchar(8, 17)
+   textscreen
+
+   call n("a tab moves on to the next stop", screentabcol, 9)
+   call s("a tab fills the columns it skips with spaces", screentabfill$, " ")
+   call s("what follows a tab starts on the stop", screentabchar$, "c")
+   call n("a tab already on a stop moves on to the next one", screenstopcol, 17)
+   call s("what follows that tab starts on the next stop", screenstopchar$, "z")
+   call n("a tab that is owed a wrap takes the wrap first", screentabwraprow, 17)
+   call n("and counts its stops from the new row", screentabwrapcol, 9)
+   call s("the character before the wrap stayed where it was", screentabwrapq$, "Q")
+   call s("the character after the tab is on the new row", screentabwrapw$, "w")
+
+   ###################################################
+   # the bottom right character
+   ###################################################
+
+   # The one cell that cannot be written unless the wrap really is left owing:
+   # anything else would scroll it away as it was written.
+   textscreen 40, 25
+   locate 0, 0
+   print "TOP";
+   locate 39, 24
+   print "Z";
+   screenbrcol = textcol
+   screenbrrow = textrow
+   screenbrchar$ = textchar(39, 24)
+   screenbrtop$ = textchar(0, 0)
+   textscreen
+
+   call s("the bottom right cell can be written", screenbrchar$, "Z")
+   call n("the cursor rests on the last column", screenbrcol, 39)
+   call n("and on the last row", screenbrrow, 24)
+   call s("filling the last cell does not scroll on its own", screenbrtop$, "T")
+
+   ###################################################
+   # scrolling
+   ###################################################
+
+   textscreen 40, 25
+   locate 0, 0
+   print "AAA";
+   locate 0, 1
+   print "BBB";
+   locate 0, 24
+   print "ZZZ"
+   screenscrollcol = textcol
+   screenscrollrow = textrow
+   screenscrolltop$ = textchar(0, 0)
+   screenscrollmoved$ = textchar(0, 23)
+   screenscrollbottom$ = textchar(0, 24)
+   textscreen
+
+   call s("a line ending on the last row scrolls the top row away", screenscrolltop$, "B")
+   call s("every row moves up one", screenscrollmoved$, "Z")
+   call s("and the new last row is blank", screenscrollbottom$, " ")
+   call n("the cursor stays on the last row", screenscrollrow, 24)
+   call n("and goes back to column zero", screenscrollcol, 0)
+
+   ###################################################
+   # square cells
+   ###################################################
+
+   # Square cells are a shape, not a different screen: the grid the program
+   # sees is the same one either way.
+   textscreen 40, 25, true
+   locate 9999, 9999
+   screensquarecol = textcol
+   screensquarerow = textrow
+   locate 0, 0
+   print "SQ";
+   screensquarechar$ = textchar(1, 0)
+   textscreen
+
+   call n("square cells do not change the number of columns", screensquarecol, 39)
+   call n("square cells do not change the number of rows", screensquarerow, 24)
+   call s("square cells hold the same characters", screensquarechar$, "Q")
+
+   ###################################################
+   # turning the screen on and off
+   ###################################################
+
+   textscreen 40, 25
+   locate 5, 5
+   print "STALE";
+   textscreen 40, 25
+   screenagainchar$ = textchar(5, 5)
+   screenagaincol = textcol
+   screenagainrow = textrow
+   textscreen
+   screengonechar$ = textchar(5, 5)
+
+   textscreen 40, 25
+   locate 0, 0
+   print "GRID";
+   textscreen 0, 25
+   screenzerochar$ = textchar(0, 0)
+
+   call s("TEXTSCREEN again starts from a blank screen", screenagainchar$, " ")
+   call n("TEXTSCREEN again homes the cursor column", screenagaincol, 0)
+   call n("TEXTSCREEN again homes the cursor row", screenagainrow, 0)
+   call s("TEXTSCREEN on its own leaves the screen behind", screengonechar$, "")
+   call s("a screen with no size at all leaves the screen behind", screenzerochar$, "")
+
+   ###################################################
+   # CLS on a screen
+   ###################################################
+
+   textscreen 40, 25
+   locate 5, 5
+   print "CLEARME";
+   cls
+   screenclschar$ = textchar(5, 5)
+   screenclscol = textcol
+   screenclsrow = textrow
+   textscreen
+
+   call s("CLS empties the screen", screenclschar$, " ")
+   call n("CLS homes the cursor column", screenclscol, 0)
+   call n("CLS homes the cursor row", screenclsrow, 0)
+
+   ###################################################
+   # colour
+   ###################################################
+
+   # TEXTCHAR reads the character in a cell and not the colours it was drawn
+   # in, so what a program can check is that setting a colour -- including
+   # handing it back to the theme -- writes the characters it was given and
+   # moves the cursor no differently. Whether the colours themselves are right
+   # is the eyeball check at the end of this file.
+   textscreen 40, 25
+   locate 0, 0
+   textcolor rgb(255, 80, 80)
+   print "RED";
+   textcolor rgb(120, 255, 120), rgb(0, 0, 120)
+   print "GRN";
+   textbackground rgb(40, 0, 60)
+   print "BAK";
+   textcolor
+   textbackground
+   print "DEF";
+   screencolr$ = textchar(0, 0)
+   screencolg$ = textchar(3, 0)
+   screencolb$ = textchar(6, 0)
+   screencold$ = textchar(9, 0)
+   screencolcol = textcol
+   screencolrow = textrow
+   textscreen
+
+   call s("TEXTCOLOR does not disturb the characters", screencolr$, "R")
+   call s("TEXTCOLOR with a background does not disturb them either", screencolg$, "G")
+   call s("TEXTBACKGROUND does not disturb them", screencolb$, "B")
+   call s("TEXTCOLOR and TEXTBACKGROUND alone hand back to the theme", screencold$, "D")
+   call n("none of the colour statements moved the cursor column", screencolcol, 12)
+   call n("none of them moved its row either", screencolrow, 0)
+
+   ###################################################
+   # what only a person can check
+   ###################################################
+
+   # confirm() is called here rather than the usual q() helper because q()
+   # prints, and a print while the screen is up would scribble on the very
+   # thing being looked at.
+   if not unattended then
+      textscreen 32, 16, true
+      textcolor rgb(255, 255, 0), rgb(0, 0, 160)
+      locate 0, 0
+      print " BASIC256 text screen           ";
+      textcolor rgb(160, 255, 160)
+      locate 2, 3
+      print "32 columns by 16 rows";
+      locate 2, 5
+      print "cells as tall as they are wide";
+      textcolor
+      textbackground
+      locate 2, 8
+      print "and back to the theme colours";
+      screenlooksright = confirm("A 32 by 16 screen: a yellow on blue title line across the top, two green lines below it, then a line in the ordinary output colours. The cells should look square. Is that what you see?", true)
+      textscreen
+      call boolean("the text screen is drawn the way it was asked for", screenlooksright)
+   endif
+
+endif
+
+###################################################
+# leave the pane the way the rest of the suite expects it
+###################################################
+
+textscreen
+textcolor
+textbackground

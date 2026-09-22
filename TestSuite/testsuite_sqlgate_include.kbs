@@ -1,0 +1,226 @@
+# testsuite_sqlgate_include section for BASIC256
+
+# Modification History
+# date		programmer	description
+# 20260922	m.vilain	original coding
+
+currentsuite = "sqlgate"
+
+# DBOPEN goes through the file gate, but that only covers the first file:
+# ATTACH and VACUUM INTO name further files from a connection that is already
+# open, which is how a program would otherwise write anywhere on the disk
+# through SQLite. So the statement itself is read far enough to find its
+# leading keyword and the file name that follows, and that name is held to the
+# same rule as any other path.
+#
+# Everything else is ordinary SQL and is not touched, which is what the
+# positive tests below are for: a gate that broke ordinary database work would
+# be worse than the hole it closed.
+#
+# As with the file gate, --silent makes every refusal exact, while an
+# interactive run raises the Allow dialog and needs "Don't allow" each time.
+
+sqlgatesetting$ = getsetting("SYSTEM", "Allow/File")
+sqlgateon = sqlgatesetting$ <> "2"
+
+###################################################
+# a database in the program's own folder
+###################################################
+
+try
+   kill("sqlgate.db")
+catch
+end try
+try
+   kill("sqlgate_attached.db")
+catch
+end try
+try
+   kill("sqlgate_vacuum.db")
+catch
+end try
+
+dbopen "sqlgate.db"
+dbexecute "create table t (i integer primary key, d text);"
+dbexecute "insert into t (i,d) values (1,'one');"
+dbopenset "select d from t where i = 1;"
+call n("ordinary SQL still runs", dbrow(), true)
+call s("and still returns its data", dbstring(0), "one")
+dbcloseset
+
+###################################################
+# attaching inside the folder still works
+###################################################
+
+dbexecute "attach database 'sqlgate_attached.db' as beside;"
+dbexecute "create table beside.u (z);"
+dbexecute "insert into beside.u (z) values (42);"
+dbopenset "select z from beside.u;"
+call n("a database attached beside the program opens", dbrow(), true)
+call n("and can be written to", dbint(0), 42)
+dbcloseset
+dbexecute "detach database beside;"
+call n("the attached database was made in the program's folder", exists("sqlgate_attached.db"), true)
+
+# a private database belongs to the connection and names no file at all
+dbexecute "attach database ':memory:' as scratch;"
+dbexecute "create table scratch.v (z);"
+dbexecute "insert into scratch.v (z) values (7);"
+dbopenset "select z from scratch.v;"
+call n("an in-memory database attaches", dbrow(), true)
+call n("and works", dbint(0), 7)
+dbcloseset
+dbexecute "detach database scratch;"
+
+# A plain VACUUM rewrites the database that is already open and names no file,
+# so the gate leaves it alone. VACUUM INTO does name one, and a name inside
+# the folder is allowed -- whether the SQLite behind Qt is new enough to
+# support the INTO form is not this test's business, so what is checked is
+# only that the gate did not refuse it.
+sqlgatevacuumerror = 0
+try
+   dbexecute "vacuum;"
+catch
+   sqlgatevacuumerror = lasterror
+end try
+call different("a plain VACUUM is not touched by the gate", sqlgatevacuumerror, ERROR_PERMISSION)
+
+sqlgateintoerror = 0
+try
+   dbexecute "vacuum into 'sqlgate_vacuum.db';"
+catch
+   sqlgateintoerror = lasterror
+end try
+call different("VACUUM INTO the program's own folder is not refused", sqlgateintoerror, ERROR_PERMISSION)
+
+###################################################
+# reaching outside through SQLite
+###################################################
+
+if sqlgateon then
+
+   # As in the file gate, clear away anything a broken gate left behind on an
+   # earlier run before checking that nothing new appears.
+   try
+      if exists("../sqlgate_escape.db") then kill("../sqlgate_escape.db")
+   catch
+   end try
+
+   try
+      dbexecute "attach database '../sqlgate_escape.db' as outside;"
+      call boolean("ATTACH above the program's folder should have been refused", false)
+   catch
+      call n("ATTACH above the program's folder", lasterror, ERROR_PERMISSION)
+   end try
+   call n("and no database was made there", exists("../sqlgate_escape.db"), false)
+
+   # DATABASE is optional in the statement, so the scanner must not depend on it
+   try
+      dbexecute "attach '../sqlgate_escape.db' as outside;"
+      call boolean("ATTACH without the word DATABASE should have been refused", false)
+   catch
+      call n("ATTACH written without the word DATABASE", lasterror, ERROR_PERMISSION)
+   end try
+
+   try
+      dbexecute "ATTACH DATABASE '../sqlgate_escape.db' AS outside;"
+      call boolean("ATTACH in capitals should have been refused", false)
+   catch
+      call n("ATTACH written in capitals", lasterror, ERROR_PERMISSION)
+   end try
+
+   # leading whitespace, a line comment and a block comment are all skipped
+   # before the keyword is read, so none of them walks past the gate
+   try
+      dbexecute "   attach database '../sqlgate_escape.db' as outside;"
+      call boolean("ATTACH behind leading spaces should have been refused", false)
+   catch
+      call n("ATTACH behind leading whitespace", lasterror, ERROR_PERMISSION)
+   end try
+
+   try
+      dbexecute "-- nothing to see here" + chr(10) + "attach database '../sqlgate_escape.db' as outside;"
+      call boolean("ATTACH behind a line comment should have been refused", false)
+   catch
+      call n("ATTACH behind a line comment", lasterror, ERROR_PERMISSION)
+   end try
+
+   try
+      dbexecute "/* nothing to see here */ attach database '../sqlgate_escape.db' as outside;"
+      call boolean("ATTACH behind a block comment should have been refused", false)
+   catch
+      call n("ATTACH behind a block comment", lasterror, ERROR_PERMISSION)
+   end try
+
+   # the same place named absolutely rather than with ..
+   sqlgatehome$ = currentdir
+   try
+      dbexecute "attach database '" + sqlgatehome$ + "/../sqlgate_escape.db' as outside;"
+      call boolean("ATTACH of an absolute path outside should have been refused", false)
+   catch
+      call n("ATTACH of an absolute path outside the folder", lasterror, ERROR_PERMISSION)
+   end try
+
+   # The URI form carries its own mode and can name a vfs of its own, so the
+   # plain path rules do not describe what it would do and it is refused
+   # outright -- even pointing at the program's own folder.
+   try
+      dbexecute "attach database 'file:sqlgate_uri.db?mode=rwc' as outside;"
+      call boolean("the file: URI form should have been refused", false)
+   catch
+      call n("ATTACH written as a file: URI", lasterror, ERROR_PERMISSION)
+   end try
+   call n("and nothing was made from it", exists("sqlgate_uri.db"), false)
+
+   # A target that is not a plain literal cannot be known before SQLite
+   # resolves it, so it is refused rather than guessed at. Double quotes make
+   # this an identifier, not a string literal.
+   try
+      dbexecute "attach database " + chr(34) + "../sqlgate_escape.db" + chr(34) + " as outside;"
+      call boolean("an ATTACH target that is not a literal should have been refused", false)
+   catch
+      call n("ATTACH of a target that is not a plain literal", lasterror, ERROR_PERMISSION)
+   end try
+
+   try
+      dbexecute "vacuum into '../sqlgate_vacuum_escape.db';"
+      call boolean("VACUUM INTO above the program's folder should have been refused", false)
+   catch
+      call n("VACUUM INTO above the program's folder", lasterror, ERROR_PERMISSION)
+   end try
+   call n("and no database was made there", exists("../sqlgate_vacuum_escape.db"), false)
+
+   # DBOPENSET prepares a statement down the same path, so it is gated too
+   try
+      dbopenset "attach database '../sqlgate_openset.db' as outside;"
+      call boolean("ATTACH through DBOPENSET should have been refused", false)
+   catch
+      call n("ATTACH through DBOPENSET", lasterror, ERROR_PERMISSION)
+   end try
+   call n("and no database was made there", exists("../sqlgate_openset.db"), false)
+
+endif
+
+###################################################
+# the connection survived all of it
+###################################################
+
+dbopenset "select d from t where i = 1;"
+call n("the connection still works after every refusal", dbrow(), true)
+call s("and still returns its data", dbstring(0), "one")
+dbcloseset
+dbclose
+
+try
+   kill("sqlgate.db")
+catch
+end try
+try
+   kill("sqlgate_attached.db")
+catch
+end try
+try
+   kill("sqlgate_vacuum.db")
+catch
+end try
+call n("the test databases were cleaned up", exists("sqlgate.db"), false)
