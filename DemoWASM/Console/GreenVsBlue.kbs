@@ -1,4 +1,4 @@
-# Green vs Blue": a Bobby Breitling C64 one-liner ported to the BASIC256 2.3.0 text screen
+# "Green vs Blue": a Bobby Breitling C64 one-liner ported to the BASIC256 2.3.0 text screen
 # C64: P=RND(1)*40:X=P<2:A=(A OR X)-(A AND X):PRINT CHR$(154+A);:POKE P+1024-960*A,81:SYS 59761-A*4:GOTO 1
 
 textscreen 40, 25, true           # 40x25 character grid, like the C64 screen, true for square glyphs

@@ -1,7 +1,7 @@
 <RCC>
     <qresource prefix="/examples">
         <file>Console/ConsoleStatementDemo.kbs</file>
-        <file>Console/Green vs Blue.kbs</file>
+        <file>Console/GreenVsBlue.kbs</file>
         <file>Demo/BTK2_Toolkit_demo.kbs</file>
         <file>Demo/BubbleUniverse_variations.kbs</file>
         <file>Demo/FieldLines.kbs</file>
