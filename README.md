@@ -4,7 +4,7 @@
 [![Latest release](https://img.shields.io/github/v/release/uglymike17/basic256?include_prereleases)](https://github.com/uglymike17/basic256/releases)
 [![License: GPLv3](https://img.shields.io/badge/license-GPLv3-blue)](license.txt)
 
-> **BASIC256 is a classic BASIC programming language designed to make learning programming fun through graphics, animation, sound and experimentation.**
+> **BASIC256 is a small, approachable language that lets a beginner gradually grow into graphics, simulation, games and systems programming.**
 
 <p align="center">
   <img src="resources/icons/basic256_256.png" width="192" height="192" alt="The BASIC256 logo: the words BASIC and 256 in white block letters on a rounded green square with a thick black outline">
