@@ -118,6 +118,81 @@ call n("rect spans the window units asked for", pixel(45,45), blue)
 call n("rect starts where it was told", pixel(0,0), blue)
 
 # ---------------------------------------------------------------------------
+# IMGLOAD keeps its pixel size, the window places its centre
+# ---------------------------------------------------------------------------
+
+# An image is a block of pixels and IMGLOAD has a scale argument of its own,
+# so -- like FONT and PENWIDTH -- it does not grow with the window. Only the
+# centre is a window coordinate.
+
+j$ = imagenew(20, 20, blue)
+setgraph j$
+imgsave "testwindowimg.png"
+setgraph
+
+k$ = imagenew(100, 100, rgb(255,255,255))
+setgraph k$
+imgload 50, 50, 1, 0, "testwindowimg.png"
+call n("without a window imgload centres on the pixel asked for", pixel(50,50), blue)
+call n("and covers its own 20 pixels", pixel(40,40), blue)
+call boolean("and no more", pixel(39,39) <> blue)
+
+l$ = imagenew(100, 100, rgb(255,255,255))
+setgraph l$
+window 0, 0, 10, 10
+imgload 5, 5, 1, 0, "testwindowimg.png"
+window
+call n("the window places the centre", pixel(50,50), blue)
+call n("the image is still 20 pixels across", pixel(40,40), blue)
+call n("and 20 down", pixel(59,59), blue)
+call boolean("the window does not magnify it", pixel(39,39) <> blue)
+call boolean("nor stretch it to the far edge", pixel(60,60) <> blue)
+
+kill "testwindowimg.png"
+call same("delete temp imgload image", exists("testwindowimg.png"), false)
+
+# ---------------------------------------------------------------------------
+# GETSLICE and PUTSLICE are a pair, and the window does not break the pair
+# ---------------------------------------------------------------------------
+
+# The corner is a window coordinate, as it is for PIXEL, but the width and
+# height stay a count of pixels -- so the array comes back the size asked for
+# and putslice x,y,getslice(x,y,w,h,l) puts every pixel back where it was.
+
+m$ = imagenew(100, 100, rgb(255,255,255))
+setgraph m$
+color red
+rect 20, 20, 10, 10
+
+window 0, 0, 10, 10
+dim sl(1,1)
+sl = getslice(2, 2, 10, 10, slice_paint)
+call n("getslice returns the pixel count it was asked for", sl[?,], 10)
+call n("in both directions", sl[,?], 10)
+
+# wipe the surface, then put the slice back at the coordinate it came from
+color white
+rect 0, 0, 10, 10
+window
+call n("the surface really was wiped", pixel(20,20), white)
+
+window 0, 0, 10, 10
+putslice 2, 2, sl
+window
+call n("putslice puts the slice back where getslice took it", pixel(20,20), red)
+call n("all of it", pixel(29,29), red)
+call boolean("and no more", pixel(30,30) <> red)
+call boolean("nor anything before it", pixel(19,19) <> red)
+
+# the same slice put somewhere else follows the window, at its own pixel size
+window 0, 0, 10, 10
+putslice 5, 5, sl
+window
+call n("a slice put at another window coordinate lands there", pixel(50,50), red)
+call n("still 10 pixels across", pixel(59,59), red)
+call boolean("not magnified by the window", pixel(60,60) <> red)
+
+# ---------------------------------------------------------------------------
 # WINDOW with no arguments goes back to pixels
 # ---------------------------------------------------------------------------
 
@@ -191,6 +266,30 @@ call n("2d list of points gives the same width", spritew(4), 31)
 call n("2d list of points gives the same height", spriteh(4), 6)
 
 penwidth 1
+
+# SPRITEW and SPRITEH report the size the sprite covers on screen, so they
+# follow the scale and rotation handed to SPRITEPLACE -- the same transformed
+# image that SPRITECOLLIDE and the redraw region already work from. A program
+# testing x > graphwidth - spritew(n)/2 needs the size it can actually see.
+
+penwidth 1
+spritepoly 0, {0,0, 40,0, 40,40, 0,40}
+call n("an unplaced sprite is its own size", spritew(0), 41)
+spriteplace 0, 100, 100, 3
+call n("scale 3 makes spritew three times as wide", spritew(0), 123)
+call n("and spriteh three times as tall", spriteh(0), 123)
+spriteplace 0, 100, 100, 1
+call n("back at scale 1 spritew is the original width", spritew(0), 41)
+call n("and spriteh the original height", spriteh(0), 41)
+
+# a quarter turn swaps a wide sprite for a tall one. The bounding box of a
+# rotated rectangle is not a whole number of pixels, so this asks which way
+# round it is rather than for an exact size.
+spriteplace 1, 50, 50, 1, pi/2
+call boolean("a quarter turn makes a wide sprite tall", spritew(1) < spriteh(1))
+spriteplace 1, 50, 50, 1, 0
+call n("and turning it back restores the width", spritew(1), 31)
+call n("and the height", spriteh(1), 6)
 
 # leave the drawing state as it was found so later suites are unaffected
 window

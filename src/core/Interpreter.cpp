@@ -5099,8 +5099,20 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					int layer = stack->popInt();
 					int h = stack->popInt();
 					int w = stack->popInt();
-					int y = stack->popInt();
-					int x = stack->popInt();
+					int x, y;
+					if (windowActive) {
+						// as PIXEL, the corner is a window coordinate; the width and height
+						// stay a count of pixels, so the slice keeps the size it was asked
+						// for and PUTSLICE can put it back exactly where it came from
+						double yd = stack->popDouble();
+						double xd = stack->popDouble();
+						QPointF c = windowTransform.map(QPointF(xd, yd));
+						x = qRound(c.x());
+						y = qRound(c.y());
+					} else {
+						y = stack->popInt();
+						x = stack->popInt();
+					}
 					QImage *layerimage;
 					DataElement *d = new DataElement();			// RELEASE
 					switch(layer) {
@@ -5145,8 +5157,20 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					// get image from array
 					int tw,th;
 					DataElement *d = stack->popDE();			// RELEASE
-					int y = stack->popInt();
-					int x = stack->popInt();
+					int x, y;
+					if (windowActive) {
+						// as PIXEL, the corner is a window coordinate; the width and height
+						// stay a count of pixels, so the slice keeps the size it was asked
+						// for and PUTSLICE can put it back exactly where it came from
+						double yd = stack->popDouble();
+						double xd = stack->popDouble();
+						QPointF c = windowTransform.map(QPointF(xd, yd));
+						x = qRound(c.x());
+						y = qRound(c.y());
+					} else {
+						y = stack->popInt();
+						x = stack->popInt();
+					}
 					
 					if (DataElement::getType(d)==T_ARRAY) {
 						int w = d->arrayRows();
@@ -5167,8 +5191,17 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 							painter->setCompositionMode(QPainter::CompositionMode_SourceOver);
 							painter_last_compositionModeClear=false;
 						}
-						// actually display the image
-						painter->drawImage(x, y, tmp);
+						// actually display the image -- x,y is already in surface pixels, and the
+						// slice is drawn pixel for pixel, so putslice x,y,getslice(x,y,w,h,l)
+						// puts the pixels back exactly where they were taken from
+						if (windowActive && painter->isActive()) {
+							painter->save();
+							painter->resetTransform();
+							painter->drawImage(x, y, tmp);
+							painter->restore();
+						} else {
+							painter->drawImage(x, y, tmp);
+						}
 						if (!fastgraphics && drawingOnScreen) waitForGraphics();
 					} else {
 						error->q(ERROR_ARRAYEXPR);
@@ -5507,7 +5540,18 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 							}
 							//end update painter
 
-							painter->drawImage(QPointF(x - .5 * i.width(), y - .5 * i.height()), i);
+							if (windowActive && painter->isActive()) {
+								// as OP_TEXT: an image is a block of pixels and IMGLOAD has its own
+								// scale argument, so the window places the centre and the image is
+								// then drawn at its own size rather than magnified by the window
+								QPointF c = windowTransform.map(QPointF(x, y));
+								painter->save();
+								painter->resetTransform();
+								painter->drawImage(QPointF(c.x() - .5 * i.width(), c.y() - .5 * i.height()), i);
+								painter->restore();
+							} else {
+								painter->drawImage(QPointF(x - .5 * i.width(), y - .5 * i.height()), i);
+							}
 						}
 						if (!fastgraphics && drawingOnScreen) waitForGraphics();
 					}
@@ -6504,10 +6548,14 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						error->q(ERROR_SPRITENUMBER);
 						stack->pushInt(0);
 					} else {
+						// SPRITEW/SPRITEH report the size the sprite covers on screen, so they
+						// follow the scale and rotation given to SPRITEPLACE/SPRITEMOVE -- the
+						// same transformed image that SPRITECOLLIDE and the redraw region use
+						QImage *shown = sprites[n].transformed_image ? sprites[n].transformed_image : sprites[n].image;
 						if (opcode==OP_SPRITEX) stack->pushDouble(sprites[n].x);
 						if (opcode==OP_SPRITEY) stack->pushDouble(sprites[n].y);
-						if (opcode==OP_SPRITEH) stack->pushInt(sprites[n].image?sprites[n].image->height():0);
-						if (opcode==OP_SPRITEW) stack->pushInt(sprites[n].image?sprites[n].image->width():0);
+						if (opcode==OP_SPRITEH) stack->pushInt(shown?shown->height():0);
+						if (opcode==OP_SPRITEW) stack->pushInt(shown?shown->width():0);
 						if (opcode==OP_SPRITEV) stack->pushInt(sprites[n].visible?1:0);
 						if (opcode==OP_SPRITER) stack->pushDouble(sprites[n].r);
 						if (opcode==OP_SPRITES) stack->pushDouble(sprites[n].s);
