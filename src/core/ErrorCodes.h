@@ -142,6 +142,7 @@
 #define ERROR_CROSSDIM					138
 #define ERROR_VECELEMENT				139
 #define ERROR_VECZERO					140
+#define ERROR_HSV						141
 
 
 

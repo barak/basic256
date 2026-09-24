@@ -176,6 +176,7 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "graphvisible"						//graphvisible
 			<< "graphwidth"							//graphwidth
 			<< "hour"								//hour
+			<< "hsv"								//hsv
 			<< "if"									//if
 			<< "in"
 			<< "imageautocrop"						//imageautocrop

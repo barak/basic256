@@ -659,6 +659,7 @@
 %token B256GREY
 %token B256GTE
 %token B256HOUR
+%token B256HSV
 %token B256IF
 %token B256IN
 %token B256IMAGEAUTOCROP
@@ -2021,6 +2022,13 @@ expr_numeric:
 	}
 	| B256RGB '(' expr ',' expr ',' expr ',' expr ')' {
 		addOp(OP_RGB);
+	}
+	| B256HSV '(' expr ',' expr ',' expr ')' {
+		addIntOp(OP_PUSHINT,100);	// a, in percent
+		addOp(OP_HSV);
+	}
+	| B256HSV '(' expr ',' expr ',' expr ',' expr ')' {
+		addOp(OP_HSV);
 	}
 	| B256GETCOLOR args_none { addOp(OP_GETCOLOR); }
 	| B256GETBRUSHCOLOR args_none { addOp(OP_GETBRUSHCOLOR); }

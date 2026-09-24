@@ -357,6 +357,7 @@ graphwidth [Gg][Rr][Aa][Pp][Hh][Ww][Ii][Dd][Tt][Hh]
 gray [Gg][Rr][AaEe][Yy]
 green [Gg][Rr][Ee][Ee][Nn]
 hour [Hh][Oo][Uu][Rr]
+hsv [Hh][Ss][Vv]
 if [Ii][Ff]
 in [Ii][Nn]
 imageautocrop [Ii][Mm][Aa][Gg][Ee][Aa][Uu][Tt][Oo][Cc][Rr][Oo][Pp]
@@ -868,6 +869,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {gray}						{ count(); return B256GREY; }
 {green}						{ count(); return B256GREEN; }
 {hour}						{ count(); return B256HOUR; }
+{hsv}						{ count(); return B256HSV; }
 {imagecopy}					{ count(); return B256IMAGECOPY; }
 {imageheight}					{ count(); return B256IMAGEHEIGHT; }
 {imageload}					{ count(); return B256IMAGELOAD; }

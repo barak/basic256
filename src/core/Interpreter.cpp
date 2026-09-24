@@ -313,6 +313,7 @@ QString Interpreter::opname(int op) {
 	case OP_LOCATE : return QString("OP_LOCATE");
 	case OP_TEXTSCREEN : return QString("OP_TEXTSCREEN");
 	case OP_TEXTCHAR : return QString("OP_TEXTCHAR");
+	case OP_HSV : return QString("OP_HSV");
 	case OP_LOG : return QString("OP_LOG");
 	case OP_LOGTEN : return QString("OP_LOGTEN");
 	case OP_LOWER : return QString("OP_LOWER");
@@ -5061,6 +5062,25 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 						stack->pushLong(0);
 					} else {
 						stack->pushInt( (int) QColor(rval,gval,bval,aval).rgba());
+					}
+				}
+				break;
+
+				case OP_HSV: {
+					// hue in degrees 0-360 (360 is red again, the same as 0),
+					// saturation, value and alpha in percent 0-100; fractions
+					// are kept so a slow hue sweep does not step
+					double aval = stack->popDouble();
+					double vval = stack->popDouble();
+					double sval = stack->popDouble();
+					double hval = stack->popDouble();
+					if (!(hval >= 0 && hval <= 360 && sval >= 0 && sval <= 100
+						  && vval >= 0 && vval <= 100 && aval >= 0 && aval <= 100)) {
+						error->q(ERROR_HSV);
+						stack->pushLong(0);
+					} else {
+						if (hval >= 360) hval = 0;
+						stack->pushInt( (int) QColor::fromHsvF(hval / 360.0, sval / 100.0, vval / 100.0, aval / 100.0).rgba());
 					}
 				}
 				break;

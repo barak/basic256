@@ -508,6 +508,9 @@ QString Error::getErrorMessage(char **symtable) {
 		case ERROR_VECZERO:
 			errormessage = tr("UNIT can not make a unit vector from a vector of length zero");
 			break;
+		case ERROR_HSV:
+			errormessage = tr("HSV needs a hue from 0 to 360, and saturation, value and alpha from 0 to 100");
+			break;
 
 
 
