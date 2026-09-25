@@ -10,6 +10,7 @@
         <file>Demo/Quiverbloom.kbs</file>
         <file>Demo/SlimeMoldSimulation_GUI.kbs</file>
         <file>FractalsChaosAttractors/BarnsleyFern.kbs</file>
+        <file>FractalsChaosAttractors/CloudySky.kbs</file>
         <file>FractalsChaosAttractors/JuliaMoerman.kbs</file>
         <file>FractalsChaosAttractors/Mandelbrot-256.kbs</file>
         <file>FractalsChaosAttractors/MultiJuliaIFS.kbs</file>
@@ -20,8 +21,9 @@
         <file>Fun/PongWars2.kbs</file>
         <file>Fun/SpecialEffect.kbs</file>
         <file>Fun/Warpfactor_Starfield.kbs</file>
-        <file>Games/Claude-AI-neon_snake.kbs</file>
+        <file>Games/ClaudeAI-neonsnake.kbs</file>
         <file>Games/FlappyBall.kbs</file>
+        <file>Games/FlappyBall2.kbs</file>
         <file>Games/Flood-It.kbs</file>
         <file>Games/MarbleGame.kbs</file>
         <file>Games/PacMan.kbs</file>
