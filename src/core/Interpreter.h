@@ -42,6 +42,7 @@
 #include "Sound.h"
 #include "Sleeper.h"
 #include "BasicDownloader.h"
+#include "FileSecurity.h"
 
 
 #include <QElapsedTimer>
@@ -215,7 +216,6 @@ class Interpreter : public QThread
 		QImage returnImage;				// return value from runcontroller emit
 		int settingsAllowPort;
 		int settingsAllowSystem;
-		int settingsAllowFile;			// access outside programRoot: NO / ASK / YES
 		bool settingsNetListenAny;		// netlisten binds all interfaces, not just loopback
 		QString programTitle;			// set by RunController before each run; used for the print doc name
 
@@ -433,14 +433,9 @@ class Interpreter : public QThread
 		QProcess *sys;
 
 		QString originalPath;				// used to restore IDE path afrer it may be changed at run time
-		QString programRoot;				// canonical folder the running program was loaded from
-		bool allowFileThisRun;			// the "yes, for the rest of this run" answer to the file gate
-		QSet<QString> userChosenPaths;	// paths the user picked in a file dialog - consent by selection
-		// gate every path a program names; true when the operation may proceed
-		QString resolvePath(const QString &path);
-		bool allowPath(const QString &path, const QString &what);
-		bool allowDbTarget(const QString &target);
-		bool allowSql(const QString &stmt);
+		// which files a program may touch - see FileSecurity.h
+		FileSecurity fileSecurity;
+		int askAllowFile(const QString &what, const QString &resolved);
 };
 
 

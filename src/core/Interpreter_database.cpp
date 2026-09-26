@@ -34,7 +34,7 @@ void Interpreter::execDatabaseOp(int opcode) {
 				error->q(ERROR_DBCONNNUMBER);
 			} else {
 #ifdef BASIC256_ENABLE_SQL
-				if (!allowPath(file, tr("open the database"))) break;
+				if (!fileSecurity.allowPath(file, tr("open the database"))) break;
 				
 				closeDatabase(n);
 				QString dbconnection = QStringLiteral("DBCONNECTION") + QString::number(n);
@@ -78,7 +78,7 @@ void Interpreter::execDatabaseOp(int opcode) {
 				QString dbconnection = QStringLiteral("DBCONNECTION") + QString::number(n);
 				QSqlDatabase db = QSqlDatabase::database(dbconnection);
 				if(db.isValid()) {
-					if (!allowSql(stmt)) break;
+					if (!fileSecurity.allowSql(stmt)) break;
 					
 					QSqlQuery *q = new QSqlQuery(db);
 					bool ok = q->exec(stmt);
@@ -112,7 +112,7 @@ void Interpreter::execDatabaseOp(int opcode) {
 					QString dbconnection = QStringLiteral("DBCONNECTION") + QString::number(n);
 					QSqlDatabase db = QSqlDatabase::database(dbconnection);
 					if(db.isValid()) {
-						if (!allowSql(stmt)) break;
+						if (!fileSecurity.allowSql(stmt)) break;
 						
 						if (dbSet[n][set]) {
 							dbSet[n][set]->clear();

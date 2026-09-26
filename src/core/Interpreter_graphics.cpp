@@ -949,7 +949,7 @@ void Interpreter::execGraphicsOp(int opcode) {
 			// Image Save - Save image
 			QString type = stack->popQString();
 			QString file = stack->popQString();
-			if (!allowPath(file, tr("save an image to"))) break;
+			if (!fileSecurity.allowPath(file, tr("save an image to"))) break;
 			
 			QStringList validtypes;
 			validtypes << IMAGETYPE_BMP << IMAGETYPE_JPG << IMAGETYPE_JPEG << IMAGETYPE_PNG ;

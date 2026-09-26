@@ -31,7 +31,7 @@ void Interpreter::execFileOp(int opcode) {
 			QString name = stack->popQString();
 			int fn = stack->popInt();
 
-			if (!allowPath(name, tr("open the file"))) break;
+			if (!fileSecurity.allowPath(name, tr("open the file"))) break;
 			
 			if (fn<0||fn>=NUMFILES) {
 				error->q(ERROR_FILENUMBER);
@@ -83,7 +83,7 @@ void Interpreter::execFileOp(int opcode) {
 			mymutex->unlock();
 			// consent by selection: the user chose this path themselves
 			if (!inputString.isEmpty()) {
-				userChosenPaths.insert(resolvePath(inputString));
+				fileSecurity.rememberChosen(inputString);
 			}
 			stack->pushQString(inputString);
 		}
@@ -103,7 +103,7 @@ void Interpreter::execFileOp(int opcode) {
 			mymutex->unlock();
 			// consent by selection: the user chose this path themselves
 			if (!inputString.isEmpty()) {
-				userChosenPaths.insert(resolvePath(inputString));
+				fileSecurity.rememberChosen(inputString);
 			}
 			stack->pushQString(inputString);
 		}
@@ -361,7 +361,7 @@ void Interpreter::execFileOp(int opcode) {
 
 		case OP_KILL: {
 			QString name = stack->popQString();
-			if (!allowPath(name, tr("delete the file"))) break;
+			if (!fileSecurity.allowPath(name, tr("delete the file"))) break;
 			
 			if(!QFile::remove(name)) {
 				error->q(ERROR_FILEOPEN);
@@ -417,7 +417,7 @@ void Interpreter::execFileOp(int opcode) {
 		case OP_MKDIR: {
 			QString name = stack->popQString();
 			//fprintf(stderr,"mkdir %s\n",name.toUtf8().data());
-			if (!allowPath(name, tr("create the folder"))) break;
+			if (!fileSecurity.allowPath(name, tr("create the folder"))) break;
 			
 			QDir dir = QDir::current();
 			if (!dir.exists(name)) {
