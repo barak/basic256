@@ -62,6 +62,13 @@ set(SOURCES_CORE
     src/core/Error.cpp
     src/core/GraphicsBuffer.cpp
     src/core/Interpreter.cpp
+    src/core/Interpreter_database.cpp
+    src/core/Interpreter_files.cpp
+    src/core/Interpreter_graphics.cpp
+    src/core/Interpreter_network.cpp
+    src/core/Interpreter_sound.cpp
+    src/core/Interpreter_system.cpp
+    src/core/Interpreter_textoutput.cpp
     src/core/md5.cpp
     src/core/opensimplex.cpp
     src/core/MediaPath.cpp
@@ -88,6 +95,7 @@ set(HEADERS_CORE
     src/core/ErrorCodes.h
     src/core/GraphicsBuffer.h
     src/core/Interpreter.h
+    src/core/InterpreterPrivate.h
     src/core/md5.h
     src/core/opensimplex.h
     src/core/MediaPath.h

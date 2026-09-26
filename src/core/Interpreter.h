@@ -351,6 +351,14 @@ class Interpreter : public QThread
 		// storage.  See the block comment above it in Interpreter.cpp for how
 		// an array is read as a matrix and what the element arithmetic does.
 		void matStatement(int, int, DataElement *, int, DataElement *, int);
+		// Opcodes execByteCode() hands on, one group per Interpreter_<group>.cpp
+		void execFileOp(int opcode);
+		void execSoundOp(int opcode);
+		void execGraphicsOp(int opcode);
+		void execTextOutputOp(int opcode);
+		void execDatabaseOp(int opcode);
+		void execNetworkOp(int opcode);
+		void execSystemOp(int opcode);
 		
 		void runLoop();
 
