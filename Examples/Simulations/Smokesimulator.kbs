@@ -1,0 +1,133 @@
+#Simple Smoke
+  gosub ScreenSetup
+  gosub ForcesDeclaration
+  gosub ParticleDeclaration
+while true 
+   gosub ForcesUpdate
+  gosub ParticleUpdate 
+  gosub Show 
+end while  
+
+ScreenSetup:
+  Fastgraphics 	# write to video buffer.
+  width=400
+  height=200 		# good practice to put every constant in a variable.
+  graphsize width,height 
+  # give the smoke particle something to move against
+  color black
+  rect(0, 0, width, height)
+  refresh
+  emit_x =width / 2
+  emit_y = height - 40
+return
+
+ForcesDeclaration:
+  dx = 0
+  maxWind = 0.2 
+return  
+
+ParticleDeclaration:
+  particles = 200
+  dim Particle(particles,9)
+  pos_x = 0
+  pos_y = 1
+  vel_x = 2
+  vel_y = 3
+  acc_x = 4
+  acc_y = 5
+  life = 6
+  radius = 7
+  alpha = 8
+return
+
+ForcesUpdate: 
+  if mousex > 0 then dx = mousex * ((0.4/width)) -maxWind  
+  wind = {dx, 0}
+return 
+
+ParticleUpdate:
+  # Now we initialize a particles and give its velocity a random gaussian value 
+  found=0
+  for i = 0 to particles-1
+    if Particle[i,life] <= 0 then  
+      found=found+1
+      Particle[i,pos_x] = emit_x
+      Particle[i,pos_y] = emit_y
+      u1 = rand
+      u2 = rand
+      z = sqrt(-2 * log(u1)) * cos(2 * pi * u2)   # standard normal N(0,1)
+      Particle[i,vel_x] = 0 + z * (0.3)	# scale to mean m, variance v
+      u1 = rand
+      u2 = rand
+      z = sqrt(-2 * log(u1)) * cos(2 * pi * u2)   # standard normal N(0,1)
+      Particle[i,vel_y] = -1 + z * (0.2)	# scale to mean m, variance v
+      Particle[i,acc_x] = 0
+      Particle[i,acc_y] = 0
+      Particle[i,life] = 75
+      Particle[i,radius] = 15
+      Particle[i,alpha] = 50
+    end if
+    if found = 1 then i = particles+1
+  next i
+  # Now we update all life particles
+  for i = 0 to particles-1
+    if Particle[i,life] > 0 then      
+      Particle[i,acc_x] = Particle[i,acc_x] + dx
+      Particle[i,acc_y] = Particle[i,acc_y] + 0
+      Particle[i,vel_x] = Particle[i,vel_x] + Particle[i,acc_x]
+      Particle[i,vel_y] = Particle[i,vel_y] + Particle[i,acc_y]
+      Particle[i,pos_x] = Particle[i,pos_x] + Particle[i,vel_x]
+      Particle[i,pos_y] = Particle[i,pos_y] + Particle[i,vel_y]
+      Particle[i,life] =Particle[i,life] - 1
+      Particle [i, alpha] = Particle [i, alpha] -0.65  
+      Particle[i,acc_x] = 0
+      Particle[i,acc_y] = 0
+    endif  
+  next i  
+return
+  
+Show:
+  color black
+  rect(0, 0, width-1, height-1)
+  color white 
+  # Draw the wind factor
+  pos = mousex 
+  if pos > 0 and pos < width/2 then 
+    line(width/2 , 20, pos, 20)
+    line(pos , 20, pos+10, 15)
+    line(pos , 20, pos+10, 25)
+  else
+    if pos > 0 and pos > width/2 then
+      line(width/2 , 20, pos, 20)
+      line(pos , 20, pos-10, 15)
+      line(pos , 20, pos-10, 25) 
+    endif   
+  endif 
+  # draw the emitter
+  circle (emit_x,emit_y,15) 
+  # Draw the smoke
+  for i = 0 to particles-1
+    if Particle [i, life] > 0 then
+      for x = Particle [i, radius] to 0 step -1
+        color rgb(255,255,255,Particle[i,alpha])
+        circle (Particle[i,pos_x],Particle[i,pos_y],x)
+      next x  
+    endif
+  next i    
+  refresh
+  pause 0.02
+return
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  

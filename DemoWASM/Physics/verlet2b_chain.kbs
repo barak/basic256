@@ -1,0 +1,236 @@
+#**********************************************************************************************
+#*                        Verlet integration for a chain/rope                                 *
+#**********************************************************************************************
+# A verlet integration with each particle connected to the previous one forming a chain
+# The world also has gravity, bounce and some friction
+# The first particle is 'pinned' so gravity has no effect unless moved by the mouse.
+# Moving the pinned particle makes the rope move realistically and collide with the walls.
+# Sticks are of a fixed length (ie the initial distance between the pairs of particles)
+# Verlet integration has no explicit velocity defined. Velocity is derived from previous position
+#************************************************************************************************
+#Globals to be used in the subroutines
+#************************************************************************************************
+global height, width, pos_x, pos_y, old_pos_x, old_pos_y ,pinned
+global radius, bounce, gravity, friction, grab
+global r, g, b, Particles, Part, Sticks, Stick, dist, long, particle1, particle2
+# Initialisations
+#************************************************************************************************
+call ScreenSetup()
+call WorldParameters()
+call CreateParticles()
+call CreateSticks()
+# Drawing loop
+#**********************************************************************************************
+while true
+	call mousedrag(mousex,mousey,mouseb)
+	call UpdateParticles()
+	call UpdateSticks()
+	call BoundaryCollisions()
+	call DrawParticles()
+	call DrawSticks()
+	text 340,20,"Vertlet Rope Demo"	
+	text 300,40,"Move the red dot with the mouse"	
+	refresh
+	pause 0.01
+end while
+
+#here begin the subroutines
+#**********************************************************************************************
+subroutine ScreenSetup()
+	fastgraphics
+	width = 800: height = 800
+	graphsize width, height
+	cls : clg white
+	refresh
+end subroutine
+
+subroutine WorldParameters()
+	# Physics
+	bounce = 0.6
+	gravity = 0.5
+	friction = 0.999
+	grab = -1
+end subroutine
+
+subroutine CreateParticles()
+	Particles = 60
+	dim Part(Particles,5)
+	radius = 3
+	dist = 10
+	pos_x = 0: pos_y = 1: old_pos_x = 2: old_pos_y = 3: pinned = 4
+	for i = 0 to Particles-1
+		Part[i,pos_x] = width/2
+		Part[i,pos_y] = 100 + dist*i
+		Part[i,old_pos_x] = width/2
+		Part[i,old_pos_y] = 100 + dist*i
+		if i = 0 then Part[i,pinned] = 1
+	next i
+end subroutine
+
+subroutine CreateSticks()
+	particle1 = 0
+	particle2 = 1
+	long = 2
+	Sticks = Particles - 1
+	dim Stick(Sticks, 3)
+	for i = 0 to Sticks - 1
+		# Connect particle 'i' directly to particle 'i + 1'
+		Stick[i, particle1] = i
+		Stick[i, particle2] = i + 1
+		a = Stick[i, particle1]
+		b = Stick[i, particle2]
+		dx = Part[b, pos_x] - Part[a, pos_x]
+		dy = Part[b, pos_y] - Part[a, pos_y]
+		# Store the initial distance as the target length of the stick
+		Stick[i, long] = sqr(dx * dx + dy * dy)
+	next i
+end subroutine
+
+
+subroutine UpdateParticles()
+	for i = 0 to Particles-1
+		if Part[i,pinned] < 1 then
+			vx = (Part[i,pos_x]-Part[i,old_pos_x]) * friction
+			vy = (Part[i,pos_y]-Part[i,old_pos_y]) * friction
+			Part[i,old_pos_x] = Part[i,pos_x]
+			Part[i,old_pos_y] = Part[i,pos_y]
+			Part[i,pos_x] = Part[i,pos_x] + vx
+			Part[i,pos_y] = Part[i,pos_y] + vy + gravity
+		endif
+	next i
+end subroutine
+
+subroutine UpdateSticks()
+	for iteration = 1 to 60
+		if iteration mod 2 = 0 then
+			# even passes: sweep pinned end -> free end
+			for i = 0 to Sticks - 1
+				call SolveStick(i)
+			next i
+		else
+			# odd passes: sweep free end -> pinned end
+			for i = Sticks - 1 to 0 step -1
+				call SolveStick(i)
+			next i
+		endif
+	next iteration
+end subroutine
+
+subroutine SolveStick(i)
+	a = Stick[i, particle1]
+	b = Stick[i, particle2]
+	dx = Part[b, pos_x] - Part[a, pos_x]
+	dy = Part[b, pos_y] - Part[a, pos_y]
+	distance = sqr(dx * dx + dy * dy)
+	if distance > 0 then
+		difference = Stick[i, long] - distance
+		percent = difference / distance
+		offsetX = dx * percent
+		offsetY = dy * percent
+		a_pinned = Part[a, pinned]
+		b_pinned = Part[b, pinned]
+		if a_pinned < 1 and b_pinned < 1 then
+			Part[a, pos_x] = Part[a, pos_x] - offsetX * 0.5
+			Part[a, pos_y] = Part[a, pos_y] - offsetY * 0.5
+			Part[b, pos_x] = Part[b, pos_x] + offsetX * 0.5
+			Part[b, pos_y] = Part[b, pos_y] + offsetY * 0.5
+		else
+			if a_pinned >= 1 and b_pinned < 1 then
+				Part[b, pos_x] = Part[b, pos_x] + offsetX
+				Part[b, pos_y] = Part[b, pos_y] + offsetY
+			else
+				if a_pinned < 1 and b_pinned >= 1 then
+					Part[a, pos_x] = Part[a, pos_x] - offsetX
+					Part[a, pos_y] = Part[a, pos_y] - offsetY
+				endif
+			endif
+		endif
+	endif
+end subroutine
+
+subroutine BoundaryCollisions()
+	for i = 0 to Particles-1
+		if Part[i,pos_x] > width-radius then
+			vx = Part[i,pos_x]-Part[i,old_pos_x]
+			Part[i,pos_x] = width-radius
+			Part[i,old_pos_x] = Part[i,pos_x]+vx*bounce
+		else
+			if Part[i,pos_x] < radius then
+				vx = Part[i,pos_x]-Part[i,old_pos_x]
+				Part[i,pos_x] = radius
+				Part[i,old_pos_x] = Part[i,pos_x]+vx*bounce
+			endif
+		endif
+		if Part[i,pos_y] > height-radius then
+			vy = Part[i,pos_y]-Part[i,old_pos_y]
+			Part[i,pos_y] = height-radius
+			Part[i,old_pos_y] = Part[i,pos_y]+vy*bounce
+		else
+			if Part[i,pos_y] < radius then
+				vy = Part[i,pos_y]-Part[i,old_pos_y]
+				Part[i,pos_y] = radius
+				Part[i,old_pos_y] = Part[i,pos_y]+vy*bounce
+			endif
+		endif
+	next i
+end subroutine
+
+subroutine DrawParticles()
+	color white
+	rect 0, 0, width, height
+	for i = 0 to Particles-1
+		if Part[i,pinned] = 1 then
+			color red
+			circle (Part[i,pos_x], Part[i,pos_y], radius)
+		else
+			color blue
+#			circle (Part[i,pos_x], Part[i,pos_y],1)
+			plot Part[i,pos_x], Part[i,pos_y]
+		endif
+	next i
+end subroutine
+
+subroutine DrawSticks()
+	for i = 0 to Sticks-1
+		a = Stick[i,particle1]
+		b = Stick[i,particle2]
+		penwidth 2
+		color black
+		line (Part[a,pos_x],Part[a,pos_y], Part[b,pos_x],Part[b,pos_y])
+	next i
+end subroutine
+
+subroutine mousedrag(mx, my, mb)
+ 	if mx < 0 then return                 # pointer left the window
+	if mb & 1 then                        # left button held (bit 1)
+		if grab = -1 then
+			# grab the nearest free ball within reach / its radius
+			best = -1 : bestd = 1000000000
+			for i = 0 to Particles - 1
+				if Part[i,pinned] = 1 then
+					thr = radius*radius
+					dx = Part[i,pos_x] - mx : dy = Part[i,pos_y] - my
+					dd = dx * dx + dy * dy
+					if dd < thr * thr then
+						if dd < bestd then bestd = dd : best = i
+					end if
+				end if
+			next i
+			if best >= 0 then
+				grab = best
+				Part[grab,pinned] = 1            # freeze while held
+				Part[grab,pos_x] = mx : Part[grab,pos_y] = my
+				Part[grab,old_pos_x] = mx : Part[grab,old_pos_y] = my
+			end if
+		else
+			# move the held ball, leaving a 1-tick velocity
+			Part[grab,old_pos_x] = Part[grab,pos_x] : Part[grab,old_pos_y] = Part[grab,pos_y]
+			Part[grab,pos_x] = mx : Part[grab,pos_y] = my
+		end if
+	else
+		if grab >= 0 then
+#			Part[grab,pinned] = 0                  # release -> it keeps its velocity
+			grab = -1
+		end if
+	end if
+end subroutine

@@ -77,6 +77,7 @@
         <file>Physics/Verlet1c_DifferentBalls.kbs</file>
         <file>Physics/Verlet1d_MouseMove.kbs</file>
         <file>Physics/Verlet1e_Optim.kbs</file>
+        <file>Physics/verlet2b_chain.kbs</file>
         <file>Simulations/AnimatedBall.kbs</file>
         <file>Simulations/BouncingBall.kbs</file>
         <file>Simulations/Colliding2Balls.kbs</file>
@@ -84,6 +85,8 @@
         <file>Simulations/CollidingMultipleBalls.kbs</file>
         <file>Simulations/DoublePendulum.kbs</file>
         <file>Simulations/MatrixParticles.kbs</file>
+        <file>Simulations/particle_life_final.kbs</file>
+        <file>Simulations/Smokesimulator.kbs</file>
         <file>Sound_Speech/AIChatbot.kbs</file>
         <file>Sound_Speech/SoundStatementDemo.kbs</file>
         <file>Sound_Speech/TwinkleTwinkle.kbs</file>
