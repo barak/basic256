@@ -1975,6 +1975,7 @@ expr_numeric:
 	| B256RAND args_none { addOp(OP_RAND); }
 	| B256NOISE '(' expr ')' { addIntOp(OP_PUSHINT, 1); addOp(OP_NOISE); }
 	| B256NOISE '(' args_ee ')' { addIntOp(OP_PUSHINT, 2); addOp(OP_NOISE); }
+	| B256NOISE '(' args_eee ')' { addIntOp(OP_PUSHINT, 3); addOp(OP_NOISE); }
 				| B256PI args_none { addFloatOp(OP_PUSHFLOAT, 3.14159265358979323846); }
 	| B256BOOLEOF args_none {
 		addIntOp(OP_PUSHINT, 0);

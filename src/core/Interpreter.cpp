@@ -3580,11 +3580,17 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				break;
 
 				case OP_NOISE: {
-					// NOISE(x) walks a line through the two dimensional field and
-					// NOISE(x,y) samples it directly - the grammar pushes 1 or 2 to
-					// say which form was written.
+					// NOISE(x) walks a line through the two dimensional field,
+					// NOISE(x,y) samples it directly and NOISE(x,y,z) samples the
+					// three dimensional field - the grammar pushes 1, 2 or 3 to say
+					// which form was written.
 					int dims = stack->popInt();
-					if (dims == 2) {
+					if (dims == 3) {
+						double z = stack->popDouble();
+						double y = stack->popDouble();
+						double x = stack->popDouble();
+						stack->pushDouble(OpenSimplex2::noise3(noiseSeed, x, y, z));
+					} else if (dims == 2) {
 						double y = stack->popDouble();
 						double x = stack->popDouble();
 						stack->pushDouble(OpenSimplex2::noise2(noiseSeed, x, y));
