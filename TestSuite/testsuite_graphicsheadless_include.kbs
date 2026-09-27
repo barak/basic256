@@ -293,6 +293,22 @@ call n("and turning it back restores the width", spritew(1), 31)
 call n("and the height", spriteh(1), 6)
 
 # ---------------------------------------------------------------------------
+# SPRITETEXT makes a sprite the size of the text in the current font
+# ---------------------------------------------------------------------------
+
+# The pixel size of text depends on the fonts installed, so these compare one
+# sprite with another rather than asking for exact sizes.
+spritetext 2, "Hi"
+call boolean("spritetext makes a sprite with width", spritew(2) > 0)
+call boolean("and height", spriteh(2) > 0)
+spritetext(3, "Hi there, sprites")
+call boolean("longer text makes a wider sprite", spritew(3) > spritew(2))
+call n("on the same line height", spriteh(3), spriteh(2))
+spritetext 4, "Hi", yellow
+call n("a background colour does not change the width", spritew(4), spritew(2))
+call n("or the height", spriteh(4), spriteh(2))
+
+# ---------------------------------------------------------------------------
 # ELLIPSE, and drawing an image centred or warped onto the surface
 # ---------------------------------------------------------------------------
 

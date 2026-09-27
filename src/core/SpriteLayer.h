@@ -109,8 +109,6 @@ class GraphicsBuffer;
  *   - startRun() only forgets the count; the array is freed by the clear() at
  *     the end of the run before.  Nothing frees it when the interpreter is
  *     destroyed, which only matters if that happens mid-run.
- *   - OP_SPRITETEXT has a case in execSpriteOp() but no keyword: neither
- *     basicParse.l nor basicParse.y knows SPRITETEXT, so no program reaches it.
  *   - collide() and updateScreen() pick the plain image when s is 1 and r is 0
  *     and the transformed one otherwise; place() keeps the two in step, so the
  *     transformed image is there whenever it is picked.

@@ -15,6 +15,7 @@
 	* SOUNDLOAD of a URL that cannot be downloaded gives back an empty string, the same as a file that is not there, rather than a sound resource with nothing in it. The download error is still raised.
 	* SOUNDENVELOPE with an array takes its levels and durations the way the four-number form does -- level, duration, level, and so on, ending with a level and then the release time -- so the array always has an even number of values, at least four. It used to ask for an odd number and then read one of the levels as the release time.
 	* IMAGETYPE_PNG can be written in small letters, imagetype_png, like every other word in the language.
+	* SPRITETEXT works. spritetext n, text$ makes sprite n from the text, drawn in the current font and pen colour on a clear background, the sprite being exactly the size of the text; a third argument, spritetext n, text$, colour, fills the sprite with that colour first, which makes a label that can be read over anything drawn behind it.
 
 2026-09-07 M. Vilain <uglymike17@gmail.com>
 	* The project has now moved to v2.2.0 state and includes all changes made to v2.1.2.
