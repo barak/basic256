@@ -11,6 +11,7 @@
 # 20160807	j.m.reneau	removed typeof check on an array
 # 20200421  j.m.reneau  moved input testing to inputkey
 # 20200423  j.m.reneau  added map type and assigned (as it is rerlated to type)
+# 20260927	m.vilain	TYPE_REF, and TYPEOF through a reference
 
 currentsuite = "types"
 
@@ -244,8 +245,12 @@ a = "-2.345e-7"
 call n(a; " isnumeric", isnumeric(a), true)
 call n(a; " float*1 self", float(a)*1, a)
 
-
-
-
-
-
+# TYPE_REF is the type of a reference to a variable.  TYPEOF looks through a
+# reference to the variable it names, so it reports that variable's own type
+subroutine typeofref(a)
+   call n("typeof looks through a reference to the variable's own type", typeof(a), TYPE_INT)
+   call boolean("so never reports type_ref", typeof(a) <> type_ref)
+end subroutine
+refvar = 7
+call typeofref(ref(refvar))
+call n("type_ref is type number 5", type_ref, 5)

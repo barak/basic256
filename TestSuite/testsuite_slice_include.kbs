@@ -3,6 +3,7 @@
 # Modification History
 # date		programmer	description
 # 20200403	j.m.reneau	created
+# 20260927	m.vilain	SLICE_ALL, SLICE_PAINT and SLICE_SPRITE layers
 
 currentsuite = "slice"
 
@@ -36,3 +37,27 @@ for t = 0 to 90 step 10
 next t
 refresh
 call q("2 diagonal rows of little circles")
+
+# which layer GETSLICE reads: SLICE_ALL (both, the default), SLICE_PAINT (what
+# was painted) or SLICE_SPRITE (only the sprites, the painting left clear)
+graphsize 150, 150
+clg white
+color red
+rect 0, 0, 20, 20
+color blue
+spritedim 1
+spritepoly 0, {0,0, 20,0, 20,20, 0,20}
+spriteplace 0, 40, 40
+spriteshow 0
+refresh
+sa = getslice(30, 30, 20, 20, slice_all)
+sp = getslice(30, 30, 20, 20, slice_paint)
+ss = getslice(30, 30, 20, 20, slice_sprite)
+call n("slice_all sees the sprite", sa[10, 10], blue)
+call n("slice_paint sees only the painting under it", sp[10, 10], white)
+call n("slice_sprite sees only the sprite", ss[10, 10], blue)
+ss = getslice(0, 0, 20, 20, slice_sprite)
+call n("slice_sprite leaves the painting clear", ss[10, 10], clear)
+sa = getslice(0, 0, 20, 20)
+call n("while slice_all has it", sa[10, 10], red)
+spritehide 0

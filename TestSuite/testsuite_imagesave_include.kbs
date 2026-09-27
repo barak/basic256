@@ -3,6 +3,7 @@
 # Modification History
 # date		programmer	description
 # 20200408	j.m.reneau  split from main testsuite
+# 20260927	m.vilain	IMGSAVE with IMAGETYPE_PNG, _JPG and _BMP
 
 currentsuite = "imgsave"
 
@@ -33,3 +34,20 @@ next t
 call q("imgload - did the image spin out?")
 kill "testimgsave.png"
 call same("delete temp imgsave image",exists("testimgsave.png"),false)
+
+# IMGSAVE takes the file type as a second argument
+clg white
+color green
+rect 10, 10, 50, 50
+imgsave "testimgtype.png", imagetype_png
+imgsave "testimgtype.jpg", imagetype_jpg
+imgsave "testimgtype.bmp", imagetype_bmp
+call boolean("imgsave with imagetype_png writes a file", exists("testimgtype.png"))
+call boolean("imgsave with imagetype_jpg writes a file", exists("testimgtype.jpg"))
+call boolean("imgsave with imagetype_bmp writes a file", exists("testimgtype.bmp"))
+t$ = imageload("testimgtype.bmp")
+call n("and the bmp loads back with the green square in it", imagepixel(t$, 30, 30), green)
+unload t$
+kill "testimgtype.png"
+kill "testimgtype.jpg"
+kill "testimgtype.bmp"

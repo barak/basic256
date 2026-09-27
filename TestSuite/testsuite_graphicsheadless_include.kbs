@@ -3,6 +3,7 @@
 # Modification History
 # date		programmer	description
 # 20260902	m.vilain	original coding
+# 20260927	m.vilain	ELLIPSE, IMAGECENTERED, IMAGETRANSFORMED, IMAGESMOOTH, SPRITEO, IMAGETYPE_
 
 currentsuite = "graphicsheadless"
 
@@ -290,6 +291,73 @@ call boolean("a quarter turn makes a wide sprite tall", spritew(1) < spriteh(1))
 spriteplace 1, 50, 50, 1, 0
 call n("and turning it back restores the width", spritew(1), 31)
 call n("and the height", spriteh(1), 6)
+
+# ---------------------------------------------------------------------------
+# ELLIPSE, and drawing an image centred or warped onto the surface
+# ---------------------------------------------------------------------------
+
+e$ = imagenew(100, 100, rgb(255,255,255))
+setgraph e$
+color red
+ellipse 10, 20, 60, 30
+call n("ellipse fills its centre", pixel(40, 35), red)
+call boolean("ellipse leaves the corners of its box alone", pixel(11, 21) <> red)
+
+# a 10x10 blue square to draw with
+sq$ = imagenew(10, 10, blue)
+f$ = imagenew(100, 100, rgb(255,255,255))
+setgraph f$
+imagecentered sq$, 50, 50
+call n("imagecentered puts the middle of the image on the point", pixel(50, 50), blue)
+call boolean("and reaches half its size either side", pixel(46, 46) = blue and pixel(53, 53) = blue)
+call boolean("and no further", pixel(43, 43) <> blue and pixel(56, 56) <> blue)
+imagecentered sq$, 20, 20, 2
+call boolean("imagecentered scales about the centre", pixel(12, 12) = blue and pixel(27, 27) = blue)
+call boolean("to twice the size and no more", pixel(7, 7) <> blue and pixel(32, 32) <> blue)
+
+g$ = imagenew(100, 100, rgb(255,255,255))
+setgraph g$
+imagetransformed sq$, 60, 60, 90, 60, 90, 90, 60, 90
+call n("imagetransformed stretches the image to the four corners", pixel(75, 75), blue)
+call boolean("and covers the whole quadrilateral", pixel(62, 62) = blue and pixel(88, 88) = blue)
+call boolean("and nothing outside it", pixel(55, 55) <> blue and pixel(95, 95) <> blue)
+
+# IMAGESMOOTH chooses how a scaled image is sampled: a 2x1 black and white
+# image blown up ten times is two hard blocks without it, and grades from one
+# to the other with it.  The image lands on x 10 to 29, so only the inside is read
+bw$ = imagenew(2, 1, white)
+imagesetpixel bw$, 0, 0, black
+h$ = imagenew(40, 20, rgb(255,0,0))
+setgraph h$
+imagesmooth false
+imagecentered bw$, 20, 10, 10
+graded = 0
+for x = 11 to 28
+   if pixel(x, 10) <> black and pixel(x, 10) <> white then graded = graded + 1
+next x
+call n("imagesmooth false scales to hard blocks", graded, 0)
+imagesmooth true
+imagecentered bw$, 20, 10, 10
+graded = 0
+for x = 11 to 28
+   if pixel(x, 10) <> black and pixel(x, 10) <> white then graded = graded + 1
+next x
+call boolean("imagesmooth true grades between them", graded > 0)
+imagesmooth false
+unload sq$
+unload bw$
+
+# SPRITEO reads back the opacity SPRITEPLACE gave a sprite
+spriteplace 1, 50, 50, 1, 0, .25
+call nclose("spriteo reads back the opacity spriteplace set", spriteo(1), .25)
+spriteplace 1, 50, 50, 1, 0, 1
+call nclose("and a fully opaque sprite reads 1", spriteo(1), 1)
+
+# the image type constants IMGSAVE takes
+call same("imagetype_png", imagetype_png, "PNG")
+call same("IMAGETYPE_PNG in capitals", IMAGETYPE_PNG, "PNG")
+call same("imagetype_jpg", imagetype_jpg, "JPG")
+call same("imagetype_bmp", imagetype_bmp, "BMP")
 
 # leave the drawing state as it was found so later suites are unaffected
 window

@@ -1,0 +1,93 @@
+# testsuite_system_include section for BASIC256
+
+# Modification History
+# date		programmer	description
+# 20260927	m.vilain	original coding
+
+currentsuite = "system"
+
+###################################################
+# which system this is
+###################################################
+
+call n("ostype_windows", ostype_windows, 0)
+call n("ostype_linux", ostype_linux, 1)
+call n("ostype_macintosh", ostype_macintosh, 2)
+call n("ostype_android", ostype_android, 3)
+known = ostype = ostype_windows or ostype = ostype_linux or ostype = ostype_macintosh or ostype = ostype_android
+call boolean("ostype is one of the ostype_ constants", known)
+
+###################################################
+# the clipboard - what was on it is replaced
+###################################################
+
+cs$ = "BASIC256 test suite clipboard"
+setclipboardstring cs$
+call same("getclipboardstring reads back setclipboardstring", getclipboardstring(), cs$)
+
+ci$ = imagenew(20, 10, blue)
+setclipboardimage ci$
+cg$ = getclipboardimage()
+call n("getclipboardimage gives back an image the same width", imagewidth(cg$), 20)
+call n("and the same height", imageheight(cg$), 10)
+call n("and the same colour", imagepixel(cg$, 5, 5), blue)
+unload ci$
+unload cg$
+
+###################################################
+# the window around the program
+###################################################
+
+maintoolbarvisible false
+graphtoolbarvisible false
+outputtoolbarvisible false
+call q("did the main, graphics and text output toolbars disappear")
+maintoolbarvisible true
+graphtoolbarvisible(true)
+outputtoolbarvisible(true)
+call q("are the three toolbars back")
+
+maximize true
+pause .5
+call q("did the BASIC-256 window fill the screen")
+maximize(false)
+pause .5
+call q("is it back to its own size")
+
+###################################################
+# the file dialogs
+###################################################
+
+if not unattended then
+   f$ = openfiledialog("Choose testsuite.kbs", ".", "BASIC-256 programs (*.kbs)")
+   call boolean("openfiledialog hands back the file chosen", instr(lower(f$), "testsuite.kbs") > 0)
+   f$ = savefiledialog("Type testsuite_dialog.txt and press Save", ".", "Text files (*.txt)")
+   call boolean("savefiledialog hands back the name typed", instr(lower(f$), "testsuite_dialog") > 0)
+endif
+
+###################################################
+# port I/O - only ever run where it will be refused
+###################################################
+
+# PORTOUT writes to real hardware, so the suite only tries it when it will be
+# turned down: never with port access set to Allow, and answering "Don't
+# allow" if asked. Where port I/O is not built in - anywhere but Windows with
+# inpout32.dll - it is ERROR_NOTIMPLEMENTED instead.
+if getsetting("SYSTEM", "Allow/Port") = "2" then
+   print "port I/O is set to Allow - PORTIN and PORTOUT skipped rather than touch hardware"
+else
+   if yn("Test PORTIN and PORTOUT? Answer 'Don't allow' if you are asked") then
+      try
+         portout 888, 0
+         call boolean("portout is refused", false)
+      catch
+         call boolean("portout is refused, or not built in", lasterror = error_permission or lasterror = error_notimplemented)
+      end try
+      try
+         v = portin(888)
+         call boolean("portin is refused", false)
+      catch
+         call boolean("portin is refused, or not built in", lasterror = error_permission or lasterror = error_notimplemented)
+      end try
+   endif
+endif

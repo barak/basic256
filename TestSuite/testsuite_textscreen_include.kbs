@@ -3,6 +3,7 @@
 # Modification History
 # date		programmer	description
 # 20260922	m.vilain	original coding
+# 20260927	m.vilain	TEXTFONT
 
 currentsuite = "textscreen"
 
@@ -403,6 +404,32 @@ if screenthere then
    endif
 
 endif
+
+###################################################
+# TEXTFONT - the font PRINT writes in
+###################################################
+
+textfont "Courier New", 12, 50, false
+print "printed in Courier New"
+textfont("Courier New")
+textfont ""
+print "and back in the font from Preferences"
+
+# on a text screen the size is set by the grid, and the font changes nothing
+# about where characters land
+textscreen 20, 5
+textfont "Courier New", 30, 75, true
+locate 0, 0
+print "abc";
+if screenthere then
+   call n("text still lands on the grid after textfont", textcol, 3)
+   call same("and reads back from it", textchar(1, 0), "b")
+else
+   # no pane: accepted and ignored, as every text output statement is
+   call n("with no pane TEXTCOL stays zero after textfont", textcol, 0)
+endif
+textfont ""
+textscreen
 
 ###################################################
 # leave the pane the way the rest of the suite expects it

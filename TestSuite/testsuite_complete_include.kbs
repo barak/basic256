@@ -3,6 +3,7 @@
 # Modification History
 # date		programmer	description
 # 20140529	j.m.reneau	original coding
+# 20260927	m.vilain	line-anchored patterns (INCLUDE, REM) matched per line; debuginfo left out
 
 currentsuite = "complete"
 
@@ -35,7 +36,9 @@ if exists("../LEX/basicParse.l") then
    do
       pos = instr(l$,' ')
       if pos>1 then
-         if left(l$,6)<> "error_" and left(l$,8)<> "warning_" and left(l$,pos-1)<> "label" then
+         # debuginfo is an internal diagnostic, deliberately left undocumented
+         # and untested
+         if left(l$,6)<> "error_" and left(l$,8)<> "warning_" and left(l$,pos-1)<> "label" and left(l$,pos-1)<> "debuginfo" then
             token$[ntoken] = left(l$,pos-1)
             regex$[ntoken] = mid(l$,pos+1,99999)
             kount[ntoken] = 0
@@ -63,7 +66,12 @@ if exists("../LEX/basicParse.l") then
          pgm$ = replace(pgm$,")"," ")
          close
          for n = 0 to ntoken-1
-            if instrx(pgm$,regex$[n])<>0 then
+            # a pattern anchored with ^ or $ (INCLUDE, REM) is anchored to a
+            # line, and the program is one string of many lines - so ask for
+            # multiline, where ^ and $ match at every line
+            rx$ = regex$[n]
+            if left(rx$,1) = "^" or right(rx$,1) = "$" then rx$ = "(?m)" + rx$
+            if instrx(pgm$,rx$)<>0 then
                kount[n]++
             endif
          next n
