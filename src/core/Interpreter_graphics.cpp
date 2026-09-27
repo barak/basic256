@@ -538,8 +538,7 @@ void Interpreter::execGraphicsOp(int opcode) {
 			}else{
 				// wasm: no local file exists, so a relative path is fetched from
 				// beside the page (MediaPath). Unchanged on the desktop.
-				downloader->download(MediaPath::downloadUrl(file));
-				i.loadFromData(downloader->data());
+				i.loadFromData(media.fetch(file));
 			}
 
 			if(i.isNull()) {
@@ -1186,8 +1185,7 @@ void Interpreter::execGraphicsOp(int opcode) {
 			}else{
 				// wasm: relative paths are fetched from beside the page.
 				QImage *temp = new QImage();
-				downloader->download(MediaPath::downloadUrl(s));
-				temp->loadFromData(downloader->data());
+				temp->loadFromData(media.fetch(s));
 				images[id] = new QImage(temp->convertToFormat(QImage::Format_ARGB32));
 				delete temp;
 			}
@@ -1596,11 +1594,7 @@ void Interpreter::execGraphicsOp(int opcode) {
 				}
 			}else if(id.startsWith("sound:") || id.startsWith("beep:")){
 #ifdef Q_OS_WASM
-				// Forget any auto-registration of this id, so a later
-				// SOUND/SOUNDPLAY of the same file or URL fetches and
-				// re-registers it instead of playing a resource that is
-				// no longer loaded.
-				wasmSoundResources.remove(id);
+				media.forgetSound(id);
 #endif
 				if(!sound->unloadSound(id)){
 					error->q(ERROR_SOUNDRESOURCE);

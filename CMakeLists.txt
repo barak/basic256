@@ -72,6 +72,7 @@ set(SOURCES_CORE
     src/core/Interpreter_textoutput.cpp
     src/core/md5.cpp
     src/core/opensimplex.cpp
+    src/core/MediaLoader.cpp
     src/core/MediaPath.cpp
     src/core/Sleeper.cpp
     src/core/Sound.cpp
@@ -100,6 +101,7 @@ set(HEADERS_CORE
     src/core/InterpreterPrivate.h
     src/core/md5.h
     src/core/opensimplex.h
+    src/core/MediaLoader.h
     src/core/MediaPath.h
     src/core/Sleeper.h
     src/core/Sound.h

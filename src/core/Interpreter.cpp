@@ -19,7 +19,8 @@
 Error *error;	// define the extern here
 
 Interpreter::Interpreter(QLocale *applocale, GraphicsBuffer *appgraphics, BasicKeyboard *appbasicKeyboard)
-	: fileSecurity([this](const QString &what, const QString &resolved) { return askAllowFile(what, resolved); }) {
+	: media(downloader, [this](const QString &id, QByteArray *bytes) { registerSoundBytes(id, bytes); }),
+	  fileSecurity([this](const QString &what, const QString &resolved) { return askAllowFile(what, resolved); }) {
 	//yydebug = 1;
 	fastgraphics = false;
 	frameRateSet = false;
@@ -1248,6 +1249,18 @@ Interpreter::initialize() {
 }
 
 
+// MediaLoader's way of handing a sound's bytes to the sound system, which
+// lives on the main thread: a blocking round trip, like every other signal
+// the interpreter waits on.
+void
+Interpreter::registerSoundBytes(const QString &id, QByteArray *bytes) {
+	mymutex->lock();
+	emit(loadSoundFromArray(id, bytes));
+	waitCond->wait(mymutex);
+	mymutex->unlock();
+}
+
+
 // FileSecurity's way of asking about a path outside the program's folder.
 // The interpreter is the one place that talks to the GUI, so the question is
 // put from here; the answer is a SETTINGSALLOW* value.
@@ -1436,9 +1449,7 @@ Interpreter::run() {
 	// main run loop
 	isError=false;
 	downloader = new BasicDownloader(error);
-#ifdef Q_OS_WASM
-	wasmSoundResources.clear();
-#endif
+	media.startRun();
 	mediaplayer_id_legacy = 0;
 	//link sound system to error mechanism
 	sound->error = &error;

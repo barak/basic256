@@ -61,48 +61,15 @@ void Interpreter::execSoundOp(int opcode) {
 				// a single string
 				QString playsource = e->stringval;
 #ifdef Q_OS_WASM
-				// A file or URL handed straight to SOUND/SOUNDPLAY/SOUNDPLAYER
-				// must not reach SoundSystem::playSound()'s QMediaPlayer
-				// branches in the browser: they construct a QAudioOutput, which
-				// resolves the default audio device, which never returns on
-				// WASM (see the Sound.cpp note on QMediaDevices) -- and because
-				// playSound() is a queued slot that spin is on the MAIN thread,
-				// so the whole module dies with no output and no working Stop.
-				// Turn the source into a "sound:" resource here instead, on the
-				// interpreter thread where blocking is legal, so playback goes
-				// through WasmAudioSink/decodeAudioData like every other sound.
+				// A file or URL handed straight to SOUND/SOUNDPLAY/SOUNDPLAYER is
+				// registered as a "sound:" resource first - see MediaLoader.h.
 				if(opcode!=OP_SOUNDLOAD && !playsource.startsWith("sound:") && !playsource.startsWith("beep:")){
-					QString id = QString("sound:") + playsource;
-					if(!wasmSoundResources.contains(id)){
-						QByteArray arr;
-						bool got = false;
-						if(QFileInfo(playsource).exists()){
-							QFile file(playsource);
-							if(file.open(QIODevice::ReadOnly)){
-								arr = file.readAll();
-								file.close();
-								got = true;
-							}
-						}else if(MediaPath::isFetchable(playsource)){
-							downloader->download(MediaPath::downloadUrl(playsource));
-							arr = downloader->data();
-							got = !arr.isEmpty();
-						}
-						if(!got){
-							// BasicDownloader raises its own ERROR_DOWNLOAD on a
-							// failed fetch -- don't stack a second error on top.
-							if(!error->pending()) error->q(ERROR_SOUNDFILE);
-							if(opcode==OP_SOUNDPLAYER) stack->pushInt(0);
-							delete e;
-							break;
-						}
-						mymutex->lock();
-						emit(loadSoundFromArray(id, &arr));
-						waitCond->wait(mymutex);
-						mymutex->unlock();
-						wasmSoundResources.insert(id);
+					if(!media.registerPlaySource(playsource)){
+						if(opcode==OP_SOUNDPLAYER) stack->pushInt(0);
+						delete e;
+						break;
 					}
-					playsource = id;
+					playsource = QString("sound:") + playsource;
 				}
 #endif
 				if(opcode==OP_SOUND || opcode==OP_SOUNDPLAY){
@@ -121,33 +88,7 @@ void Interpreter::execSoundOp(int opcode) {
 					stack->pushInt(id);
 				}else{
 					// OP_SOUNDLOAD
-					QString s = e->stringval;
-					if(QFileInfo(s).exists()){
-						QFile file(s);
-						file.open(QIODevice::ReadOnly);
-						QByteArray arr = file.readAll();
-						file.close();
-						QString id = QString("sound:") + s;
-						mymutex->lock();
-						emit(loadSoundFromArray(id, &arr));
-						waitCond->wait(mymutex);
-						mymutex->unlock();
-						stack->pushQString(id);
-					}else if (MediaPath::isFetchable(s)){
-						// On wasm a relative path ("./sounds/bounce.mp3") is fetched
-						// from beside the page -- there is no local file to find.
-						downloader->download(MediaPath::downloadUrl(s));
-						QByteArray arr = downloader->data();
-						QString id = QString("sound:") + s;
-						mymutex->lock();
-						emit(loadSoundFromArray(id, &arr));
-						waitCond->wait(mymutex);
-						mymutex->unlock();
-						stack->pushQString(id);
-					}else{
-						stack->pushQString("");
-						error->q(ERROR_SOUNDFILE);
-					}
+					stack->pushQString(media.loadSound(e->stringval));
 				}
 				break;
 			 } else if(DataElement::getType(e) == T_INT){
