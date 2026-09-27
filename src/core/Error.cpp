@@ -392,7 +392,7 @@ QString Error::getErrorMessage(char **symtable) {
 			errormessage = tr("Too many sound instances");
 			break;
 		case ERROR_ENVELOPEODD:
-			errormessage = tr("Envelope data must contain at least 4 elements and an odd number of elements");
+			errormessage = tr("Envelope data must contain at least 4 elements and an even number of elements");
 			break;
 		case ERROR_ENVELOPEMAX:
 			errormessage = tr("It was exceeded the maximum length of an envelope, which is 20 seconds");

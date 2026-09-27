@@ -49,7 +49,10 @@ QString
 MediaLoader::loadSound(const QString &s) {
 	if(QFileInfo(s).exists()){
 		QFile file(s);
-		file.open(QIODevice::ReadOnly);
+		if(!file.open(QIODevice::ReadOnly)){
+			error->q(ERROR_SOUNDFILE);
+			return QString("");
+		}
 		QByteArray arr = file.readAll();
 		file.close();
 		QString id = QString("sound:") + s;
@@ -60,6 +63,12 @@ MediaLoader::loadSound(const QString &s) {
 		// from beside the page -- there is no local file to find.
 		downloader->download(MediaPath::downloadUrl(s));
 		QByteArray arr = downloader->data();
+		if(arr.isEmpty()){
+			// A failed fetch leaves nothing to register.  BasicDownloader
+			// raises its own ERROR_DOWNLOAD -- don't stack a second error on top.
+			if(!error->pending()) error->q(ERROR_SOUNDFILE);
+			return QString("");
+		}
 		QString id = QString("sound:") + s;
 		registerSound(id, &arr);
 		return id;

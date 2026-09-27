@@ -90,6 +90,7 @@ void Interpreter::execSoundOp(int opcode) {
 					// OP_SOUNDLOAD
 					stack->pushQString(media.loadSound(e->stringval));
 				}
+				delete e;
 				break;
 			 } else if(DataElement::getType(e) == T_INT){
 				// a single int
@@ -279,7 +280,8 @@ void Interpreter::execSoundOp(int opcode) {
 			if (DataElement::getType(de) == T_ARRAY) {
 				// get array of envelope data
 				if(de->arrayRows()==1) {
-					if(de->arrayCols()%2==1 && de->arrayCols()>4){
+					// level, duration, level, ... level, release - always an even count
+					if(de->arrayCols()%2==0 && de->arrayCols()>=4){
 						envelope.resize(de->arrayCols());
 						for(int col =0; col < de->arrayCols(); col++) {
 							envelope[col]=convert->getFloat(de->arrayGetData(0,col));			// DONT RELEASE
