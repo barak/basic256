@@ -17,6 +17,7 @@ libpipewire-0.3-0 libpipewire-0.3-dev libgstreamer1.0-0 libgstreamer-plugins-bas
 libasound2-dev espeak-ng libespeak-ng-dev libspeechd-dev speech-dispatcher \
 qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-tools-dev-tools qt6-l10n-tools \
 qt6-multimedia-dev qt6-serialport-dev qt6-speech-dev qt6-declarative-dev \
+libqt6sql6-sqlite \
 qt6-speech-flite-plugin qt6-speech-speechd-plugin \
 libgl1-mesa-dev libx11-dev patchelf
 
@@ -91,6 +92,15 @@ sudo find / -iname "*texttospeech*" -not -path "*/proc/*" 2>/dev/null || echo "(
         cp $QT_PLUGIN_DIR/platforms/libqwayland-generic.so  Basic256/plugins/platforms/ || true
         cp $QT_PLUGIN_DIR/platforms/libqwayland-egl.so      Basic256/plugins/platforms/ || true
         cp $QT_PLUGIN_DIR/platforms/libqoffscreen.so        Basic256/plugins/platforms/ || true
+
+        # 5b. SQLite driver for DBOPEN. run.sh points Qt at the bundled plugins
+        # only, so without this QSQLITE is "not loaded" and every DBOPEN fails.
+        # Debian's driver links the system libsqlite3 rather than carrying its
+        # own, so that is bundled too. Only SQLite: the other drivers pull in
+        # client libraries this package does not ship.
+        mkdir -p Basic256/plugins/sqldrivers
+        cp $QT_PLUGIN_DIR/sqldrivers/libqsqlite.so Basic256/plugins/sqldrivers/
+        cp $QT_LIB_DIR/libsqlite3.so.*             Basic256/lib/
 
 
         # 6. Text-to-speech plugins

@@ -65,6 +65,17 @@ set -euo pipefail
           patchelf --set-rpath '$ORIGIN/../lib:$ORIGIN' "$f" 2>/dev/null || true
         done
 
+        # DBOPEN needs the SQLite driver and everything it links against;
+        # a missing one only shows on a Pi, as "Unable to open SQLITE
+        # database", so stop the build here instead
+        SQLDRV=Basic256/plugins/sqldrivers/libqsqlite.so
+        if [ ! -f "$SQLDRV" ]; then
+          echo "ERROR: $SQLDRV is missing from the package"; exit 1
+        fi
+        if LD_LIBRARY_PATH=Basic256/lib ldd "$SQLDRV" 2>&1 | grep -i "not found"; then
+          echo "ERROR: the SQLite driver has unresolved dependencies (above)"; exit 1
+        fi
+
         # Diagnostics: confirm texttospeech plugins made it into the final
         # package and that their dependencies resolve against the bundled
         # Basic256/lib (this is what the shipped artifact actually sees).

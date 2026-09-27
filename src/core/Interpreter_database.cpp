@@ -42,7 +42,11 @@ void Interpreter::execDatabaseOp(int opcode) {
 				db.setDatabaseName(file);
 				bool ok = db.open();
 				if (!ok) {
-					error->q(ERROR_DBOPEN);
+					// say why - "Driver not loaded" when the SQLite plugin is
+					// missing from a package, SQLite's own reason otherwise
+					QString why = db.lastError().databaseText();
+					if (why.isEmpty()) why = db.lastError().driverText();
+					error->q(ERROR_DBOPEN, why);
 					closeDatabase(n);
 				}
 #else

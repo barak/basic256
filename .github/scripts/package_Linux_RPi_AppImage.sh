@@ -91,6 +91,10 @@ for subdir in texttospeech mediaservice audio imageformats platforms; do
     cp "${QT_PLUGIN_DIR}/${subdir}/"*.so \
        "${APPDIR}/usr/plugins/${subdir}/" 2>/dev/null || true
 done
+# SQLite driver for DBOPEN - only SQLite, the other drivers pull in client
+# libraries that are not bundled
+mkdir -p "${APPDIR}/usr/plugins/sqldrivers"
+cp "${QT_PLUGIN_DIR}/sqldrivers/libqsqlite.so" "${APPDIR}/usr/plugins/sqldrivers/"
 
 # ── Extra runtime libs ────────────────────────────────────────────────────────
 # On ARM, linuxdeploy-plugin-qt is less reliable for finding all Qt modules,
@@ -106,6 +110,8 @@ cplib "libQt6SerialPort.so.*"
 cplib "libQt6TextToSpeech.so.*"
 cplib "libQt6PrintSupport.so.*"
 cplib "libQt6Sql.so.*"
+# Debian's SQLite driver links the system libsqlite3 rather than carrying its own
+cplib "libsqlite3.so.*"
 cplib "libQt6XcbQpa.so.*"
 cplib "libQt6DBus.so.*"
 cplib "libQt6Network.so.*"
