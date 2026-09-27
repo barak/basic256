@@ -54,6 +54,9 @@ if not screenthere then
    textbackground rgb(0, 255, 0)
    textbackground
    cls
+   # on their own at the start of a line, before a colon - were read as labels
+   textcolor: textscreen
+   textscreen: textcolor
    call s("with no pane TEXTCHAR is empty", textchar(0, 0), "")
    call n("with no pane TEXTCOL is zero", textcol, 0)
    call n("with no pane TEXTROW is zero", textrow, 0)
@@ -127,6 +130,14 @@ if screenthere then
    call s("TEXTCHAR right of the screen is empty", screenright$, "")
    call s("TEXTCHAR below the screen is empty", screenbelow$, "")
    call s("TEXTCHAR with no screen showing is empty", screennone$, "")
+
+   # TEXTSCREEN on its own at the start of a line, before a colon, still hands
+   # the window back rather than defining a label called textscreen
+   textscreen 40, 25
+   locate 0, 0
+   print "HELLO";
+   textscreen: screenbare$ = textchar(0, 0)
+   call s("textscreen: at the start of a line leaves the screen", screenbare$, "")
 
    ###################################################
    # wrapping: the wrap the last column leaves owing

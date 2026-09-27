@@ -257,7 +257,6 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "not"								//not
 			<< "offerror"							//offerror
 			<< "onerror"							//onerror
-			<< "onstop"
 			<< "open"								//open
 			<< "openb"								//openb
 			<< "openfiledialog"
@@ -275,7 +274,6 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "portin"								//portin
 			<< "portout"							//portout
 			<< "print"								//print
-			<< "printat"							//printat
 			<< "printer[ \t]*cancel"				//printercancel or printer cancel
 			<< "printer[ \t]*off"					//printeroff or printer off
 			<< "printer[ \t]*on"					//printeron or printer on
@@ -566,8 +564,9 @@ void EditSyntaxHighlighter::initConstants() {
 
             << "TYPE_ARRAY"
 			<< "TYPE_FLOAT"
-			<< "TYPE_INT"
+			<< "TYPE_INT(EGER)?"
 			<< "TYPE_MAP"
+			<< "TYPE_REF"
 			<< "TYPE_STRING"
 			<< "TYPE_UNASSIGNED"
 			<< "MOUSEBUTTON_CENTER"

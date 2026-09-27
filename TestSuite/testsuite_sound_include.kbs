@@ -202,6 +202,15 @@ l = msec - l
 call npercent("soundloop on a resource plays it three times", 900, l, .5)
 soundloop t$, 1
 
+# SOUNDPLAY on its own starts the most recent sound again. Written at the start
+# of a line, before a colon, it is still SOUNDPLAY and not a label
+soundplay r$
+a = soundid
+soundpause a
+soundplay: soundbarestate = soundstate(a)
+call n("soundplay on its own restarts the most recent sound", soundbarestate, 1)
+soundstop a
+
 ###################################################
 # every sound at once - SOUNDSYSTEM
 ###################################################

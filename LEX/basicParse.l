@@ -110,12 +110,17 @@ char *filename;
 void count();
 void unputcolon();
 
+// LINEINDENT lasts for exactly one token after a line's indentation - see the
+// label rules below
+#define YY_USER_ACTION if (YY_START == LINEINDENT) BEGIN(INITIAL);
+
 %}
 
 %option nounistd
 
 %x INCLUDE
 %x INCLUDE_FILE
+%s LINEINDENT
 
 constinteger [0-9]+
 constdecimal [0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?
@@ -393,7 +398,7 @@ isnumeric [iI][Ss][Nn][Uu][Mm][Ee][Rr][Ii][Cc]
 key [Kk][Ee][Yy]
 keypressed [Kk][Ee][Yy][Pp][Rr][Ee][Ss][Ss][Ee][Dd]
 kill [Kk][Ii][Ll][Ll]
-label ^[ \t]*{variable}:
+label ^{variable}:
 lasterror [Ll][Aa][Ss][Tt][Ee][Rr][Rr][Oo][Rr]
 lasterrorextra [Ll][Aa][Ss][Tt][Ee][Rr][Rr][Oo][Rr][Ee][Xx][Tt][Rr][Aa]
 lasterrorline [Ll][Aa][Ss][Tt][Ee][Rr][Rr][Oo][Rr][Ll][Ii][Nn][Ee]
@@ -583,7 +588,7 @@ trim [Tt][Rr][Ii][Mm]
 try [Tt][Rr][Yy]
 type_array [Tt][Yy][Pp][Ee][_][Aa][Rr][Rr][Aa][Yy]
 type_float [Tt][Yy][Pp][Ee][_][Ff][Ll][Oo][Aa][Tt]
-type_int [Tt][Yy][Pp][Ee][_][Ii][Nn][Tt]([Ee][Gg][Ee][Rr])*
+type_int [Tt][Yy][Pp][Ee][_][Ii][Nn][Tt]([Ee][Gg][Ee][Rr])?
 type_map [Tt][Yy][Pp][Ee][_][Mm][Aa][Pp]
 type_ref [Tt][Yy][Pp][Ee][_][Rr][Ee][Ff]
 type_string [Tt][Yy][Pp][Ee][_][Ss][Tt][Rr][Ii][Nn][Gg]
@@ -955,6 +960,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {soundload}					{ count(); return B256SOUNDLOAD; }
 {soundplayer}				{ count(); return B256SOUNDPLAYER; }
 {soundplay}					{ count(); return B256SOUNDPLAY; }
+{soundplay}":"				{ count(); unputcolon(); return B256SOUNDPLAY; }
 {soundposition}				{ count(); return B256SOUNDPOSITION; }
 {soundsamplerate}			{ count(); return B256SOUNDSAMPLERATE; }
 {soundstate}				{ count(); return B256SOUNDSTATE; }
@@ -1098,6 +1104,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {goto}						{ count(); return B256GOTO; }
 {graphsize}					{ count(); return B256GRAPHSIZE; }
 {window}					{ count(); return B256WINDOW; }
+{window}":"				{ count(); unputcolon(); return B256WINDOW; }
 {graphvisible}				{ count(); return B256GRAPHVISIBLE; }
 {graphtoolbarvisible}		{ count(); return B256GRAPHTOOLBARVISIBLE; }
 {if}						{ count(); return B256IF; }
@@ -1137,6 +1144,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {netlisten}					{ count(); return B256NETLISTEN; }
 {netwrite}					{ count(); return B256NETWRITE; }
 {next}						{ count(); return B256NEXT; }
+{next}":"					{ count(); unputcolon(); return B256NEXT; }
 {offerror}					{ count(); return B256OFFERROR; }
 {offerror}":"				{ count(); unputcolon(); return B256OFFERROR; }
 {onerror}					{ count(); return B256ONERROR; }
@@ -1216,9 +1224,11 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {system}					{ count(); return B256SYSTEM; }
 {text}						{ count(); return B256TEXT; }
 {textscreen}				{ count(); return B256TEXTSCREEN; }
+{textscreen}":"			{ count(); unputcolon(); return B256TEXTSCREEN; }
 {textbackground}			{ count(); return B256TEXTBACKGROUND; }
 {textbackground}":"		{ count(); unputcolon(); return B256TEXTBACKGROUND; }
 {textcolor}				{ count(); return B256TEXTCOLOR; }
+{textcolor}":"			{ count(); unputcolon(); return B256TEXTCOLOR; }
 {textfont}				{ count(); return B256TEXTFONT; }
 {then}						{ count(); return B256THEN; }
 {then}":"					{ count(); unputcolon(); return B256THEN; }
@@ -1290,7 +1300,20 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 "<<"						{ count(); return B256BITSHIFTL; }
 ">>"						{ count(); return B256BITSHIFTR; }
 
-{label} {
+	/* A label is a name and a colon at the start of a line, indented or not.
+	 * The indentation is eaten by a rule of its own, so that "name:" is matched
+	 * on its own and ties on length with the {stmt}":" rules for statements
+	 * that take no arguments - flex gives a tie to the earlier rule, which is
+	 * the statement.  Were the indentation part of the label, the label would
+	 * be the longer match and an indented "next:" or "cls:" would be a label.
+	 */
+^{whitespace}	{
+	count();
+	BEGIN(LINEINDENT);
+}
+
+{label} |
+<LINEINDENT>{variable}":" {
 	char *temp;
 	char *c, *d;
 

@@ -59,6 +59,16 @@ for r = 0 to 9
 next r
 call boolean("window -1,1,1,-1 puts a large y at the top", found)
 
+# WINDOW on its own at the start of a line, straight before a colon, is still
+# WINDOW and not a label called window: the plot lands on pixels, not units
+w$ = imagenew(100, 100, rgb(255,255,255))
+setgraph w$
+window 0, 0, 10, 10
+color blue
+window: plot 1, 1
+call n("window: at the start of a line resets the window", pixel(1, 1), blue)
+call boolean("and the point is not scaled to a unit", pixel(10, 10) <> blue)
+
 e$ = imagenew(500, 500, rgb(255,255,255))
 setgraph e$
 window -1, -1, 1, 1
