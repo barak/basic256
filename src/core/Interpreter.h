@@ -44,6 +44,7 @@
 #include "BasicDownloader.h"
 #include "FileSecurity.h"
 #include "MediaLoader.h"
+#include "SpriteLayer.h"
 
 
 #include <QElapsedTimer>
@@ -179,21 +180,6 @@ struct forframe {
     std::map<std::string, DataElement*>::iterator mapIterEnd;
 };
 
-typedef struct {
-    bool visible;
-    double x;
-    double y;
-    double r;	// rotate
-    double s;	// scale
-    double o;	// opacity
-    QImage *image;
-    QImage *transformed_image;
-    QRect position;
-    bool changed;
-    bool was_printed;
-    QRect last_position;
-} sprite;
-
 class Interpreter : public QThread
 {
 	Q_OBJECT
@@ -289,6 +275,8 @@ class Interpreter : public QThread
 		BasicDownloader *downloader;
 		// the bytes of sounds and pictures a program names - see MediaLoader.h
 		MediaLoader media;
+		// SPRITEDIM's sprites and the layer they are drawn on - see SpriteLayer.h
+		SpriteLayer sprites;
 		void registerSoundBytes(const QString &id, QByteArray *bytes);
 		//int optype(int op);
 		QString opname(int);
@@ -328,13 +316,6 @@ class Interpreter : public QThread
 		double double_random_max;
 		int64_t noiseSeed;			// seeds NOISE, set alongside srand by SEED
 		int currentLine;
-		void clearsprites();
-		void update_sprite_screen();
-		void sprite_prepare_for_new_content(int);
-		void force_redraw_all_sprites_next_time();
-		bool sprite_collide(int, int, bool);
-		sprite *sprites;
-		int nsprites;
 		void closeDatabase(int);
 		int arraybase;			// 0 for 0..n-1, 1 for 1 to n array indexing
 		// watch... functions trigger the variablewatch window to display
@@ -351,6 +332,7 @@ class Interpreter : public QThread
 		void execFileOp(int opcode);
 		void execSoundOp(int opcode);
 		void execGraphicsOp(int opcode);
+		void execSpriteOp(int opcode);
 		void execTextOutputOp(int opcode);
 		void execDatabaseOp(int opcode);
 		void execNetworkOp(int opcode);

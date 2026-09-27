@@ -836,7 +836,7 @@ void Interpreter::execGraphicsOp(int opcode) {
 				waitCond->wait(mymutex);
 				mymutex->unlock();
 				if(drawingOnScreen) setPainterTo(graphics->image);
-				force_redraw_all_sprites_next_time();
+				sprites.forceRedrawAll();
 			}else{
 				QImage tmp = images[drawto]->copy(0,0,width,height);
 				if(!printing){

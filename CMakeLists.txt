@@ -68,6 +68,7 @@ set(SOURCES_CORE
     src/core/Interpreter_graphics.cpp
     src/core/Interpreter_network.cpp
     src/core/Interpreter_sound.cpp
+    src/core/Interpreter_sprites.cpp
     src/core/Interpreter_system.cpp
     src/core/Interpreter_textoutput.cpp
     src/core/md5.cpp
@@ -76,6 +77,7 @@ set(SOURCES_CORE
     src/core/MediaPath.cpp
     src/core/Sleeper.cpp
     src/core/Sound.cpp
+    src/core/SpriteLayer.cpp
     src/core/Stack.cpp
     src/core/Variables.cpp
     src/core/WasmAudioSink.cpp
@@ -105,6 +107,7 @@ set(HEADERS_CORE
     src/core/MediaPath.h
     src/core/Sleeper.h
     src/core/Sound.h
+    src/core/SpriteLayer.h
     src/core/Stack.h
     src/core/Variables.h
     src/core/Version.h

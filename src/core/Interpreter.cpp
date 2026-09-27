@@ -20,6 +20,7 @@ Error *error;	// define the extern here
 
 Interpreter::Interpreter(QLocale *applocale, GraphicsBuffer *appgraphics, BasicKeyboard *appbasicKeyboard)
 	: media(downloader, [this](const QString &id, QByteArray *bytes) { registerSoundBytes(id, bytes); }),
+	  sprites(appgraphics),
 	  fileSecurity([this](const QString &what, const QString &resolved) { return askAllowFile(what, resolved); }) {
 	//yydebug = 1;
 	fastgraphics = false;
@@ -1208,7 +1209,7 @@ Interpreter::initialize() {
 	windowTransform.reset();
 	windowInverse.reset();
 
-	nsprites = 0;
+	sprites.startRun();
 	printing = false;
 	regexMinimal = false;
 	basicKeyboard->reset();
@@ -1326,7 +1327,7 @@ Interpreter::cleanup() {
 
 	delete(convert);
 	// Clean up sprites
-	clearsprites();
+	sprites.clear();
 	
 	// Clean up, for frames, etc.
 	freeBasicParse();
@@ -1478,228 +1479,12 @@ void Interpreter::runLoop() {
 	}
 }
 
-void Interpreter::clearsprites() {
-	// cleanup sprites - release images and deallocate the space
-	graphics->spritesimage->fill(Qt::transparent);
-
-	int i;
-	if (nsprites>0) {
-		for(i=0; i<nsprites; i++) {
-			if (sprites[i].image) {
-				delete sprites[i].image;
-				sprites[i].image = NULL;
-			}
-			if (sprites[i].transformed_image) {
-				delete sprites[i].transformed_image;
-				sprites[i].transformed_image = NULL;
-			}
-		}
-		delete[] sprites;
-		sprites = NULL;
-		nsprites = 0;
-		graphics->draw_sprites_flag = false;
-	}
-}
-
-void Interpreter::sprite_prepare_for_new_content(int n) {
-	if (sprites[n].image) {
-		delete sprites[n].image;
-		sprites[n].image = NULL;
-	}
-	if (sprites[n].transformed_image) {
-		delete sprites[n].transformed_image;
-		sprites[n].transformed_image = NULL;
-	}
-	sprites[n].x=0;
-	sprites[n].y=0;
-	sprites[n].r=0;	// rotate
-	sprites[n].s=1;	// scale
-	sprites[n].o=1;	// opacity
-	sprites[n].visible=false;
-	sprites[n].changed=true;
-	sprites[n].position.setRect(0,0,0,0);
-	//last_position and was_printed remains the same in case we need to clear last position
-}
-
-bool Interpreter::sprite_collide(int n1, int n2, bool deep) {
-	QPolygon p1, p2, result;
-	QPoint center;
-	QRect rect;
-	if (n1==n2) return true;											// cant collide with itself
-	if (!sprites[n1].visible || !sprites[n2].visible) return false; 	// cant collide if invisible
-	if(!sprites[n1].position.intersects(sprites[n2].position))
-		return false;
-
-	if(sprites[n1].r==0 && sprites[n2].r==0){
-		if(!deep) return true;
-		rect=sprites[n1].position.intersected(sprites[n2].position);
-	}else{
-		if(sprites[n1].r==0){
-			p1=QPolygon(sprites[n1].position);
-		}else{
-			p1 = QTransform().translate(0,0).rotateRadians(sprites[n1].r).scale(sprites[n1].s,sprites[n1].s).mapToPolygon(QRect(0, 0, sprites[n1].image->width(), sprites[n1].image->height()));
-			center = p1.boundingRect().center();
-			p1.translate(sprites[n1].x-center.x(), sprites[n1].y-center.y());
-		}
-		if(sprites[n2].r==0){
-			p2=QPolygon(sprites[n2].position);
-		}else{
-			p2 = QTransform().translate(0,0).rotateRadians(sprites[n2].r).scale(sprites[n2].s,sprites[n2].s).mapToPolygon(QRect(0, 0, sprites[n2].image->width(), sprites[n2].image->height()));
-			center = p2.boundingRect().center();
-			p2.translate(sprites[n2].x-center.x(), sprites[n2].y-center.y());
-		}
-
-		result=p1.intersected(p2);
-		if(result.isEmpty()) return false;
-		if(!deep) return true;
-		//this line can look stupid, but if we use only rect = result.boundingRect(), then we got from time to time
-		//bome black lines on the edge of intersected rectangle after we print the two images
-		//draw contact zone
-		//rect = result.boundingRect();
-		rect = result.boundingRect().intersected(sprites[n1].position).intersected(sprites[n2].position);
-	}
-	if(rect.isEmpty()) return false;
-
-	// Debug
-	//	QPainter *ian2;
-	//	ian2 = new QPainter(graphics->image);
-	//	ian2->drawPolygon(p1);
-	//	ian2->drawPolygon(p2);
-	//	ian2->drawPolygon(result);
-	//	ian2->drawRect(result.boundingRect());
-	//	ian2->end();
-	//	delete ian2;
-	//////////////////////////////////
-
-
-	QImage *scan = new QImage(rect.size(), QImage::Format_ARGB32_Premultiplied);
-	scan->fill(Qt::transparent);
-	QPainter *sprite_painter = new QPainter(scan);
-	if(sprites[n1].r==0 && sprites[n1].s==1){
-		sprite_painter->drawImage(sprites[n1].position.x()-rect.x(),sprites[n1].position.y()-rect.y(), *sprites[n1].image);
-	}else{
-		sprite_painter->drawImage(sprites[n1].position.x()-rect.x(),sprites[n1].position.y()-rect.y(), *sprites[n1].transformed_image);
-	}
-	sprite_painter->setCompositionMode(QPainter::CompositionMode_DestinationIn);
-	if(sprites[n2].r==0 && sprites[n2].s==1){
-		sprite_painter->drawImage(sprites[n2].position.x()-rect.x(),sprites[n2].position.y()-rect.y(), *sprites[n2].image);
-	}else{
-		sprite_painter->drawImage(sprites[n2].position.x()-rect.x(),sprites[n2].position.y()-rect.y(), *sprites[n2].transformed_image);
-	}
-	sprite_painter->end();
-	delete sprite_painter;
-
-	//check collision comparing only alpha channel
-	const uchar* scanbits = scan->bits();
-	bool flag=false;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-	const int max = scan->sizeInBytes();
-#else
-	const int max = scan->byteCount();
-#endif
-	for(int f=3;f<max;f+=4){
-		if(scanbits[f]){
-			flag=true;
-			break;
-		}
-	}
-
-	//debug - print collision zone
-	//	painter->drawImage(0,0,*scan);
-	//	painter->end();
-
-	delete scan;
-	return flag;
-}
-
-void Interpreter::force_redraw_all_sprites_next_time(){
-	for(int n=0;n<nsprites;n++){
-		sprites[n].was_printed=false;
-	}
-}
-
-void Interpreter::update_sprite_screen(){
-	if(nsprites<=0){
-		graphics->draw_sprites_flag = false;
-		return;
-	}
-
-	QPainter *sprite_painter;
-	QRegion region = QRegion(0,0,0,0);
-	sprite_painter = new QPainter(graphics->spritesimage);
-	bool flag=false;
-
-	for(int n=0;n<nsprites;n++){
-		if(sprites[n].was_printed){
-			if(!sprites[n].visible){
-				//clear old position if sprite is hidden now
-				region+=sprites[n].last_position;
-				sprites[n].was_printed=false;
-			}else{
-				if(sprites[n].changed){
-					//prepare area for a moved sprite
-					region+=sprites[n].last_position;
-					region+=sprites[n].position;
-				}
-			}
-		}else{
-			//sprite become visible - clear area
-			if(sprites[n].visible){
-				region+=sprites[n].position; //Delete new - mark for first draw
-			}
-		}
-	}
-
-	graphics->sprites_clip_region = region;
-	sprite_painter->setClipRegion(region);
-	sprite_painter->setCompositionMode(QPainter::CompositionMode_Clear);
-	sprite_painter->fillRect(region.boundingRect(),Qt::transparent);
-	sprite_painter->setCompositionMode(QPainter::CompositionMode_SourceOver);
-	double lasto=1.0;
-	for(int n=0;n<nsprites;n++){
-		if(sprites[n].visible){
-				if(lasto!=sprites[n].o){
-					lasto=sprites[n].o;
-					sprite_painter->setOpacity(lasto);
-				}
-				if(sprites[n].s==1 && sprites[n].r==0){
-					if(sprites[n].image){
-						if(graphics->sprites_clip_region.intersects(sprites[n].position)){
-							sprite_painter->drawImage(sprites[n].position, *sprites[n].image);
-							sprites[n].last_position=sprites[n].position;
-							sprites[n].was_printed=true;
-							sprites[n].changed=false;
-						}
-						graphics->sprites_clip_region+=sprites[n].position;
-						flag = true;
-					}
-				}else{
-					if(sprites[n].transformed_image){
-						if(graphics->sprites_clip_region.intersects(sprites[n].position)){
-							sprite_painter->drawImage(sprites[n].position, *sprites[n].transformed_image);
-							sprites[n].last_position=sprites[n].position;
-							sprites[n].was_printed=true;
-							sprites[n].changed=false;
-						}
-						graphics->sprites_clip_region+=sprites[n].position;
-						flag = true;
-					}
-				}
-
-		}
-	}
-	sprite_painter->end();
-	delete sprite_painter;
-	graphics->draw_sprites_flag = flag;
-
-}
-
 void Interpreter::waitForGraphics() {
 	// --silent: nothing is ever shown, so skip sprite compositing and the
 	// cross-thread screen-image update entirely rather than doing that work
 	// against a window nobody will ever see.
 	if (guiState == GUISTATESILENT) return;
-	update_sprite_screen();
+	sprites.updateScreen();
 	// wait for graphics operation to complete
 	mymutex->lock();
 	emit(goutputReady());
@@ -3946,348 +3731,6 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				}
 				break;
 
-				case OP_SPRITEPOLY: {
-					// create a sprite from a polygon
-					
-					DataElement *e = stack->popDE();			// RELEASE
-					QPolygonF *poly = convert->getPolygonF(e);
-					if (poly) {
-						// Move the polygon to the top left corner of the sprite and
-						// leave a margin for the pen.  drawPolygon centres the stroke
-						// on the path, so half of it falls outside the polygon's own
-						// bounds - without the margin a wide pen is clipped on every
-						// edge.  The caller cannot make room instead, because any
-						// margin it adds is taken back out by the move to the corner.
-						QRectF bound = poly->boundingRect();
-						qreal margin = drawingpen.width() / 2.0;
-						qreal dx = margin - bound.left();
-						qreal dy = margin - bound.top();
-						if (dx != 0 || dy != 0) {
-							for(int j=0;j<poly->size();j++) {
-								QPointF pt = poly->at(j);
-								pt.setX(pt.x()+dx);
-								pt.setY(pt.y()+dy);
-								poly->replace(j, pt);
-							}
-							bound = poly->boundingRect();
-						}
-						// the image is the polygon plus the margin on both sides
-						int spritewidth = (int) ceil(bound.width() + drawingpen.width());
-						int spriteheight = (int) ceil(bound.height() + drawingpen.width());
-						//
-						// now build sprite
-						int n = stack->popInt(); // sprite number
-						if(n >= 0 && n < nsprites) {
-							// free old, draw, and capture sprite
-							sprite_prepare_for_new_content(n);
-							sprites[n].image = new QImage(spritewidth,spriteheight,QImage::Format_ARGB32_Premultiplied);
-							if(!sprites[n].image->isNull()){
-								sprites[n].image->fill(Qt::transparent);
-								if (!CompositionModeClear) {
-									QPainter *p = new QPainter(sprites[n].image);
-									p->setPen(drawingpen);
-									p->setBrush(drawingbrush);
-									p->drawPolygon(*poly);
-									p->end();
-									delete p;
-									sprites[n].position.setRect(-(spritewidth/2),-(spriteheight/2),spritewidth,spriteheight);
-								}
-							}
-						} else {
-							error->q(ERROR_SPRITENUMBER);
-						}
-					}
-					delete e;
-				}
-				break;
-				
-				case OP_SPRITETEXT: {
-					int background = stack->popInt();
-					QString txt = stack->popQString();
-					int n = stack->popInt(); // sprite number
-					if(n >= 0 && n < nsprites) {
-						// calculate size
-						int h, w;
-						if(painter_font_need_update){
-							painter->setFont(font);
-							painter_font_need_update=false;
-						}
-						h = QFontMetrics(painter->font()).height();
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-						w = (int) (QFontMetrics(painter->font()).horizontalAdvance(txt));
-#else
-						w = (int) (QFontMetrics(painter->font()).width(txt));
-#endif
-						//build sprite
-						sprite_prepare_for_new_content(n);
-						sprites[n].image = new QImage(w,h,QImage::Format_ARGB32_Premultiplied);
-						if (background) 
-							sprites[n].image->fill(background);
-						else
-							sprites[n].image->fill(Qt::transparent);
-						if(!sprites[n].image->isNull()){
-							QPainter *p = new QPainter(sprites[n].image);
-							p->setFont(font);
-							p->setPen(drawingpen);
-							p->drawText(0, QFontMetrics(p->font()).ascent(), txt);
-							p->end();
-							delete p;
-							sprites[n].position.setRect(-(w/2),-(h/2),w,h);
-						}
-					} else {
-						error->q(ERROR_SPRITENUMBER);
-					}
-				}
-				break;
-
-				case OP_SPRITEDIM: {
-					int n = stack->popInt();
-					// deallocate existing sprites
-					clearsprites();
-					// create new ones that are not visible, active, and are at origin
-					if (n > 0) {
-						sprites = new sprite[n];
-						nsprites = n;
-						while (n>0) {
-							n--;
-							sprites[n].image = NULL;
-							sprites[n].transformed_image = NULL;
-							sprites[n].visible = false;
-							sprites[n].x = 0;
-							sprites[n].y = 0;
-							sprites[n].r = 0;
-							sprites[n].s = 1;
-							sprites[n].position.setRect(0,0,0,0);
-							sprites[n].changed=false;
-							sprites[n].was_printed = false;
-							sprites[n].last_position.setRect(0,0,0,0);
-						}
-					}
-				}
-				break;
-
-				case OP_SPRITELOAD: {
-
-					QString file = stack->popQString();
-					int n = stack->popInt();
-
-					if(n < 0 || n >=nsprites) {
-						error->q(ERROR_SPRITENUMBER);
-					} else {
-						sprite_prepare_for_new_content(n);
-
-
-						QImage *tmp;
-						if(QFileInfo(file).exists()){
-							tmp = new QImage(file);
-						}else{
-							// wasm: relative paths are fetched from beside the page.
-							tmp = new QImage();
-							downloader->download(MediaPath::downloadUrl(file));
-							tmp->loadFromData(downloader->data());
-						}
-
-
-						if(tmp->isNull()) {
-							delete tmp;
-							error->q(ERROR_IMAGEFILE);
-						}else{
-							sprites[n].image = new QImage(tmp->convertToFormat(QImage::Format_ARGB32_Premultiplied));
-							delete tmp;
-							double img_w=sprites[n].image->width();
-							double img_h=sprites[n].image->height();
-							sprites[n].position.setRect(-(img_w/2),-(img_h/2),img_w,img_h);
-						}
-					}
-				}
-				break;
-
-				case OP_SPRITESLICE: {
-
-					int h = stack->popInt();
-					int w = stack->popInt();
-					int y = stack->popInt();
-					int x = stack->popInt();
-					int n = stack->popInt();
-
-					if(n < 0 || n >=nsprites) {
-						error->q(ERROR_SPRITENUMBER);
-					} else {
-						sprite_prepare_for_new_content(n);
-						if(drawingOnScreen || drawto.isEmpty()){
-							sprites[n].image = new QImage(graphics->image->copy(x, y, w, h).convertToFormat(QImage::Format_ARGB32_Premultiplied));
-						}else{
-							sprites[n].image = new QImage(images[drawto]->copy(x, y, w, h).convertToFormat(QImage::Format_ARGB32_Premultiplied));
-						}
-						if(sprites[n].image->isNull()) {
-							error->q(ERROR_SPRITESLICE);
-						}else{
-							double img_w=sprites[n].image->width();
-							double img_h=sprites[n].image->height();
-							sprites[n].position.setRect(-(img_w/2),-(img_h/2),img_w,img_h);
-						}
-					}
-				}
-				break;
-
-				case OP_SPRITEMOVE:
-				case OP_SPRITEPLACE: {
-					double o=0, r=0, s=0, y=0, x=0;
-					int nr = stack->popInt(); // number of arguments (3-6)
-					switch(nr){
-						case 6  :
-							o = stack->popDouble();
-							[[fallthrough]];
-						case 5  :
-							r = stack->popDouble();
-							[[fallthrough]];
-						case 4  :
-							s = stack->popDouble();
-							[[fallthrough]];
-						default :
-							y = stack->popDouble();
-							x = stack->popDouble();
-					}
-					int n = stack->popInt();
-
-					double img_w, img_h;
-
-					if(n < 0 || n >=nsprites) {
-						error->q(ERROR_SPRITENUMBER);
-					} else {
-							if(!sprites[n].image) {
-								error->q(ERROR_SPRITENA);
-							} else {
-
-								if (opcode==OP_SPRITEMOVE) {
-									x += sprites[n].x;
-									y += sprites[n].y;
-									s += sprites[n].s;
-									r += sprites[n].r;
-									o += sprites[n].o;
-								}else{
-									//OP_SPRITEPLACE - populate missing arguments
-									if(nr<6) o = sprites[n].o;
-									if(nr<5) r = sprites[n].r;
-									if(nr<4) s = sprites[n].s;
-								}
-
-									if(sprites[n].s != s || sprites[n].r != r){
-										//there is a transformation from the last time
-										if (sprites[n].transformed_image) {
-											delete sprites[n].transformed_image;
-											sprites[n].transformed_image = NULL;
-										}
-										if(s!=1 || r!=0){
-											QTransform transform = QTransform().translate(sprites[n].image->width()/2, sprites[n].image->height()/2).rotateRadians(r).scale(s,s);;
-											sprites[n].transformed_image = new QImage(sprites[n].image->transformed(transform).convertToFormat(QImage::Format_ARGB32_Premultiplied));
-											img_w=sprites[n].transformed_image->width();
-											img_h=sprites[n].transformed_image->height();
-											sprites[n].position.setRect(x-(img_w/2),y-(img_h/2),img_w,img_h);
-										}else{
-											img_w=sprites[n].image->width();
-											img_h=sprites[n].image->height();
-											sprites[n].position.setRect(x-(img_w/2),y-(img_h/2),img_w,img_h);
-										}
-										sprites[n].changed=true;
-									}else if(sprites[n].x != x || sprites[n].y != y){
-										//there is no transformation from last time but is just a movement
-										if(s!=1 || r!=0){
-											img_w=sprites[n].transformed_image->width();
-											img_h=sprites[n].transformed_image->height();
-										}else{
-											img_w=sprites[n].image->width();
-											img_h=sprites[n].image->height();
-										}
-										sprites[n].position.moveTo(x-(img_w/2),y-(img_h/2));
-										sprites[n].changed=true;
-									}
-									if(sprites[n].o != o){
-										if(o<0) o=0;
-										if(o>1) o=1;
-										if(sprites[n].o != o)
-											sprites[n].changed=true;
-									}
-
-									sprites[n].x = x;
-									sprites[n].y = y;
-									sprites[n].s = s;
-									sprites[n].r = r;
-									sprites[n].o = o;
-
-									if (!fastgraphics) waitForGraphics();
-							}
-					}
-				}
-				break;
-
-				case OP_SPRITEHIDE:
-				case OP_SPRITESHOW: {
-
-					int n = stack->popInt();
-					bool vis = opcode==OP_SPRITESHOW;
-
-					if(n < 0 || n >=nsprites) {
-						error->q(ERROR_SPRITENUMBER);
-					} else {
-						if(!sprites[n].image && vis) {
-							error->q(ERROR_SPRITENA);
-						} else if (sprites[n].visible != vis){
-							sprites[n].visible = vis;
-							if (!fastgraphics) waitForGraphics();
-						}
-					}
-				}
-				break;
-
-				case OP_SPRITECOLLIDE: {
-					int val = stack->popBool();
-					int n1 = stack->popInt();
-					int n2 = stack->popInt();
-
-					if(n1 < 0 || n1 >=nsprites || n2 < 0 || n2 >=nsprites) {
-						error->q(ERROR_SPRITENUMBER);
-					} else {
-						if(!sprites[n1].image || !sprites[n2].image) {
-							error->q(ERROR_SPRITENA);
-						} else {
-							stack->pushInt(sprite_collide(n1, n2, val!=0));
-						}
-					}
-				}
-				break;
-
-				case OP_SPRITEX:
-				case OP_SPRITEY:
-				case OP_SPRITEH:
-				case OP_SPRITEW:
-				case OP_SPRITEV:
-				case OP_SPRITER:
-				case OP_SPRITES:
-				case OP_SPRITEO: {
-
-					int n = stack->popInt();
-
-					if(n < 0 || n >=nsprites) {
-						error->q(ERROR_SPRITENUMBER);
-						stack->pushInt(0);
-					} else {
-						// SPRITEW/SPRITEH report the size the sprite covers on screen, so they
-						// follow the scale and rotation given to SPRITEPLACE/SPRITEMOVE -- the
-						// same transformed image that SPRITECOLLIDE and the redraw region use
-						QImage *shown = sprites[n].transformed_image ? sprites[n].transformed_image : sprites[n].image;
-						if (opcode==OP_SPRITEX) stack->pushDouble(sprites[n].x);
-						if (opcode==OP_SPRITEY) stack->pushDouble(sprites[n].y);
-						if (opcode==OP_SPRITEH) stack->pushInt(shown?shown->height():0);
-						if (opcode==OP_SPRITEW) stack->pushInt(shown?shown->width():0);
-						if (opcode==OP_SPRITEV) stack->pushInt(sprites[n].visible?1:0);
-						if (opcode==OP_SPRITER) stack->pushDouble(sprites[n].r);
-						if (opcode==OP_SPRITES) stack->pushDouble(sprites[n].s);
-						if (opcode==OP_SPRITEO) stack->pushDouble(sprites[n].o);
-					}
-				}
-				break;
-
 				case OP_LASTERROR: {
 					stack->pushInt(error->e);
 				}
@@ -5444,6 +4887,28 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 				case OP_IMAGETRANSFORMED:
 				case OP_SETGRAPH:
 					execGraphicsOp(opcode);
+					break;
+
+				// Sprites: the work is done in Interpreter_sprites.cpp
+				case OP_SPRITEPOLY:
+				case OP_SPRITETEXT:
+				case OP_SPRITEDIM:
+				case OP_SPRITELOAD:
+				case OP_SPRITESLICE:
+				case OP_SPRITEMOVE:
+				case OP_SPRITEPLACE:
+				case OP_SPRITEHIDE:
+				case OP_SPRITESHOW:
+				case OP_SPRITECOLLIDE:
+				case OP_SPRITEX:
+				case OP_SPRITEY:
+				case OP_SPRITEH:
+				case OP_SPRITEW:
+				case OP_SPRITEV:
+				case OP_SPRITER:
+				case OP_SPRITES:
+				case OP_SPRITEO:
+					execSpriteOp(opcode);
 					break;
 
 				// Text output: the work is done in Interpreter_textoutput.cpp

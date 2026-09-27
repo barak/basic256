@@ -39,7 +39,8 @@ class BasicDownloader;
  * What the interpreter asks
  * -------------------------
  *   fetch(path)                 bytes of a path that is not a local file,
- *                               downloaded (IMGLOAD and IMAGELOAD decode them)
+ *                               downloaded (IMGLOAD, IMAGELOAD and SPRITELOAD
+ *                               decode them)
  *   loadSound(path)             SOUNDLOAD: register the file or URL as a sound
  *                               resource and return its "sound:" id, or "" with
  *                               ERROR_SOUNDFILE queued
@@ -80,9 +81,8 @@ class BasicDownloader;
  *
  * Deliberately not here
  * ---------------------
- * SPRITELOAD fetches its picture the same way and could call fetch() too; it
- * sits in the sprite code, which is being kept as it is for now.  Loading a
- * local picture stays with the opcode (QImage reads the file itself).
+ * Loading a local picture stays with the opcode (QImage reads the file
+ * itself); IMGLOAD, IMAGELOAD and SPRITELOAD call fetch() only for the rest.
  */
 class MediaLoader {
 	public:
