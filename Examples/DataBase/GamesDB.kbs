@@ -1,0 +1,498 @@
+#***********************************************************************
+#                    BASIC-256 GAMES DATABASE                          *
+#***********************************************************************
+# This Example files shows both how to work with the SQLite in BASIC256
+# and how to work with the console screen as creating forms there is
+# a lot easier than creating decent forms in the Graphics window
+#
+# This small SQLite database application demonstrates:
+#   * Reading a CSV file
+#   * Creating and populating an SQLite database
+#   * SELECT queries and navigating result sets
+#   * Adding records to a database
+#   * LOCATE in the Text Output window
+#   * TEXTSCREEN for a real character-based screen
+#   * TEXTCOLOR and TEXTBACKGROUND
+#   * TEXTFONT
+#   * TEXTCOL / TEXTROW
+#
+# The program expects:
+#       Examples/Database/Games.csv
+# The database is created alongside the program as:
+#       Games.sqlite3
+# The CSV supplied with this example contains:
+#       Release Date,Title,Provider
+# and 49 game records.
+# **********************************************************************
+# ----------------------------------------------------------------------
+# Configuration
+# ----------------------------------------------------------------------
+
+# database$ is shown by the Database information screen, a subroutine
+global database$
+csvfile$ = "Games.csv"
+database$ = "Games.sqlite3"
+textfont "Courier New", 12
+textscreen 82, 30
+textbackground rgb(20, 28, 38)
+textcolor rgb(235, 240, 245)
+db = freedb
+# Open the database and make sure the Games table exists.
+dbopen db, database$
+dbexecute db, "create table if not exists Games (" + "ReleaseDate integer, " + "Title text, " + "Provider text" + ");"
+
+set = freedbset(db)
+dbopenset db, set, "select count(*) as n from Games"
+gamecount = 0
+if dbrow(db, set) then
+	gamecount = dbint(db, set, "n")
+end if
+dbcloseset db, set
+if gamecount = 0 then
+	call importcsv(db, csvfile$)
+end if
+
+# Main menu
+do
+	call drawmenu(db)
+	locate 4, 25
+	textcolor rgb(255, 230, 120)
+	print "Choice: ";
+	input choice$
+	if choice$ = "1" then
+		call listgames(db)
+	endif
+	if choice$ = "2" then
+		call searchgames(db)
+	endif
+	if choice$ = "3" then
+		call addgame(db)
+	endif
+	if choice$ = "4" then
+		call databaseinfo(db)
+	endif
+until choice$ = "0"
+
+# Shut down cleanly.
+dbclose db
+textscreen
+textbackground
+textcolor
+textfont ""
+cls
+print "Games database closed."
+end
+
+# IMPORT CSV
+subroutine importcsv(db, filename$)
+	call message("Importing Games.csv...")
+	open filename$
+	# Skip the CSV header.
+	if not eof then
+		header$ = readline
+	endif
+	# Put the complete import inside one SQLite transaction.
+	# This is much faster than committing every INSERT separately.
+	dbexecute db, "begin transaction;"
+	imported = 0
+	while not eof
+		line$ = readline
+		# Ignore completely empty lines.
+		if trim(line$) <> "" then
+			fields$ = explode(line$, ",")
+			# The supplied CSV has three columns.
+			if fields$[?] >= 3 then
+				releaseyear = int(trim(fields$[0]))
+				title$ = trim(fields$[1])
+				provider$ = trim(fields$[2])
+				sql$ = "insert into Games " + "(ReleaseDate, Title, Provider) values (" + releaseyear + "," + quote$(title$) + "," + quote$(provider$) + ");"
+				dbexecute db, sql$
+				imported += 1
+			endif
+		endif
+	end while
+	close
+	dbexecute db, "commit;"
+	call message(string(imported) + " games imported from " + filename$)
+end subroutine
+
+# MAIN MENU
+subroutine drawmenu(db)
+	cls
+	textcolor rgb(255, 255, 255), rgb(45, 75, 110)
+	locate 0, 0
+	print "  +------------------------------------------------------------------------------+"
+	locate 0, 1
+	print "  |                         BASIC-256 GAMES DATABASE                             |"
+	locate 0, 2
+	print "  +------------------------------------------------------------------------------+"
+	# Number of games currently in the database.
+	set = freedbset(db)
+	dbopenset db, set, "select count(*) as n from Games"
+	gamecount = 0
+	if dbrow(db, set) then
+		gamecount = dbint(db, set, "n")
+	endif
+	dbcloseset db, set
+	textcolor rgb(180, 220, 255)
+	locate 4, 5
+	print "The database contains "; gamecount; " games."
+	locate 8, 8
+	textcolor rgb(255, 255, 255), rgb(55, 65, 80)
+	print "  1   List all games"
+	locate 8, 10
+	print "  2   Search games"
+	locate 8, 12
+	print "  3   Add a new game"
+	locate 8, 14
+	print "  4   Database information"
+	locate 8, 16
+	print "  0   Exit"
+	textcolor rgb(160, 170, 180)
+	locate 4, 20
+	print "The CSV is imported automatically when the database is empty."
+	locate 4, 22
+	print "Use Courier New to keep the database columns aligned."
+end subroutine
+
+# LIST GAMES
+subroutine listgames(db)
+	cls
+	textcolor rgb(255, 255, 255), rgb(45, 75, 110)
+	locate 0, 0
+	print "  +------------------------------------------------------------------------------+"
+	locate 0, 1
+	print "  |                              ALL GAMES                                       |"
+	locate 0, 2
+	print "  +------------------------------------------------------------------------------+"
+	# Column headings.
+	textcolor rgb(255, 230, 120)
+	locate 3, 4
+	print "YEAR";
+	locate 12, 4
+	print "TITLE";
+	locate 55, 4
+	print "PROVIDER";
+	locate 3, 5
+	print "----";
+	locate 12, 5
+	print "------------------------------------------";
+	locate 55, 5
+	print "-------------------------";
+	# Query the database in a useful display order.
+	set = freedbset(db)
+	dbopenset db, set, "select ReleaseDate, Title, Provider " + "from Games order by ReleaseDate, Title;"
+	row = 6
+	textcolor rgb(235, 240, 245)
+	while dbrow(db, set)
+		gameyear = dbint(db, set, "ReleaseDate")
+		title$ = dbstring(db, set, "Title")
+		provider$ = dbstring(db, set, "Provider")
+		locate 3, row
+		print gameyear;
+		locate 12, row
+		print fit$(title$, 41);
+		locate 55, row
+		print fit$(provider$, 24);
+		row += 1
+		# Keep the menu usable even if the database becomes much larger.
+		if row >= 27 then
+			locate 3, 28
+			textcolor rgb(255, 230, 120)
+			print "More records are available. Press a key to continue...";
+			while key = 0
+				pause .02
+			end while
+			dummy = key
+			cls
+			textcolor rgb(255, 255, 255), rgb(45, 75, 110)
+			locate 0, 0
+			print "  +------------------------------------------------------------------------------+"
+			locate 0, 1
+			print "  |                              ALL GAMES                                       |"
+			locate 0, 2
+			print "  +------------------------------------------------------------------------------+"
+			textcolor rgb(255, 230, 120)
+			locate 3, 4
+			print "YEAR";
+			locate 12, 4
+			print "TITLE";
+			locate 55, 4
+			print "PROVIDER";
+			row = 6
+			textcolor rgb(235, 240, 245)
+		endif
+	end while
+	dbcloseset db, set
+	locate 3, 28
+	textcolor rgb(255, 230, 120)
+	print "Press any key to return to the main menu...";
+	while key = 0
+		pause .02
+	end while
+	dummy = key
+end subroutine
+
+# SEARCH
+subroutine searchgames(db)
+	cls
+	textcolor rgb(255, 255, 255), rgb(45, 75, 110)
+	locate 0, 0
+	print "  +------------------------------------------------------------------------------+"
+	locate 0, 1
+	print "  |                              SEARCH GAMES                                    |"
+	locate 0, 2
+	print "  +------------------------------------------------------------------------------+"
+	textcolor rgb(235, 240, 245)
+	locate 4, 6
+	print "Enter part of a title or provider:";
+	locate 4, 8
+	input search$
+	if trim(search$) = "" then
+		return
+	endif
+	cls
+	textcolor rgb(255, 255, 255), rgb(45, 75, 110)
+	locate 0, 0
+	print "  +------------------------------------------------------------------------------+"
+	locate 0, 1
+	print "  | SEARCH RESULTS                                                              |"
+	locate 0, 2
+	print "  +------------------------------------------------------------------------------+"
+	textcolor rgb(180, 220, 255)
+	locate 3, 4
+	print "Search: "; search$
+	textcolor rgb(255, 230, 120)
+	locate 3, 6
+	print "YEAR";
+	locate 12, 6
+	print "TITLE";
+	locate 55, 6
+	print "PROVIDER";
+	# SQLite LIKE is used for a case-insensitive search in the normal
+	# SQLite configuration.
+	#
+	# quote$() also protects apostrophes in the search text.
+	set = freedbset(db)
+	dbopenset db, set, "select ReleaseDate, Title, Provider from Games " + "where Title like " + quote$("%" + search$ + "%") + " or Provider like " + quote$("%" + search$ + "%") + " order by ReleaseDate, Title;"
+	row = 7
+	found = 0
+	textcolor rgb(235, 240, 245)
+	while dbrow(db, set)
+		found += 1
+		gameyear = dbint(db, set, "ReleaseDate")
+		title$ = dbstring(db, set, "Title")
+		provider$ = dbstring(db, set, "Provider")
+		locate 3, row
+		print gameyear;
+		locate 12, row
+		print fit$(title$, 41);
+		locate 55, row
+		print fit$(provider$, 24);
+		row += 1
+		if row >= 27 then
+			exitwhile
+		endif
+	end while
+	dbcloseset db, set
+	textcolor rgb(255, 230, 120)
+	locate 3, 28
+	if found = 0 then
+		print "No games found."
+	else
+		print found; " game(s) found."
+	endif
+	locate 40, 28
+	print "Press any key...";
+	while key = 0
+		pause .02
+	end while
+	dummy = key
+end subroutine
+
+# ADD GAME
+subroutine addgame(db)
+	cls
+	textcolor rgb(255, 255, 255), rgb(45, 75, 110)
+	locate 0, 0
+	print "  +------------------------------------------------------------------------------+"
+	locate 0, 1
+	print "  |                              ADD NEW GAME                                    |"
+	locate 0, 2
+	print "  +------------------------------------------------------------------------------+"
+	textcolor rgb(235, 240, 245)
+	locate 5, 6
+	print "Release year : ";
+	input releaseyear
+	locate 5, 8
+	print "Title        : ";
+	input title$
+	locate 5, 10
+	print "Provider     : ";
+	input provider$
+	# Basic validation.
+	if releaseyear <= 0 then
+		locate 5, 14
+		textcolor rgb(255, 120, 120)
+		print "Release year must be greater than zero."
+		locate 5, 16
+		print "Press any key..."
+		while key = 0
+			pause .02
+		end while
+		dummy = key
+		return
+	endif
+	if trim(title$) = "" then
+		locate 5, 14
+		textcolor rgb(255, 120, 120)
+		print "Title may not be empty."
+		locate 5, 16
+		print "Press any key..."
+		while key = 0
+			pause .02
+		end while
+		dummy = key
+		return
+	endif
+	if trim(provider$) = "" then
+		locate 5, 14
+		textcolor rgb(255, 120, 120)
+		print "Provider may not be empty."
+		locate 5, 16
+		print "Press any key..."
+		while key = 0
+			pause .02
+		end while
+		dummy = key
+		return
+	endif
+	# Add the new record.
+	sql$ = "insert into Games " + "(ReleaseDate, Title, Provider) values (" + releaseyear + "," + quote$(title$) + "," + quote$(provider$) + ");"
+	dbexecute db, sql$
+	cls
+	textcolor rgb(255, 255, 255), rgb(45, 100, 65)
+	locate 0, 0
+	print "  +------------------------------------------------------------------------------+"
+	locate 0, 1
+	print "  |                              GAME ADDED                                     |"
+	locate 0, 2
+	print "  +------------------------------------------------------------------------------+"
+	textcolor rgb(210, 255, 215)
+	locate 5, 6
+	print "Release year : "; releaseyear
+	locate 5, 8
+	print "Title        : "; title$
+	locate 5, 10
+	print "Provider     : "; provider$
+	locate 5, 14
+	textcolor rgb(255, 230, 120)
+	print "The record has been written to the Games table."
+	locate 5, 16
+	print "Press any key to return to the menu..."
+	while key = 0
+		pause .02
+	end while
+	dummy = key
+end subroutine
+
+# DATABASE INFORMATION
+subroutine databaseinfo(db)
+	cls
+	textcolor rgb(255, 255, 255), rgb(45, 75, 110)
+	locate 0, 0
+	print "  +------------------------------------------------------------------------------+"
+	locate 0, 1
+	print "  |                           DATABASE INFORMATION                               |"
+	locate 0, 2
+	print "  +------------------------------------------------------------------------------+"
+	set = freedbset(db)
+	dbopenset db, set, "select count(*) as n, " + "min(ReleaseDate) as firstyear, " + "max(ReleaseDate) as lastyear " + "from Games;"
+	if dbrow(db, set) then
+		gamecount = dbint(db, set, "n")
+		firstyear = dbint(db, set, "firstyear")
+		lastyear = dbint(db, set, "lastyear")
+	endif
+	dbcloseset db, set
+	textcolor rgb(220, 230, 240)
+	locate 5, 6
+	print "Database file : "; database$
+	locate 5, 8
+	print "Table         : Games"
+	locate 5, 10
+	print "Records       : "; gamecount
+	locate 5, 12
+	print "First release : "; firstyear
+	locate 5, 14
+	print "Last release  : "; lastyear
+	locate 5, 18
+	textcolor rgb(160, 190, 220)
+	print "Columns:"
+	locate 8, 20
+	print "ReleaseDate    integer"
+	locate 8, 21
+	print "Title          text"
+	locate 8, 22
+	print "Provider       text"
+	locate 5, 26
+	textcolor rgb(255, 230, 120)
+	print "Press any key to return to the main menu..."
+	while key = 0
+		pause .02
+	end while
+	dummy = key
+end subroutine
+
+
+
+# **********************************************************************
+# SQL STRING QUOTING
+# SQLite strings use single quotes.
+# An apostrophe inside a game title such as:
+#       Tom's Game
+# must therefore become:
+#       'Tom''s Game'
+# before being put into an SQL statement.
+# **********************************************************************
+function quote$(a$)
+	return "'" + replace(a$, "'", "''") + "'"
+end function
+
+# **********************************************************************
+# FIT A STRING TO A DISPLAY COLUMN
+#
+# Strings longer than the requested width are truncated.
+# Shorter strings are padded with spaces.
+#
+# This is deliberately done in BASIC rather than using SQL formatting,
+# because it demonstrates that the database and the Text Output screen
+# are separate concerns.
+# **********************************************************************
+function fit$(a$, width)
+	a$ = trim(a$)
+	if length(a$) > width then
+		return left(a$, width)
+	endif
+	while length(a$) < width
+		a$ += " "
+	end while
+	return a$
+end function
+
+# SHORT MESSAGE
+subroutine message(msg$)
+	cls
+	textcolor rgb(255, 255, 255), rgb(45, 75, 110)
+	locate 0, 0
+	print "  +------------------------------------------------------------------------------+"
+	locate 0, 1
+	print "  |                              GAMES DATABASE                                  |"
+	locate 0, 2
+	print "  +------------------------------------------------------------------------------+"
+	textcolor rgb(220, 230, 240)
+	locate 5, 8
+	print msg$
+	locate 5, 12
+	print "Please wait..."
+end subroutine
+
