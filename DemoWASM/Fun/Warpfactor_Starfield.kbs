@@ -10,7 +10,7 @@ max =300
 side=1200
 graphsize side,side
 graphvisible(1)
-editvisible(1)
+editvisible(0)
 outputvisible(0)
 clg
 fastgraphics

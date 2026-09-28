@@ -3,7 +3,7 @@
 Fastgraphics
 graphsize 600,460
 graphvisible(1)
-editvisible(1)
+editvisible(0)
 outputvisible(0)
 continue$="yes"
 #Splash screen handeling

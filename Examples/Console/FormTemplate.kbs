@@ -1,0 +1,185 @@
+#***********************************************************************
+#                       Text Form Template                             *
+#***********************************************************************
+# This Example file shows how to work with the console screen for 
+# creating basic forms (under Examples/DB, there is a 'real' use of this)
+# The options here print to the graphical screen. You canjust as well 
+# create a new subroutine drawoption1() that pops up another textscreen1
+#
+# This small application demonstrates:
+#   * LOCATE in the Text Output window
+#   * TEXTSCREEN for a real character-based screen
+#   * TEXTCOLOR and TEXTBACKGROUND
+#   * TEXTFONT
+#   * TEXTCOL / TEXTROW
+#
+# **********************************************************************
+# Configuration
+textfont "Courier New", 12
+textscreen 82, 30
+textbackground rgb(20, 28, 38)
+textcolor rgb(235, 240, 245)
+# Main menu
+do
+	call drawmenu()
+	locate 4, 25
+	textcolor rgb(255, 230, 120)
+	print "Choice: ";
+	input choice$
+	if choice$ = "1" then
+		call option1()
+	endif
+	if choice$ = "2" then
+		call option2()
+	endif
+	if choice$ = "3" then
+		call option3()
+	endif
+	if choice$ = "4" then
+		call option4()
+	endif
+until choice$ = "0"
+
+# Shut down cleanly.
+textscreen
+textbackground
+textcolor
+textfont ""
+cls
+clg
+print "Form template closed."
+end
+
+
+# MAIN MENU
+subroutine drawmenu()
+	cls
+	textcolor rgb(255, 255, 255), rgb(45, 75, 110)
+	locate 0, 0
+	print "  ********************************************************************************"
+	locate 0, 1
+	print "  *                         Input form with 4 Options                            *"
+	locate 0, 2
+	print "  ********************************************************************************"
+	textcolor rgb(180, 220, 255)
+	locate 4, 5
+	print "Being a template, the options do not do anything. That's up to you"
+	locate 8, 8
+	textcolor rgb(255, 255, 255), rgb(55, 65, 80)
+	print "  1   Option 1"
+	locate 8, 10
+	print "  2   Option 2"
+	locate 8, 12
+	print "  3   Option 3"
+	locate 8, 14
+	print "  4   Option 4"
+	locate 8, 16
+	print "  0   Exit"
+	textcolor rgb(160, 170, 180)
+	locate 4, 20
+	print "Use monospace font Courier New to keep the database columns aligned."
+	locate 4, 22
+	print "Using non-monospace fonts screws up the column alignment"
+end subroutine
+
+# Option subroutines
+subroutine option1()
+	graphsize 500,500
+	clg black
+	color white
+	text 170,150,"You Chose Option 1!!"
+	text 50,200,"Give the options a name and program something usefull!!"
+	refresh
+end subroutine
+
+subroutine option2()
+	graphsize 500,500
+	clg black
+	color white
+	text 150,150,"Yes, Option 2 is also an Option...."
+	text 50,200,"Of course, in your program something should actually happen!"
+	refresh
+end subroutine
+
+subroutine option3()
+	graphsize 500,500
+	clg black
+	color white
+	text 140,150,"I knew you would choose this Option 3!!"
+	text 100,200,"This is just a placeholder for actual code of course"
+	refresh
+end subroutine
+
+subroutine option4()
+	clg black
+	color white
+	graphsize 600,400
+	fastgraphics
+	for t=0 to 110 step .1
+		color black
+		rect 0,0,600,600
+		For y1 = 0 to 20
+			For x1 = 0 to 20
+				x=(12*(24-x1)+12*y1)+1
+				y=-6*(24-x1)+6*y1+300
+				d= ((10-x1)^2+(10-y1)^2)^.5
+				h=60*sin(x1/4+t)+65
+				if t>20 and t<40 then h=30*sin(x1/2+t)+30*sin(y1/2+t)+65
+				if t>40 and t<60 then h=60*sin((x1+y1)/4+t)+65
+				if t>60 and t<80 then h=60*sin(d*.3+t)+65
+				if t>80 and t<100 then h = 60 * (sin(x1 / 3 + t) * cos(y1 / 3 + t)) + 65
+				if t>100 then h = 60 * (sin(x1 / 3 + t) * cos(y1 / 3 + t)) + 65
+#				if t>140 and t<180 then h = 40 * sin(x1 / 6 + t) + 20 * sin(y1 / 1.5 - t * 2) + 65
+				color rgb(100+h,100+h,h)
+				poly{x,y-h,x+10,y+5-h,x+20,y-h,x+10,y-5-h}
+				color rgb(60,60,0)
+				poly{x,y-h,x+10,y+5-h,x+10,y,x,y-5}
+				color rgb(150,150,0)
+				poly{x+10,y+5-h,x+10,y,x+20,y-5,x+20,y-h}
+			next x1
+		next y1
+		refresh
+		clg
+	next t
+	refresh
+	clg black
+end subroutine
+
+# **********************************************************************
+# FIT A STRING TO A DISPLAY COLUMN
+#
+# Strings longer than the requested width are truncated.
+# Shorter strings are padded with spaces.
+#
+# This is deliberately done in BASIC rather than using SQL formatting,
+# because it demonstrates that the database and the Text Output screen
+# are separate concerns.
+# **********************************************************************
+function fit$(a$, width)
+	a$ = trim(a$)
+	if length(a$) > width then
+		return left(a$, width)
+	endif
+	while length(a$) < width
+		a$ += " "
+	end while
+	return a$
+end function
+
+# SHORT MESSAGE
+subroutine message(msg$)
+	cls
+	textcolor rgb(255, 255, 255), rgb(45, 75, 110)
+	locate 0, 0
+	print "  ********************************************************************************"
+	locate 0, 1
+	print "  *                              GAMES DATABASE                                  *"
+	locate 0, 2
+	print "  ********************************************************************************"
+	textcolor rgb(220, 230, 240)
+	locate 5, 8
+	print msg$
+	locate 5, 12
+	print "Please wait..."
+end subroutine
+

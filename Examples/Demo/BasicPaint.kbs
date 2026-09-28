@@ -1,0 +1,4968 @@
+# Remarks  *
+#***********
+#       Pencil	Tranparancy causes extra lines as artefacts
+#       Pen	3D cutoff abrupt and sometimes flipping (unusable)
+#		Tranparancy gives extra lines as artefacts
+#                   Does not do mirroring
+#       Dropper	Only active in drawing area (by design)
+#       Fill	Fill does not work with Alpha
+#                   Sometimes causes program to end
+#
+# Improvements to implement
+#
+#      Circle/Rectangle:    allow different colors for border & fill
+#      Color plane:         allow gradient between 2 colors (Horizontal & Vertical. Radial?)
+#      Mirroring:	        allow moving of the mirror line (like the 'sliders' in customcolors)
+#      Undo	        allow 10 step undo (save 10 undo pics, 1 after each mouseclick in drawing)
+############################################################################
+# globals & arrays
+global stack	# used in fill subroutine
+global fill_x	# used in fill subroutine
+global fill_y	# used in fill subroutine
+global size_x	# used in fill subroutine
+global size_y	# used in fill subroutine
+global pointer	# used in fill subroutine
+global colorid	# active color used in drawing subroutine
+global col	# array of selectable colors used in drawing subroutine
+global radio$	# used in all radio buttons
+global recpenw	# pen width for non-filled rectangles
+global cirpenw	# pen width for non-filled circles
+global img_ind	# index for the imagehose
+global imgc_list$   # array of stamp images
+global sp_up_topleft_x, sp_up_topleft_y, sp_up_botright_x, sp_up_botright_y, sp_heigth, sp_array_list$ # used in spin button
+
+# _label	==> Checkbox label
+# _state  ==> Checkbox state
+global spraytype_label$
+global spraytype_state
+global rectfill_label$
+global rectfill_state
+global circfill_label$
+global circfill_state
+global imgfill_label$
+global imgfill_state
+global fake3d_label$
+global fake3d_state
+global check_label$
+global check_state
+global Loc_hori_label$
+global Loc_hori_state
+global Loc_vert_label$
+global Loc_vert_state
+global Perspective_state
+global PerspecGround_state
+global Mir_hori_state
+global Mir_vert_state
+global poly_open_label$
+global poly_open_state
+global bezier_open_label$
+global bezier_open_state
+
+global slidetype$	    # Type of slider: Spray Size / Spray Density / Color Alpha
+
+dim stack(1000000) fill 0	    # used in fill routine
+dim paintcan(1000) fill 0      # used in spraycan routine
+dim tools$(12) fill 0	    # names of possible tools
+dim toolloc(24) fill 0	    # position of tool in the tool button array
+dim col(20) fill 0	    # array of standard colors
+dim radio$(10) fill 0	    # used in all radiobuttons
+dim opt_mouse_size$(4) fill 0  # used in eraser radio buttons
+dim pix$(1000) fill 0	    # used to store slice for eraser 'preview"
+dim custcols(10) fill 0        #used to store custom colors
+dim imgc_list$(4) fill 0       #used to store stamps
+dim pointarray(300) fill 0     # store points for bezier
+dim controlpoint(300) fill 0   # storee control points for bezier
+
+spritedim(50)
+
+#checkbox arrays for checkbox label and state
+dim check_label$(1) fill 0
+dim check_state(1) fill 0
+dim spraytype_state(1) fill 0
+dim spraytype_label_1$(1) fill 0
+dim spraytype_state_1(1) fill 0
+dim spraytype_label_2$(1) fill 0
+dim spraytype_state_2(1) fill 0
+dim spraytype_label_3$(1) fill 0
+dim spraytype_state_3(1) fill 0
+dim Perspective_label_1$(1) fill 0
+dim Perspective_state_1(1) fill 0
+dim PerspecGround_label_1$(1) fill 0
+dim PerspecGround_state_1(1) fill 0
+dim Loc_hori_label_1$(1) fill 0
+dim Loc_hori_state_1(1) fill 0
+dim Loc_vert_label_1$(1) fill 0
+dim Loc_vert_state_1(1) fill 0
+dim Mir_hori_label_1$(1) fill 0
+dim Mir_hori_state_1(1) fill 0
+dim Mir_vert_label_1$(1)  fill 0
+dim Mir_vert_state_1(1) fill 0
+dim rectfill_label_1$(1) fill 0
+dim rectfill_state_1(1) fill 0
+dim circfill_label_1$(1) fill 0
+dim circfill_state_1(1) fill 0
+dim imgfill_label_1$(5) fill 0
+dim imgfill_state_1(1) fill 0
+dim fake3d_label_1$(1) fill 0
+dim fake3d_state_1(1) fill 0
+dim poly_open_label_1$(1) fill 0
+dim poly_open_state_1(1) fill 0
+dim bezier_open_label_1$(1) fill 0
+dim bezier_open_state_1(1) fill 0
+
+dim circslice$(32) fill 0		# stores slices with outline points during circle sizing
+dim bezierslice$(300) fill 0	# stores slices with points through which the bezier curve has to go
+dim setsin(32) fill 0		# precalculated sin values
+dim setcos(32) fill 0		# precalculated cos values
+
+# initialize arrays
+# standard colors
+col={black,white,red,darkred,green,darkgreen,blue,darkblue, cyan,darkcyan,purple, darkpurple,yellow,darkyellow,orange, darkorange, grey,darkgrey}
+# Tool labels
+tools$={"pencil","spray","clearline","fillit","pix","pen","circ","recta","line","polyline","bezier","backgrd"}
+#Gum_size
+opt_mouse_size$={"Small","Medium","Large","Huge"}
+# Pre-calculated sin & cos values
+for i = 0 to 31
+	setsin[i]=sin(i*pi/16)
+	setcos[i]=cos(i*pi/16)
+next i
+# position of tool in the tool button array
+toolloc={1,1,1,2,2,1,2,2,3,1,3,2,4,1,4,2,5,1,5,2,6,1,6,2}
+#checkbox item labels
+Perspective_label_1$={"1-point Perspective"}
+PerspecGround_label_1$={"Ground only"}
+Loc_hori_label_1$={"Lock Hori"}
+Loc_vert_label_1$={"Lock Vert"}
+Mir_hori_label_1$={"Horiz."}
+Mir_vert_label_1$={"Verti."}
+rectfill_label_1$={"Draw filled"}
+circfill_label_1$={"Draw filled"}
+imgfill_label_1$={"Image hose"}
+fake3d_label_1$={"Fake 3D"}
+poly_open_label_1$={"close poly"}
+bezier_open_label_1$={"close bezier"}
+
+Perspective_state_1={0}
+PerspecGround_state_1={0}
+rectfill_state_1={1}
+circfill_state_1={1}
+imgfill_state_1={0}
+fake3d_state_1={0}
+poly_open_state_1={0}
+bezier_open_state_1={0}
+# droplet array
+spraysize_active=1
+spraydense_active=2
+spray_size=30
+spray_dense=2*spray_size*spray_size
+
+# Slider element
+# draw the slider control and capture it in three sprites
+color black
+circle 150,97,7
+color darkgrey
+circle 150,97,6
+color rgb(200,200,200)
+circle 150,97,5
+color white
+circle 152,95,2
+spriteslice 0,143,90,15,15 # spray size slider
+spriteslice 1,143,90,15,15 # spray density slider
+spriteslice 2,143,90,15,15 # colro alpha slider
+#initial screen setup
+# window size = desired drawing size +  84 for left-to-right
+#               desired drawing size + 168 for top-to-bottom
+size_x=1084: size_y=688 # drawing size of 1000 by 500
+graphsize (size_x,size_y)
+fastgraphics
+
+# ─── Canvas boundary constants  ───────────────────────
+
+can_left  = 77         # drawing area: mousex must be > can_left
+can_right = size_x-6   # drawing area: mousex must be < can_right
+can_top   = 109        # drawing area: mousey must be > can_top
+can_bot   = size_y-69  # drawing area: mousey must be < can_bot
+mir_xoff  = can_left + can_right    # = size_x+71
+mir_yoff  = can_top  + can_bot      # = size_y+40
+# First/last pixel of the drawable canvas (for sprite undo)
+canvas_x1 = can_left  + 1          # = 78
+canvas_y1 = can_top   + 1          # = 110
+canvas_x2 = can_right - 1          # = size_x-7
+canvas_y2 = can_bot   - 1          # = size_y-70
+
+editvisible 0
+outputvisible 0
+
+pointer=0		 # pointer to the fill stack
+oldcol=0
+custcol=-1
+starting=0          # skip the first toolbox check
+linewidth=1         # default linewidth at startup
+slinewidth=1        # default linewidth for Line, Polyline & Bezier tools
+pen_deltax=4	# default slant of the pen tool
+pen_deltay=4	# default slant of the pen tool
+recpenw=1		# default width of the rectange border
+cirpenw=1		# default width of the circle border
+img_ind=0		# initialisation of the stamp index
+mouse_size=20
+PerspecGround_state=0
+spraytype_state=0
+fake3d_state=0
+alpha=255
+sw_first=0
+sw_done=0
+sw_circborder=0
+sw_ground=0
+sw_colors=0
+sw_fp=0		# indicates if startpoint of line has been selected
+sw_title=0           # program title has not yet been shown
+gosub draw_interface
+sw_title=1	 # program title has been shown
+
+# activate default tool
+action$="pencil"
+call button (8,109,32,32," ",8,10,11,1)
+gosub drawpencil
+gosub options_pencil
+refresh
+gosub saveundo
+sw_undo=1
+loopontool:
+#now, the hard work starts....
+while starting
+	#check if in Toolbox
+	if mousex > 6 and mousex < 76 and mousey > 109 and mousey < 350 then
+		# mouse in Toolbox
+		if mouseb=1 then
+			if mousex < 42 then
+				# left hand toolbox column
+				if mousey > 109  and mousey < 145 then
+					gosub clearbutton
+					action$="pencil"
+					starting=0
+					gosub pushbutton
+					gosub drawpencil
+					gosub options_pencil
+					refresh
+					gosub saveundo
+					sw_undo=1
+				else
+					if mousey > 144 and mousey < 180 then
+						gosub clearbutton
+						action$="clearline"
+						starting=0
+						gosub pushbutton
+						gosub options_erase
+						gosub drawerase
+						refresh
+						gosub saveundo
+						sw_undo=1
+					else
+						if mousey > 179 and mousey < 215 then
+							gosub clearbutton
+							action$="pix"
+							starting=0
+							gosub pushbutton
+							gosub options_colpic
+							gosub drawcolpic
+							refresh
+							gosub saveundo
+							sw_undo=1
+							refresh
+						else
+							if mousey > 214 and mousey < 250 then
+								gosub clearbutton
+								action$="circ"
+								starting=0
+								gosub pushbutton
+								gosub options_circle
+								gosub drawcirc
+								refresh
+								gosub saveundo
+								sw_undo=1
+							else
+								if mousey > 249 and mousey < 285 then
+									gosub clearbutton
+									action$="line"
+									starting=0
+									gosub pushbutton
+									gosub options_line
+									gosub drawline
+									refresh
+									gosub saveundo
+									sw_undo=1
+									refresh
+								else
+									if mousey > 283 and mousey < 317 then
+										gosub clearbutton
+										action$="bezier"
+										starting=0
+										gosub pushbutton
+										gosub options_bezier
+										gosub drawbezier
+										refresh
+										gosub saveundo
+										sw_undo=1
+										refresh
+									endif # end bezier
+								endif # end line
+							endif # end circle
+						endif # end pixel
+					endif # end  eraser
+				endif # end pencil
+			else
+				# right hand toolbox column
+				if mousex > 41 then
+					if mousey > 109 and mousey <145 then
+						gosub clearbutton
+						action$="spray"
+						starting=0
+						gosub pushbutton
+						gosub drawspray
+						gosub options_spray
+						refresh
+						spritehide 0
+						spritehide 1
+						spritehide 2
+						imgsave "bpaintundo.png"
+						spriteshow 0
+						spriteshow 1
+						spriteshow 2
+						sw_undo=1
+					else
+						if mousey > 144 and mousey < 180 then
+							gosub clearbutton
+							action$="fillit"
+							starting=0
+							gosub pushbutton
+							gosub drawfill
+							gosub options_fill
+							refresh
+							gosub saveundo
+							sw_undo=1
+							refresh
+						else
+							if mousey > 179 and mousey < 215 then
+								gosub clearbutton
+								action$="pen"
+								starting=0
+								gosub pushbutton
+								gosub drawpen
+								gosub options_pen
+								refresh
+								gosub saveundo
+								sw_undo=1
+								refresh
+							else
+								if mousey > 214 and mousey < 250 then
+									gosub clearbutton
+									action$="recta"
+									starting=0
+									gosub pushbutton
+									gosub options_recta
+									gosub drawrecta
+									refresh
+									gosub saveundo
+									sw_undo=1
+									refresh
+								else
+									if mousey > 251 and mousey < 287 then
+										gosub clearbutton
+										action$="polyline"
+										starting=0
+										gosub pushbutton
+										gosub options_poly
+										gosub drawpoly
+										refresh
+										gosub saveundo
+										sw_undo=1
+										refresh
+									else
+										if mousey > 284 and mousey < 317 then
+											gosub clearbutton
+											action$="backgrd"
+											starting=0
+											gosub pushbutton
+											gosub options_backgrd
+											gosub drawbackgrd
+											refresh
+											gosub saveundo
+											sw_undo=1
+											refresh
+										endif # end background
+									endif # end polyline
+								endif  #end recta
+							endif  # end pen
+						endif  # end fillit
+					endif  # end spray
+				endif  # end right hand column
+			endif # end lefthand column
+		endif # end mouse click check
+	else
+		#check if on command buttons
+		if mouseb=1 and mousex>6 and mousex< 49 and mousey> 28  and mousey<67 then
+			# mouse on new
+			call button (6,28,43,39,"New",8,10,11,2)
+			color grey
+			font "Tahoma",14,100
+			text size_x/2-60,size_y/2-15,"Just a moment"
+			refresh
+			linewidth=1
+			recpenw=1
+			penw_shown=1
+			cirpenw=1
+			penwc_shown=1
+			Mir_vert_state_1[0]=0
+			Mir_hori_state_1[0]=0
+			gosub draw_interface
+			call button (8,109,32,32," ",8,10,11,1)
+			gosub drawpencil
+			gosub options_pencil
+			color black
+			colorid=4278190080
+			rect draw2_locx,draw2_locy,draw2_width,draw2_height
+			gosub saveundo
+			refresh
+		else
+			if mouseb=1 and mousex>49 and mousex< 92 and mousey> 28  and mousey<67 then
+				# mouse on undo
+				call button (49,28,43,39,"Undo",8,10,11,2)
+				if sw_undo=1 then
+					gosub restoreundo
+					gosub clearbutton
+					Loc_vert_state_1[0]=0
+					Loc_hori_state_1[0]=0
+					Mir_vert_state_1[0]=0
+					Mir_hori_state_1[0]=0
+					color grey
+					rect 92,28,size_x-92-6,80
+					if custcol > -1 then
+						for i = 0 to 9
+							if custcols[i] > 0 then
+								color custcols[i]
+							else
+								color white
+							endif
+							if i < 5 then
+								rect 420+i*28,size_y-59,15,15
+							else
+								rect 420+(i-5)*28,size_y-31,15,15
+							end if
+						next i
+					end if
+					draw2_color = 2
+					call drawing(draw2_elements_x, draw2_elements_y, draw2_locx, draw2_locy, draw2_width,draw2_height, draw2_offsetx, draw2_offsety, draw2_color)
+					newcolor=colorid
+					color white
+					rect draw2_locx,draw2_locy,draw2_width,draw2_height
+					color black
+					for i = 0 to 39 step 8
+						for j = 0 to 39 step 8
+							rect draw2_locx+2,draw2_locy+2,4,4
+							rect draw2_locx+i+2,draw2_locy+j+2,4,4
+						next j
+					next i
+					color colorid
+					rect draw2_locx,draw2_locy,draw2_width,draw2_height
+					spriteshow 2
+					refresh
+				else
+					if mouseb=1 and mousex>49 and mousex< 92 and mousey> 67  and mousey<106 then
+						#quit command button
+						call button (49,68,43,39,"Quit",8,6,11,2)
+						a=2
+						gosub alldone
+						end
+					else
+						if mouseb=1 and mousex>6 and mousex< 49 and mousey> 67  and mousey<106 then
+							# save command button
+							call button (6,68,43,39,"Save",8,6,11,2)
+							sw_title=1
+							gosub savequit
+							font "Tahoma",14,100
+							text size_x/2-150,size_y/2-15,"Image saved as"
+							font "Tahoma",16,100
+							text size_x/2-200,size_y/2+15,"MyBasicPainting.png"
+							refresh
+							pause 1
+							imgload size_x/2,size_y/2,"bpaintundo.png"
+							spriteshow 2
+							refresh
+						endif
+					endif
+				endif
+			endif
+		endif
+	endif # end toolbox check
+end while
+
+#**********************
+#Toolselector
+#**********************
+#we have clicked on a tool!
+starting=1
+pause 0.2
+while mouseb = 0 and mousex > can_left and mousex < can_right and mousey > can_top and mousey < can_bot
+	#not clicking and in drawing area
+	gosub showcoords
+	refresh
+	oldmx = mousex
+	oldmy = mousey
+endwhile
+newclick = 1
+a=1
+while a=1
+	if mouseb > 0 then
+		if action$="pencil" then gosub pencil
+		if action$="clearline" then gosub clearline
+		if action$="spray" then gosub spraycan
+		if action$="pix" then gosub dropper
+		if action$="pen" then gosub pen
+		if action$="fillit" then gosub fillit
+		if action$="circ" then gosub circ
+		if action$="recta" then gosub recta
+		if action$="line" then gosub lineseg
+		if action$="polyline" then gosub polyline
+		if action$="bezier" then gosub bezier
+		if action$="backgrd" then gosub backgrd
+		refresh
+	else
+		oldmx=mousex
+		oldmy=mousey
+		while mouseb=0 and action$="clearline" and mousex > 77+mouse_size/2 and mousex < size_x-6-mouse_size/2 and mousey > 109+mouse_size/2 and mousey < size_y-69-mouse_size/2
+			pix$=getslice(oldmx-mouse_size/2,oldmy-mouse_size/2,mouse_size,mouse_size)
+			color grey
+			rect oldmx-mouse_size/2,oldmy-mouse_size/2,mouse_size,mouse_size
+			color colorid
+			refresh
+			pause 0.01
+			putslice oldmx-mouse_size/2,oldmy-mouse_size/2, pix$
+			refresh
+			pix$=getslice(mousex-mouse_size/2,mousey-mouse_size/2,mouse_size,mouse_size)
+			oldmx=mousex
+			oldmy=mousey
+		end while
+
+	endif
+end while
+goto loopontool
+
+#**********************
+# Pencil tool
+#**********************
+pencil:
+clickclear
+color colorid
+sw_startline=0
+pencilactive=1
+while pencilactive=1
+	sw_startline=0
+	sw_clicked=0
+	gosub commands
+	if sw_clicked=1 then
+		return
+	endif
+	while mouseb > 0
+		if mousex > can_left and mousex < can_right and mousey > can_top and mousey < can_bot then
+			if sw_first= 0 then
+				oldmx=mousex
+				oldmy=mousey
+				sw_first=1
+			endif
+			sw_startline=0
+			#drawing area
+			color grey
+			rect size_x-70,size_y-25,60,18
+			if linewidth=1 then
+				color black
+				font "Tahoma",8,100
+				if mousex-77 > -1 then
+					text size_x-70,size_y-20,mousex-77
+				else
+					text size_x-70,size_y-20,0
+				endif
+				if mousey-109 > -1 then
+					text size_x-40,size_y-20,mousey-109
+				else
+					text size_x-40,size_y-20,0
+				endif
+				color colorid
+				sw_done = 1
+				newmx = mousex
+				newmy = mousey
+				if Mir_vert_state_1[0] = 1 and Mir_hori_state_1[0] = 1 then
+					line oldmx, oldmy, newmx, newmy
+					line mir_xoff-oldmx,oldmy,mir_xoff-newmx,newmy
+					line oldmx, mir_yoff-oldmy, newmx, mir_yoff-newmy
+					line mir_xoff-oldmx, mir_yoff-oldmy, mir_xoff-newmx, mir_yoff-newmy
+				else
+					if Mir_hori_state_1[0] = 1 then
+						line oldmx, oldmy, newmx, newmy
+						line oldmx, mir_yoff-oldmy, newmx, mir_yoff-newmy
+					else
+						if Mir_vert_state_1[0] = 1 then
+							line oldmx, oldmy, newmx, newmy
+							line mir_xoff-oldmx,oldmy,mir_xoff-newmx,newmy
+						else
+							line oldmx, oldmy, newmx, newmy
+						endif
+					endif
+				endif
+				oldmx = newmx
+				oldmy = newmy
+				refresh
+			else
+				#thicker lines based on paralelograms and circles
+				gosub showcoords
+				refresh
+				color colorid
+				if  mousex > 77+linewidth/2 and mousex < size_x-6-linewidth/2 and mousey > 109+linewidth/2 and mousey < size_y-69-linewidth/2 then
+					sw_done = 1
+					newmx = mousex
+					newmy = mousey
+					if oldmx <> newmx or oldmy <> newmy then
+						if Mir_vert_state_1[0] = 1 and Mir_hori_state_1[0]=1 then
+							# where you draw
+							poly {oldmx-linewidth/2,oldmy, oldmx + linewidth/2, oldmy, newmx+linewidth/2,newmy, newmx - linewidth/2, newmy}
+							poly {oldmx,oldmy-linewidth/2, oldmx, oldmy + linewidth/2, newmx,newmy+linewidth/2, newmx, newmy - linewidth/2}
+
+							#Horizontal mirror
+							poly {oldmx,mir_yoff-oldmy-linewidth/2, oldmx, mir_yoff-oldmy + linewidth/2, newmx,mir_yoff-newmy+linewidth/2, newmx, mir_yoff-newmy - linewidth/2}
+							poly {oldmx-linewidth/2,mir_yoff-oldmy, oldmx + linewidth/2, mir_yoff-oldmy, newmx+linewidth/2,mir_yoff-newmy, newmx - linewidth/2, mir_yoff-newmy}
+							#Vertical and Horizontal mirror
+							poly {mir_xoff-oldmx,mir_yoff-oldmy-linewidth/2, mir_xoff-oldmx, mir_yoff-oldmy + linewidth/2, mir_xoff-newmx,mir_yoff-newmy+linewidth/2, mir_xoff-newmx, mir_yoff-newmy - linewidth/2}
+							poly {mir_xoff-oldmx-linewidth/2,mir_yoff-oldmy, mir_xoff-oldmx + linewidth/2, mir_yoff-oldmy, mir_xoff-newmx+linewidth/2,mir_yoff-newmy , mir_xoff-newmx - linewidth/2, mir_yoff-newmy}
+							#Vertical mirror
+							poly {mir_xoff-oldmx,oldmy-linewidth/2, mir_xoff-oldmx, oldmy + linewidth/2, mir_xoff-newmx,newmy+linewidth/2, mir_xoff-newmx, newmy - linewidth/2}
+							poly {mir_xoff-oldmx-linewidth/2,oldmy, mir_xoff-oldmx + linewidth/2, oldmy, mir_xoff-newmx+linewidth/2,newmy, mir_xoff-newmx - linewidth/2, newmy}
+							if sw_startline=0 then
+								circle mir_xoff-oldmx,oldmy,linewidth/2-1
+								circle oldmx,oldmy,linewidth/2-1
+								circle oldmx,mir_yoff-oldmy,linewidth/2-1
+								circle mir_xoff-oldmx,mir_yoff-oldmy,linewidth/2-1
+								sw_startline=1
+							endif
+						else
+							if Mir_hori_state_1[0] = 1 then
+								poly {oldmx,mir_yoff-oldmy-linewidth/2, oldmx, mir_yoff-oldmy + linewidth/2, newmx,mir_yoff-newmy+linewidth/2, newmx, mir_yoff-newmy - linewidth/2}
+								poly {oldmx-linewidth/2,mir_yoff-oldmy, oldmx + linewidth/2, mir_yoff-oldmy, newmx+linewidth/2,mir_yoff-newmy, newmx - linewidth/2, mir_yoff-newmy}
+								poly {oldmx,oldmy-linewidth/2, oldmx, oldmy + linewidth/2, newmx,newmy+linewidth/2, newmx, newmy - linewidth/2}
+								poly {oldmx-linewidth/2,oldmy, oldmx + linewidth/2, oldmy, newmx+linewidth/2,newmy, newmx - linewidth/2, newmy}
+								if sw_startline=0 then
+									circle oldmx,oldmy,linewidth/2-1
+									circle oldmx,mir_yoff-oldmy,linewidth/2-1
+									sw_startline=1
+								endif
+							else
+								if Mir_vert_state_1[0] = 1 then
+									poly {oldmx,oldmy-linewidth/2, oldmx, oldmy + linewidth/2, newmx,newmy+linewidth/2, newmx, newmy - linewidth/2}
+									poly {oldmx-linewidth/2,oldmy, oldmx + linewidth/2, oldmy, newmx+linewidth/2,newmy, newmx - linewidth/2, newmy}
+									poly {mir_xoff-oldmx,oldmy-linewidth/2, mir_xoff-oldmx, oldmy + linewidth/2, mir_xoff-newmx,newmy+linewidth/2, mir_xoff-newmx, newmy - linewidth/2}
+									poly {mir_xoff-oldmx-linewidth/2,oldmy, mir_xoff-oldmx + linewidth/2, oldmy, mir_xoff-newmx+linewidth/2,newmy, mir_xoff-newmx - linewidth/2, newmy}
+									if sw_startline=0 then
+										circle oldmx,oldmy,linewidth/2-1
+										circle mir_xoff-oldmx,oldmy,linewidth/2-1
+										sw_startline=1
+									endif
+								else
+									poly {oldmx,oldmy-linewidth/2, oldmx, oldmy + linewidth/2, newmx,newmy+linewidth/2, newmx, newmy - linewidth/2}
+									poly {oldmx-linewidth/2,oldmy, oldmx + linewidth/2, oldmy, newmx+linewidth/2,newmy, newmx - linewidth/2, newmy}
+									if sw_startline=0 then
+										circle oldmx,oldmy,linewidth/2
+										sw_startline=1
+									endif
+								endif
+							endif
+						endif
+					endif
+					oldmx=newmx
+					oldmy=newmy
+				endif
+				refresh
+			endif # not in line drawing mode
+		else # not in drawing area
+			while mousex>linew_up_x and mousex < linew_up_x+linew_updown_width and mousey >linew_up_y and mousey < linew_down_y+linew_updown_heigth
+				if clickb=1 then
+					if mousey >linew_up_y and mousey < linew_up_y+linew_updown_heigth then
+						linew_shown=linew_shown +linew_inc
+						if linew_shown>linew_max then linew_shown=linew_max
+						linewidth=linew_shown
+						call spinner(linew_color, linew_locx, linew_locy, linew_width, linew_heigth, linew_offsetx, linew_offsety, linew_insetx, linew_insety, linew_array, linew_shown, linew_max, linew_min, linew_inc)
+						refresh
+						clickclear
+						#endif
+					else
+						if mousey >linew_down_y and mousey < linew_down_y+linew_updown_heigth then
+							linew_shown=linew_shown - linew_inc
+							if linew_shown<linew_min then linew_shown=linew_min
+							linewidth=linew_shown
+							call spinner(linew_color, linew_locx, linew_locy, linew_width, linew_heigth, linew_offsetx, linew_offsety, linew_insetx,linew_insety, linew_array, linew_shown, linew_max, linew_min, linew_inc)
+							refresh
+							clickclear
+						endif # not in line width spinner down button
+					endif # not in line width spinner up button
+				endif # no click
+				clickclear
+			end while # not in spinner area
+			gosub checkmirror
+			gosub colorstuff
+			clickclear
+		endif # not in drawing area
+	end while # mouse not active
+	if sw_startline = 1 then
+		if Mir_vert_state_1[0] = 1 and Mir_hori_state_1[0]=1 then
+			circle mir_xoff-newmx,newmy,linewidth/2-1
+			circle newmx,newmy,linewidth/2-1
+			circle newmx,mir_yoff-newmy,linewidth/2-1
+			circle mir_xoff-newmx,mir_yoff-newmy,linewidth/2-1
+			sw_startline=0
+		else
+			if Mir_hori_state_1[0] = 1 then
+				circle newmx,newmy,linewidth/2-1
+				circle newmx,mir_yoff-newmy,linewidth/2-1
+			else
+				if Mir_vert_state_1[0] = 1 then
+					circle newmx,newmy,linewidth/2-1
+					circle mir_xoff-newmx,newmy,linewidth/2-1
+				else
+					circle newmx,newmy,linewidth/2-1
+				endif
+			endif
+		endif
+		sw_startline=0
+	endif
+	gosub showcoords
+	refresh
+	oldmx=mousex
+	oldmy=mousey
+end while
+return
+
+#**********************
+# Spray tool
+#**********************
+spraycan:
+clickclear
+newcolor=colorid
+coloridb = blauw(newcolor)
+coloridg = groen(newcolor)
+coloridr = rood(newcolor)
+colorida= alpha
+colorid=rgb(coloridr, coloridg, coloridb, alpha)
+color colorid
+oldmx=mousex
+oldmy=mousey
+sprayactive=1
+while sprayactive=1
+	sw_clicked=0
+	gosub commands
+	if sw_clicked=1 then
+		return
+	endif
+	while mouseb > 0
+		if mousex > can_left and mousex < can_right and mousey > can_top and mousey < can_bot then
+			#drawing (spraying) area
+			gosub showcoords
+			sw_done = 1
+			if img_ind=0 and imgfill_state_1[0]=1 then # stars
+				#            siz=rand/2+0.2
+				siz=(spray_size/60)*(rand/2+0.2)
+				offsetx= rand*20-10
+				offsety= rand*20-10
+				stampx=mousex-(30*siz/2)+offsetx
+				if stampx-(30*siz/2) <77 then stampx= 77+(30*siz/2)
+				if stampx >size_x-7-30*siz then stampx=size_x-7-30*siz
+				if stampx <7 then stampx= 7
+				if stampx >size_x-7-30*siz then stampx=size_x-7-30*siz
+				stampy=mousey-(30*siz/2)+offsety
+				if stampy < 110 then stampy=110
+				if stampy >size_y-70-30*siz then stampy=size_y-70-30*siz
+				color col[14]
+				stamp stampx, stampy, siz, {14,0,18,11,29,12,20,18,24,29,14,23,5,29,9,18,0,11,11,10}
+				color col[12]
+				stamp stampx+1, stampy+1,siz*0.8,{14,0,18,11,29,12,20,18,24,29,14,23,5,29,9,18,0,11,11,10}
+				refresh
+				pause 0.05
+			else
+				if img_ind=1 and imgfill_state_1[0]=1 then # bubbles
+					#               siz=rand/2+0.2
+					siz=(spray_size/60)*(rand/2+0.2)
+					offsetx= rand*20-10
+					offsety= rand*20-10
+					stampx=mousex-(30*siz/2)+offsetx
+					if stampx-(30*siz/2) <77 then stampx= 77+(30*siz/2)
+					if stampx >size_x-7-30*siz then stampx=size_x-7-30*siz
+					if stampx <7 then stampx= 7
+					if stampx >size_x-7-30*siz then stampx=size_x-7-30*siz
+					stampy=mousey-(30*siz/2)+offsety
+					if stampy < 110 then stampy=110
+					if stampy >size_y-70-30*siz then stampy=size_y-70-30*siz
+					newcolor=colorid
+					coloridb = blauw(newcolor)
+					coloridg = groen(newcolor)
+					coloridr = rood(newcolor)
+					colorida= alpha
+					colorid=rgb(coloridr, coloridg, coloridb, alpha)
+					color colorid
+					stamp stampx, stampy, siz, {12,0,19,1,26,8,27,15,27,12,26,19,19,26,12,27,15,27,8,26,1,19,0,12,0,15,1,8,8,1,15,0}
+					color white
+					stamp stampx+siz, stampy+siz,siz*0.3,{12,0,19,1,26,8,27,15,27,12,26,19,19,26,12,27,15,27,8,26,1,19,0,12,0,15,1,8,8,1,15,0}
+					refresh
+					pause 0.05
+				else
+					if img_ind=2 and imgfill_state_1[0]=1 then    #leaves
+						siz=(rand/2+0.2)*3  # 0.6 to 2.1
+						siz=(spray_size/50)*(rand/2+0.3)
+						offsetx= rand*20-10
+						offsety= rand*20-10
+						stampx=mousex-(24*siz/2)+offsetx
+						if stampx-(24*siz/2) <77 then stampx= 77+(24*siz/2)
+						if stampx >size_x-7-(24*siz/2) then stampx=size_x-7-(24*siz/2)
+						stampy=mousey-(24*siz/2)+offsety
+						if stampy < 133 then stampy=133
+						if stampy >size_y-70-(24*siz/2) then stampy=size_y-70-(24*siz/2)
+						rota= rand*2*pi
+						color darkyellow
+						stamp stampx, stampy, siz, rota, {0,11,1,9,3,7,7,3,9,-1,9,-5,6,-7,2,-7,1,-5,1,-10,2,-12,-2,-12,-1,-10,-1,-5,-3,-7,-6,-7,-9,-5,-9,-1,-7,3,-1,9,0,11}
+						color darkgreen
+						stamp stampx, stampy, siz*0.8, rota, {0,11,1,9,3,7,7,3,9,-1,9,-5,6,-7,2,-7,1,-5,1,-10,2,-12,-2,-12,-1,-10,-1,-5,-3,-7,-6,-7,-9,-5,-9,-1,-7,3,-1,9,0,11}
+						color darkorange
+						stamp stampx, stampy, siz*0.8, rota,{0,10,1,8,1,5,2,5,1,3,1,1,3,3,1,0,1,-3,5,0,1,-4,1,-6,-1,-6,-1,-4,-5,0,-1,-3,-1,-0,-3,3,-1,1,-1,3,-2,5,-1,5,-1,8,-0,10}
+						refresh
+						# end leaves
+						pause 0.08
+					else
+						if img_ind=3 and imgfill_state_1[0]=1 then  # hearts
+							#hearts come here
+							siz=(spray_size/60)*(rand/2+0.2)
+							offsetx= rand*20-10
+							offsety= rand*20-10
+							stampx=mousex+offsetx-(16*siz)
+							if stampx <78+(16*siz) then stampx= 78+(16*siz)
+							if stampx >size_x-7-(16*siz) then stampx=size_x-7-(16*siz)
+							stampy=mousey+offsety-(16*siz)
+							if stampy < 110+(16*siz) then stampy=110+(16*siz)
+							if stampy >size_y-70-(16*siz) then stampy=size_y-70-(16*siz)
+							newcolor=colorid
+							coloridb = blauw(newcolor)
+							coloridg = groen(newcolor)
+							coloridr = rood(newcolor)
+							colorida= 255
+							colorid=rgb(coloridr, coloridg, coloridb, 255)
+							color rgb(190,0,0,255)
+							stamp stampx, stampy, siz, {0.1,-7.95,-2.9,-9.95,-6.95,-11.15,-9.05,-11,-12.85,-9.85,-14.95,-6.95,-16.1,-4.05,-14.85,-0.8,-11.7,2.25,-7.9,4.05,-4.9,6.15,-1.95,8.95,0.15,12.3,2.1,9,5.1,5.85,8.05,4.05,10.05,3,11.95,1.95,14.1,-0,15.05,-0.85,15.95,-4,14.95,-7,12.9,-10,9.05,-10.9,7.2,-11.05,2.95,-10,0,-7.95}
+							color rgb(255,50,50,alpha)
+							stamp stampx, stampy, siz,{-3.95,-8.25,-7.45,-9.35,-10.35,-8.2,-12.15,-5.65,-11.45,-1.55,-8.2,0.8,-6.1,0.1,-7,-2.5,-7.05,-5.75,-4.05,-8.05}
+							refresh
+							pause 0.1
+
+						else
+							penwidth 4
+							#----------------------------------------------------------
+							# Normal spray-can
+							#
+							# Instead of clearly visible individual droplets, use a
+							# dense cloud of very transparent pixels.
+							#
+							# The existing rand^0.5 distribution is retained because
+							# it gives an even distribution over the AREA of the circle.
+							#
+							# alpha is deliberately reduced for each spray particle.
+							# Repeated particles and repeated passes build up the paint,
+							# giving a much more realistic aerosol/spray-can effect.
+							#----------------------------------------------------------
+							for i = 0 to spray_dense*10
+								randi=rand*pi*2
+								rands=spray_size/6*rand^0.5
+								plotx=sin(randi)*rands
+								ploty=cos(randi)*rands
+								newmx=mousex
+								newmy=mousey
+								newcolor=colorid
+								coloridb=blauw(newcolor)
+								coloridg=groen(newcolor)
+								coloridr=rood(newcolor)
+								colorida=alpha
+								#-------------------------------------------------------
+								# Use a fraction of the selected alpha for each particle.
+								#
+								# The original selected alpha is restored below, so this
+								# only affects the individual spray particles.
+								#
+								# 10% of the selected alpha gives a subtle aerosol effect.
+								#-------------------------------------------------------
+								spray_alpha=alpha*0.10
+								if spray_alpha<1 then spray_alpha=1
+								color rgb(coloridr,coloridg,coloridb,spray_alpha)
+								#-------------------------------------------------------
+								# Normal spray + mirror modes
+								#-------------------------------------------------------
+								if Mir_vert_state_1[0]=1 and Mir_hori_state_1[0]=1 then
+									if (plotx+newmx)>77 and (plotx+newmx)<size_x-6 and (ploty+newmy)>109 and (ploty+newmy)<size_y-69 then
+										plot plotx+newmx,ploty+newmy
+									endif
+									plot plotx+mir_xoff-newmx,ploty+newmy
+									plot plotx+newmx,ploty+mir_yoff-newmy
+									plot plotx+mir_xoff-newmx,ploty+mir_yoff-newmy
+								else
+									if Mir_vert_state_1[0]=1 then
+										if (plotx+newmx)>77 and (plotx+newmx)<size_x-6 and (ploty+newmy)>109 and (ploty+newmy)<size_y-69 then
+											plot plotx+newmx,ploty+newmy
+										endif
+										plot plotx+mir_xoff-newmx,ploty+newmy
+									else
+										if Mir_hori_state_1[0]=1 then
+											if (plotx+newmx)>77 and (plotx+newmx)<size_x-6 and (ploty+newmy)>109 and (ploty+newmy)<size_y-69 then
+												plot plotx+newmx,ploty+newmy
+											endif
+											plot plotx+newmx,ploty+mir_yoff-newmy
+										else
+											if (plotx+newmx)>77 and (plotx+newmx)<size_x-6 and (ploty+newmy)>109 and (ploty+newmy)<size_y-69 then
+												plot plotx+newmx,ploty+newmy
+											endif
+										endif
+									endif
+								endif
+							next i
+							#----------------------------------------------------------
+							# Restore the user's selected colour/alpha.
+							#----------------------------------------------------------
+							color rgb(coloridr,coloridg,coloridb,colorida)
+							refresh
+							pause 0.01
+						endif
+						penwidth 1
+					endif
+				endif
+			endif
+		else
+			gosub colorstuff
+			gosub checkmirror
+			if mousex > slsize_locx_top and mousex < slsize_locx_bot then
+				#sprayslider
+				if abs(mousey-slsize_locy_top)<8 then
+					newcolor=colorid
+					coloridb = blauw(newcolor)
+					coloridg = groen(newcolor)
+					coloridr = rood(newcolor)
+					colorida= alpha
+					colorid=rgb(coloridr, coloridg, coloridb, alpha)
+					color colorid
+					if mousex > slsize_locx_bot then
+						spray_size=90
+						color darkgrey
+						circle 400,67,spray_size/2
+						color grey
+						circle 400,67,spray_size/2-2
+						for i = 0 to spray_dense*4
+							randi=rand*pi*2
+							rands=spray_size/2*rand^0.5
+							plotx=sin(randi)*rands
+							ploty=cos(randi)*rands
+							newmx=398
+							newmy=67
+							plot plotx+newmx,ploty+newmy
+						next i
+					else
+						if mousex < slsize_locx_top then
+							spray_size=30
+							color darkgrey
+							circle 400,67,spray_size/2
+							color grey
+							circle 400,67,spray_size/2-2
+							for i = 0 to spray_dense*4
+								randi=rand*pi*2
+								rands=spray_size/2*rand^0.5
+								plotx=sin(randi)*rands
+								ploty=cos(randi)*rands
+								newmx=398
+								newmy=67
+								newcolor=colorid
+								coloridb = blauw(newcolor)
+								coloridg = groen(newcolor)
+								coloridr = rood(newcolor)
+								colorida= alpha
+								colorid=rgb(coloridr, coloridg, coloridb, alpha)
+								color colorid
+								plot plotx+newmx,ploty+newmy
+							next i
+						else
+							spray_size=mousex-slsize_locx_top + 30
+							color grey
+							rect 329,30,140,77
+							if spray_size/2 <37 then
+								color darkgrey
+								circle 398,67,spray_size/2
+								color grey
+								circle 398,67,spray_size/2-2
+								for i = 0 to spray_dense*4
+									randi=rand*pi*2
+									rands=spray_size/2*rand^0.5
+									plotx=sin(randi)*rands
+									ploty=cos(randi)*rands
+									newmx=398
+									newmy=67
+									newcolor=colorid
+									coloridb = blauw(newcolor)
+									coloridg = groen(newcolor)
+									coloridr = rood(newcolor)
+									colorida= alpha
+									colorid=rgb(coloridr, coloridg, coloridb, alpha)
+									color colorid
+									plot plotx+newmx,ploty+newmy
+								next i
+							else
+								color grey
+								rect 329,28,140,77
+								if spray_size > 136 then
+									color darkgrey
+									line 398-68,32,398-68,105
+									line 397-68,32,397-68,105
+									line 398+68,32,398+68,105
+									line 397+68,32,397+68,105
+									for i = 0 to spray_dense*4
+										randi=136*rand
+										rands=136*rand
+										plotx=330+(randi)
+										ploty=29+78*rand
+										newcolor=colorid
+										coloridb = blauw(newcolor)
+										coloridg = groen(newcolor)
+										coloridr = rood(newcolor)
+										colorida= alpha
+										colorid=rgb(coloridr, coloridg, coloridb, alpha)
+										color colorid
+										plot plotx,ploty
+									next i
+								else
+									color darkgrey
+									line 398-spray_size/2,32,398-spray_size/2,105
+									line 397-spray_size/2,32,397-spray_size/2,105
+									line 398+spray_size/2,32,398+spray_size/2,105
+									line 397+spray_size/2,32,397+spray_size/2,105
+									for i = 0 to spray_dense*4
+										randi=spray_size*rand
+										rands=spray_size*rand
+										plotx=398-spray_size/2+(randi)
+										ploty=29+78*rand
+										newcolor=colorid
+										coloridb = blauw(newcolor)
+										coloridg = groen(newcolor)
+										coloridr = rood(newcolor)
+										colorida= alpha
+										colorid=rgb(coloridr, coloridg, coloridb, alpha)
+										color colorid
+										plot plotx,ploty
+									next i
+								endif
+							end if
+						endif
+					end if
+					spriteplace 0,slsize_locx_top+spray_size-30,slsize_locy_top+4
+					refresh
+					pause 0.01
+				else
+					if abs(mousey-sldense_locy_top)<8 and imgfill_state_1[0]=0 then
+						if mousex > sldense_locx_bot then
+							spray_dense=15
+						else
+							if mousex < sldense_locx_top then
+								spray_dense=1
+							else
+								spray_dense=(mousex-sldense_locx_top)/5
+							end if
+						end if
+						spriteplace 1,sldense_locx_top+spray_dense*5,sldense_locy_top+4
+						refresh
+						pause 0.02
+					endif
+				endif
+			else
+				if mousex > imgfill_1_locx and mousex < imgfill_1_locx+11 and mousey > imgfill_1_locy_top and mousey < imgfill_1_locy_bot+10 then
+					# image hose checkbox
+					if imgfill_state_1[0] = 0 then
+						# inactive checkbox clicked, so activate it and draw the second one
+						imgfill_state_1[0]=1
+						check_state[0]=imgfill_state_1[0]
+						check_label$[0]=imgfill_label_1$[0]
+						imgfill_state=1
+						call checkbox(imgfill_1_elements, imgfill_1_locx, imgfill_1_locy_top, imgfill_1_locy_bot)
+						check_state[0]=0
+						color grey
+						font "Tahoma",8,100
+						text 110,80,"Spray Density"
+						refresh
+						color colorid
+						clickclear
+						pause 0.5
+					else
+						# active checkbox clicked, so deactivatte it and remove everything
+						imgfill_state_1[0]=0
+						check_state[0]=imgfill_state_1[0]
+						check_label$[0]=imgfill_label_1$[0]
+						imgfill_state=0
+						call checkbox(imgfill_1_elements, imgfill_1_locx, imgfill_1_locy_top, imgfill_1_locy_bot)
+						check_state[0]=1
+						color black
+						font "Tahoma",8,100
+						text 110,80,"Spray Density"
+						refresh
+						color colorid
+						clickclear
+						pause 0.5
+					endif
+				else
+					while mousex>imgc_up_x and mousex < imgc_up_x+imgc_updown_width and mousey >imgc_up_y and mousey < imgc_down_y+imgc_updown_heigth
+						if clickb=1 then
+							if mousey >imgc_up_y and mousey < imgc_up_y+imgc_updown_heigth then
+								imgc_shown=imgc_shown +imgc_inc
+								if imgc_shown>imgc_max then imgc_shown=imgc_min
+								img_ind=imgc_shown
+								call spinner(imgc_color, imgc_locx, imgc_locy, imgc_width, imgc_heigth, imgc_offsetx, imgc_offsety, imgc_insetx, imgc_insety, imgc_array, imgc_shown, imgc_max, imgc_min, imgc_inc)
+								refresh
+								clickclear
+								#endif
+							else
+								if mousey >imgc_down_y and mousey < imgc_down_y+imgc_updown_heigth then
+									imgc_shown=imgc_shown - imgc_inc
+									if imgc_shown<imgc_min then imgc_shown=imgc_max
+									img_ind=imgc_shown
+									call spinner(imgc_color, imgc_locx, imgc_locy, imgc_width, imgc_heigth, imgc_offsetx, imgc_offsety, imgc_insetx,imgc_insety, imgc_array, imgc_shown, imgc_max, imgc_min, imgc_inc)
+									refresh
+									clickclear
+								endif # not in spinner down button
+							endif # not in spinner up button
+						endif # no click
+						clickclear
+					end while # not in spinner area
+				endif #Not in Image Hose
+			endif # not in sliders
+			oldmx = mousex
+			oldmy = mousey
+		endif # not in drawing area
+		newcolor=colorid
+		coloridb = blauw(newcolor)
+		coloridg = groen(newcolor)
+		coloridr = rood(newcolor)
+		colorida= alpha
+		colorid=rgb(coloridr, coloridg, coloridb, alpha)
+		color abs(colorid)
+	end while
+	clickclear
+	pause 0.1
+	gosub showcoords
+	refresh
+end while
+oldmx=mousex
+oldmy=mousey
+return
+
+#**********************
+# Pen tool
+#**********************
+pen:
+clickclear
+newcolor=colorid
+#coloridb = abs(blauw(newcolor))
+#coloridg = abs(groen(newcolor))
+#coloridr = abs(rood(newcolor))
+#colorida= alpha
+#colorid=rgb(alpha, coloridr, coloridg, coloridb)
+color colorid
+oldmx=mousex
+oldmy=mousey
+penactive=1
+while penactive=1
+	sw_clicked=0
+	gosub commands
+	if sw_clicked=1 then
+		return
+	endif
+	while mouseb > 0
+		if mousex > 77+abs(pen_deltax) and mousex < size_x-6-abs(pen_deltax) and mousey > 109+abs(pen_deltay) and mousey < size_y-69-abs(pen_deltay) then
+			sw_done = 1
+			newmx = mousex
+			newmy = mousey
+			if (oldmx>newmx) or (oldmy>newmy) or fake3d_state=0 then
+				color colorid
+				poly {oldmx+pen_deltax,oldmy-pen_deltay,oldmx-pen_deltax,oldmy+pen_deltay,newmx-pen_deltax,newmy+pen_deltay,newmx+pen_deltax,newmy-pen_deltay}
+			else
+				if  ((oldmx<newmx) or (oldmy>newmy)) and  fake3d_state=1 then
+					color colorid
+					poly {oldmx+pen_deltax,oldmy-pen_deltay,oldmx-pen_deltax,oldmy+pen_deltay,newmx-pen_deltax,newmy+pen_deltay,newmx+pen_deltax,newmy-pen_deltay}
+				else
+					poly {oldmx+pen_deltax,oldmy-pen_deltay,oldmx-pen_deltax,oldmy+pen_deltay,newmx-pen_deltax,newmy+pen_deltay,newmx+pen_deltax,newmy-pen_deltay}
+				endif
+			endif
+			oldmx = newmx
+			oldmy = newmy
+			refresh
+		else
+			gosub colorstuff
+			if mousex > fake3d_1_locx and mousex < fake3d_1_locx+11 and mousey > fake3d_1_locy_top and mousey < fake3d_1_locy_bot+10 then
+				# image hose checkbox
+				if fake3d_state_1[0] = 0 then
+					# inactive checkbox clicked, so activate it and draw the second one
+					fake3d_state_1[0]=1
+					check_state[0]=fake3d_state_1[0]
+					check_label$[0]=fake3d_label_1$[0]
+					fake3d_state=1
+					call checkbox(fake3d_1_elements, fake3d_1_locx, fake3d_1_locy_top, fake3d_1_locy_bot)
+					check_state[0]=0
+					refresh
+					pause 0.02
+				else
+					# active checkbox clicked, so deactivatte it and remove everything
+					fake3d_state_1[0]=0
+					check_state[0]=fake3d_state_1[0]
+					check_label$[0]=fake3d_label_1$[0]
+					fake3d_state=0
+					call checkbox(fake3d_1_elements, fake3d_1_locx, fake3d_1_locy_top, fake3d_1_locy_bot)
+					check_state[0]=1
+					refresh
+					pause 0.02
+				endif
+			endif
+		endif
+		newcolor=colorid
+	end while
+	clickclear
+	while mousex>deltax_up_x and mousex < deltax_up_x+deltax_updown_width and mousey >deltax_up_y and mousey < deltay_down_y+deltay_updown_heigth
+		if clickb=1 then
+			if mousey >deltax_up_y and mousey < deltax_up_y+deltax_updown_heigth then
+				#clicked up-button on X slant
+				deltax_shown=deltax_shown +deltax_inc
+				if deltax_shown>deltax_max then deltax_shown=deltax_max
+				pen_deltax=deltax_shown
+				call spinner(deltax_color, deltax_locx, deltax_locy, deltax_width, deltax_heigth, deltax_offsetx, deltax_offsety, deltax_insetx, deltax_insety, deltax_array, deltax_shown, deltax_max, deltax_min, deltax_inc)
+				refresh
+				clickclear
+				#endif
+			else
+				if mousey >deltax_down_y and mousey < deltax_down_y+deltax_updown_heigth then
+					#if clickb=1 then
+					#clicked down-button on X slant
+					deltax_shown=deltax_shown - deltax_inc
+					if deltax_shown<deltax_min then deltax_shown=deltax_min
+					pen_deltax=deltax_shown
+					call spinner(deltax_color, deltax_locx, deltax_locy, deltax_width, deltax_heigth, deltax_offsetx, deltax_offsety, deltax_insetx, deltax_insety, deltax_array, deltax_shown, deltax_max, deltax_min, deltax_inc)
+					refresh
+					clickclear
+					# endif
+				endif
+			endif
+			if mousey >deltay_up_y and mousey < deltay_up_y+deltay_updown_heigth then
+				#clicked up-button on Y slant
+				deltay_shown=deltay_shown + deltay_inc
+				if deltay_shown>deltay_max then deltay_shown = deltay_max
+				pen_deltay=deltay_shown
+				call spinner(deltay_color, deltay_locx, deltay_locy, deltay_width, deltay_heigth, deltay_offsetx, deltay_offsety, deltay_insetx, deltay_insety, deltay_array, deltay_shown, deltay_max, deltay_min, deltay_inc)
+				refresh
+				clickclear
+			else
+				if mousey >deltay_down_y and mousey < deltay_down_y+deltay_updown_heigth then
+					deltay_shown=deltay_shown - deltay_inc
+					if deltay_shown<deltay_min then deltay_shown = deltay_min
+					pen_deltay=deltay_shown
+					call spinner(deltay_color, deltay_locx,deltay_locy,deltay_width, deltay_heigth, deltay_offsetx, deltay_offsety, deltay_insetx, deltay_insety, deltay_array, deltay_shown, deltay_max, deltay_min, deltay_inc)
+					refresh
+					clickclear
+				endif
+			endif
+			clickclear
+			pause 0.1
+		endif
+	end while
+	oldmx=mousex
+	oldmy=mousey
+end while
+return
+
+#**********************
+# Erase tool
+#**********************
+clearline:
+sw_done = 1
+clickclear
+while mouseb > 0
+	sw_clicked=0
+	gosub commands
+	if sw_clicked=1 then
+		return
+	endif
+	while mouseb>0
+		if  mousex > 77+mouse_size/2 and mousex < size_x-6-mouse_size/2 and mousey > 109+mouse_size/2 and mousey < size_y-69-mouse_size/2 then
+			sw_done = 1
+			color white
+			newmx = mousex
+			newmy = mousey
+			if oldmx < 77+mouse_size/2 or oldmx > size_x-6-mouse_size/2 then
+				oldmx=newmx
+				oldmy=newmy
+			endif
+			if oldmy < 109+mouse_size/2 or oldmy > size_y-69-mouse_size/2 then
+				oldmx=newmx
+				oldmy=newmy
+			endif
+			line oldmx, oldmy ,newmx, newmy
+			poly {oldmx,oldmy-mouse_size/2, oldmx, oldmy + mouse_size/2, newmx,newmy+mouse_size/2, newmx, newmy - mouse_size/2}
+			poly {oldmx-mouse_size/2,oldmy, oldmx + mouse_size/2, oldmy, newmx+mouse_size/2,newmy, newmx - mouse_size/2, newmy}
+			circle oldmx,oldmy,mouse_size/2-1
+			circle newmx,newmy,mouse_size/2-1
+			refresh
+			oldmx = newmx
+			oldmy = newmy
+		endif
+	end while
+end while
+while mouseb=0 and action$="clearline" and mousex > 77+mouse_size/2 and mousex < size_x-6-mouse_size/2 and mousey > 109+mouse_size/2 and mousey < size_y-69-mouse_size/2
+	pix$=getslice(oldmx-mouse_size/2,oldmy-mouse_size/2,mouse_size,mouse_size)
+	color grey
+	rect oldmx-mouse_size/2,oldmy-mouse_size/2,mouse_size,mouse_size
+	color colorid
+	refresh
+	pause 0.01
+	putslice oldmx-mouse_size/2,oldmy-mouse_size/2, pix$
+	refresh
+	pix$=getslice(mousex-mouse_size/2,mousey-mouse_size/2,mouse_size,mouse_size)
+	oldmx=mousex
+	oldmy=mousey
+end while
+while mousex > mouse_size_locx-5 and mousex < mouse_size_locx+5 and mousey > mouse_size_locy_top-4 and mousey < mouse_size_locy_bot+5
+	if clickb=1 then
+		for i=0 to mouse_size_elements
+			if mousey > mouse_size_locy_top-5+ (i*(mouse_size_locy_bot-mouse_size_locy_top)/(mouse_size_elements-1)) and mousey < mouse_size_locy_top+5+ (i*(mouse_size_locy_bot-mouse_size_locy_top)/(mouse_size_elements-1)) then
+				mouse_size_active=i+1
+				for i= 0 to mouse_size_elements-1
+					radio$[i]=opt_mouse_size$[i]
+				next i
+				call drawradio(mouse_size_elements, mouse_size_locx, mouse_size_locy_top, mouse_size_locy_bot, mouse_size_active)
+			end if
+		next i
+		mouse_size=10*mouse_size_active
+	end if
+	clickclear
+	newcolor=colorid
+	coloridb = blauw(newcolor)
+	coloridg = groen(newcolor)
+	coloridr = rood(newcolor)
+	colorida= alpha
+	colorid=rgb(coloridr, coloridg, coloridb, alpha)
+end while
+pause 0.1
+gosub showcoords
+refresh
+return
+
+#**********************
+# Color Picker tool
+#**********************
+dropper:
+clickclear
+newcolor=colorid
+coloridb = blauw(newcolor)
+coloridg = groen(newcolor)
+coloridr = rood(newcolor)
+colorid=rgb(coloridr, coloridg, coloridb)
+oldmx=mousex
+oldmy=mousey
+pickactive=1
+while pickactive=1
+	sw_clicked=0
+	gosub commands
+	if sw_clicked=1 then
+		return
+	endif
+	while mouseb > 0
+		if mousex > can_left and mousex < can_right and mousey > can_top and mousey < can_bot then
+			colorid=pixel(mousex,mousey)
+			gosub showcoords
+			sw_done = 1
+			newcolor=colorid
+			coloridb = blauw(newcolor)
+			coloridg = groen(newcolor)
+			coloridr = rood(newcolor)
+			color colorid
+			draw2_color = 2
+			call drawing(draw2_elements_x, draw2_elements_y, draw2_locx, draw2_locy, draw2_width,draw2_height, draw2_offsetx, draw2_offsety, draw2_color)
+			color colorid
+			rect draw2_locx,draw2_locy,draw2_width,draw2_height
+			refresh
+		endif
+	end while
+	oldmx=mousex
+	oldmy=mousey
+end while
+return
+
+
+#**********************
+# Bucket fill tool
+#**********************
+fillit:
+clickclear
+color colorid
+oldmx=mousex
+oldmy=mousey
+sw_clicked=0
+gosub commands
+if sw_clicked=1 then
+	return
+endif
+while mouseb>0
+	if mousex > can_left and mousex < can_right and mousey > can_top and mousey < can_bot then
+		pointx=mousex
+		pointy=mousey
+		call push(pointx,pointy)
+		#set the fill color
+		fillcol=colorid
+		#call the fill routine
+		if Mir_vert_state_1[0] = 1 and Mir_hori_state_1[0] = 1 then
+			call fillstack(pointx,pointy,pixel(pointx,pointy),fillcol)
+fillcol=colorid: pointer=0
+			call push(pointx,size_y-(pointy-40))
+			call fillstack(pointx,size_y-(pointy-40),pixel(pointx,size_y-(pointy-40)),fillcol)
+fillcol=colorid: pointer=0
+			call push(size_x-(pointx-71),pointy)
+			call fillstack(size_x-(pointx-71),pointy,pixel(size_x-(pointx-71),pointy),fillcol)
+fillcol=colorid: pointer=0
+			call push(size_x-(pointx-71),size_y-(pointy-40))
+			call fillstack(size_x-(pointx-71),size_y-(pointy-40),pixel(size_x-(pointx-71),size_y-(pointy-40)),fillcol)
+		else
+			if Mir_hori_state_1[0] = 1 then
+				call fillstack(pointx,pointy,pixel(pointx,pointy),fillcol)
+fillcol=colorid: pointer=0
+				call push(pointx,size_y-(pointy-40))
+				call fillstack(pointx,size_y-(pointy-40),pixel(pointx,size_y-(pointy-40)),fillcol)
+			else
+				if Mir_vert_state_1[0] = 1 then
+					call fillstack(pointx,pointy,pixel(pointx,pointy),fillcol)
+fillcol=colorid: pointer=0
+					call push(size_x-(pointx-71),pointy)
+					call fillstack(size_x-(pointx-71),pointy,pixel(size_x-(pointx-71),pointy),fillcol)
+				else
+					call fillstack(pointx,pointy,pixel(pointx,pointy),fillcol)
+				endif
+			endif
+		endif
+		refresh
+		clickclear
+		pointer=0
+	else
+		gosub colorstuff
+		gosub checkmirror
+	endif
+end while
+return
+
+#**********************
+# Circle tool
+#**********************
+circ:
+clickclear
+color colorid
+oldmx=mousex
+oldmy=mousey
+circleactive=1
+while circleactive=1
+	sw_clicked=0
+	gosub commands
+	if sw_clicked=1 then
+		return
+	endif
+	rad=0
+	sw_circborder=0
+	while mouseb > 0
+		if mousex > can_left and mousex < can_right and mousey > can_top and mousey < can_bot then
+			origx = mousex
+			origy = mousey
+			while mouseb=1
+				curmousex=mousex
+				rad=sqr( abs(origx-mousex)^2 + abs(origy-mousey)^2)
+				for i = 0 to 31
+					circslice$[i]=getslice(setsin[i]*rad+origx-2, setcos[i]*rad+origy-2, 4, 4)
+				next i
+				for i = 0 to 31
+					#               if (setsin[i]*rad+origx)< 77 or (setsin[i]*rad+origx) > size_x-6 or (setcos[i]*rad+origy)<109 or (setcos[i]*rad+origy) > size_y-69 then
+					#                  sw_circborder=1
+					#               else
+					# flashy colors so it is visible against any background
+					#                  color rgb(rand*255,rand*255,rand*255)
+					#                  circle setsin[i]*rad+origx,setcos[i]*rad+origy,1
+					#               endif
+					if (setsin[i]*rad+origx-1) < 78 or (setsin[i]*rad+origx+1) > size_x-7 or (setcos[i]*rad+origy-1) < 110 or (setcos[i]*rad+origy+1) > size_y-70 then
+						sw_circborder=1
+					else
+						color rgb(rand*255,rand*255,rand*255)
+						circle setsin[i]*rad+origx,setcos[i]*rad+origy,1
+					endif
+				next i
+				refresh
+				#            pause 0.05
+				for i = 0 to 31
+					putslice setsin[i]*rad+origx-2,setcos[i]*rad+origy-2,circslice$[i]
+				next i
+				refresh
+			end while
+			pause 0.3
+			if rad>0 then
+				color colorid
+				if circfill_state_1[0]=0 then
+					penwidth cirpenw
+					color colorid, clear
+				endif
+				# mirror via mirrorcircle gosub
+mc_cx=origx: mc_cy=origy: mc_r=rad
+				gosub mirrorcircle
+				clickclear
+				penwidth 1
+				if sw_circborder =1 then
+					gosub draw_interface
+					sw_circborder=0
+				endif
+				refresh
+			endif
+		else
+			gosub colorstuff
+			gosub checkmirror
+			if mousex > circfill_1_locx and mousex < circfill_1_locx+11 then
+				if mousey > circfill_1_locy_top and mousey < circfill_1_locy_bot+10 then
+					if circfill_state_1[0] = 0 then
+						# inactive checkbox clicked, so activate it and draw the second one
+						circfill_state_1[0]=1
+						check_state[0]=circfill_state_1[0]
+						check_label$[0]=circfill_label_1$[0]
+						circfill_state=1
+						call checkbox(circfill_1_elements, circfill_1_locx, circfill_1_locy_top, circfill_1_locy_bot)
+						check_state[0]=0
+						refresh
+						clickclear
+						pause 0.5
+					else
+						# active checkbox clicked, so deactivatte it and remove everything
+						circfill_state_1[0]=0
+						check_state[0]=circfill_state_1[0]
+						check_label$[0]=circfill_label_1$[0]
+						spraytype_state=0
+						call checkbox(circfill_1_elements, circfill_1_locx, circfill_1_locy_top, circfill_1_locy_bot)
+						refresh
+						clickclear
+						pause 0.5
+					endif
+				endif
+			endif # not in "Draw filled"
+			while mousex>penwc_up_x and mousex < penwc_up_x+penwc_updown_width and mousey >penwc_up_y and mousey < penwc_down_y+penwc_updown_heigth
+				if clickb=1 then
+					if mousey >penwc_up_y and mousey < penwc_up_y+penwc_updown_heigth then
+						penwc_shown=penwc_shown +penwc_inc
+						if penwc_shown>penwc_max then penwc_shown=penwc_max
+						cirpenw=penwc_shown
+						call spinner(penwc_color, penwc_locx, penwc_locy, penwc_width, penwc_heigth, penwc_offsetx, penwc_offsety, penwc_insetx, penwc_insety, penwc_array, penwc_shown, penwc_max, penwc_min, penwc_inc)
+						refresh
+						clickclear
+						#endif
+					else
+						if mousey >penwc_down_y and mousey < penwc_down_y+penwc_updown_heigth then
+							penwc_shown=penwc_shown - penwc_inc
+							if penwc_shown<penwc_min then penwc_shown=penwc_min
+							cirpenw=penwc_shown
+							call spinner(penwc_color, penwc_locx, penwc_locy, penwc_width, penwc_heigth, penwc_offsetx, penwc_offsety, penwc_insetx,penwc_insety, penwc_array, penwc_shown, penwc_max, penwc_min, penwc_inc)
+							refresh
+							clickclear
+						endif # not in spinner down button
+					endif # not in spinner up button
+				endif # no click
+				clickclear
+			end while # not in spinner area
+			oldmx = mousex
+			oldmy = mousey
+		endif
+	end while
+	oldmx=mousex
+	oldmy=mousey
+end while
+return
+
+#**********************
+# rectangle tool
+#**********************
+recta:
+clickclear
+color colorid
+oldmx=mousex
+oldmy=mousey
+rectactive=1
+while rectactive=1
+	sw_clicked=0
+	gosub commands
+	if sw_clicked=1 then
+		return
+	endif
+	while mouseb > 0
+		if mousex > can_left and mousex < can_right and mousey > can_top and mousey < can_bot then
+			firstx=mousex
+			firsty=mousey
+			# drawing area
+			counter =0
+			while counter=0
+				while mouseb=1 > 0
+					counter = 1
+					oldmousex=mousex
+					oldmousey=mousey
+					if oldmousex <78 then oldmousex = 78
+					if oldmousex > size_x-6 then oldmousex = size_x-6
+					oldmousey=mousey
+					if oldmousey <110 then oldmousey = 110
+					if oldmousey > size_y-69 then oldmousey = size_y-69
+					color colorid
+					if firstx < oldmousex and firsty < oldmousey then  # current mouse to the right and lower - ok
+						pixt$=getslice(firstx,firsty,oldmousex-firstx+1,2)
+						pixl$=getslice(firstx,firsty,2,oldmousey-firsty+1)
+						pixr$=getslice(oldmousex-1,firsty,4,oldmousey-firsty+1)
+						pixb$=getslice(firstx,oldmousey-1,oldmousex-firstx+1,4)
+						line firstx,firsty+1,oldmousex, firsty+1
+						line firstx+1,firsty,firstx+1, oldmousey
+						line firstx+1,oldmousey,oldmousex, oldmousey
+						line oldmousex,firsty+1,oldmousex, oldmousey
+						refresh
+						pause 0.2
+						putslice firstx,firsty, pixt$
+						putslice firstx,firsty, pixl$
+						putslice oldmousex-1,firsty, pixr$
+						putslice firstx,oldmousey-1, pixb$
+						refresh
+					else
+						if firstx < oldmousex and firsty > oldmousey then  # current mouse to the right and higher - ok
+							pixt$=getslice(firstx,firsty,oldmousex-firstx+1,2)
+							pixl$=getslice(firstx,oldmousey,2,firsty-oldmousey+1)
+							pixr$=getslice(oldmousex-1,oldmousey,4,firsty-oldmousey+1)
+							pixb$=getslice(firstx,oldmousey-3,oldmousex-firstx+1,7)
+							line firstx,firsty+1,oldmousex, firsty+1
+							line firstx+1,firsty,firstx+1, oldmousey
+							line firstx+1,oldmousey,oldmousex, oldmousey
+							line oldmousex,firsty+1,oldmousex, oldmousey
+							refresh
+							pause 0.2
+							putslice firstx,firsty, pixt$
+							putslice firstx,oldmousey, pixl$
+							putslice oldmousex-1,oldmousey, pixr$
+							putslice firstx,oldmousey-3, pixb$
+							refresh
+						else
+							if firstx > oldmousex and firsty < oldmousey then   # current mouse to the left and lower - ok
+								pixt$=getslice(oldmousex,firsty,firstx-oldmousex+1,2)
+								pixl$=getslice(oldmousex,firsty,2,oldmousey-firsty+1)
+								pixr$=getslice(firstx-1,firsty,4,oldmousey-firsty+1)
+								pixb$=getslice(oldmousex,oldmousey-1,firstx-oldmousex+1,4)
+								line firstx,firsty+1,oldmousex, firsty+1
+								line firstx+1,firsty,firstx+1, oldmousey
+								line firstx+1,oldmousey,oldmousex, oldmousey
+								line oldmousex,firsty+1,oldmousex, oldmousey
+								refresh
+								pause 0.2
+								putslice oldmousex,firsty, pixt$
+								putslice oldmousex,firsty, pixl$
+								putslice firstx-1,firsty, pixr$
+								putslice oldmousex,oldmousey-1, pixb$
+								refresh
+							else
+								if firstx > oldmousex and firsty > oldmousey then   # current mouse to the left and higher
+									pixt$=getslice(oldmousex,firsty,firstx-oldmousex+1,2)
+									pixl$=getslice(oldmousex,oldmousey,2,firsty-oldmousey+1)
+									pixr$=getslice(firstx-1,oldmousey,4,firsty-oldmousey+1)
+									pixb$=getslice(oldmousex,oldmousey-3,firstx-oldmousex+1,7)
+									line firstx,firsty+1,oldmousex, firsty+1
+									line firstx+1,firsty,firstx+1, oldmousey
+									line firstx+1,oldmousey,oldmousex, oldmousey
+									line oldmousex,firsty+1,oldmousex, oldmousey
+									refresh
+									pause 0.2
+									putslice oldmousex,firsty, pixt$
+									putslice oldmousex,oldmousey, pixl$
+									putslice firstx-1,oldmousey, pixr$
+									putslice oldmousex,oldmousey-3, pixb$
+									refresh
+								endif
+							endif
+						endif
+					endif
+				end while
+				if counter = 1 then
+					if rectfill_state_1[0]=0 then
+						penwidth recpenw
+						color colorid, clear
+					endif
+					if firstx < oldmousex then uplefx=firstx else uplefx=oldmousex
+					if firsty < oldmousey then uplefy=firsty else uplefy=oldmousey
+					downrighx = abs(firstx - oldmousex)
+					downrighy = abs(firsty - oldmousey)
+mr_x=uplefx: mr_y=uplefy: mr_w=downrighx: mr_h=downrighy
+					gosub mirrorrect
+					clickclear
+					penwidth 1
+				endif
+				refresh
+			end while
+		else
+			gosub checkmirror
+			gosub colorstuff
+			if mousex > rectfill_1_locx and mousex < rectfill_1_locx+11 then
+				if mousey > rectfill_1_locy_top and mousey < rectfill_1_locy_bot+10 then
+					if rectfill_state_1[0] = 0 then
+						# inactive checkbox clicked, so activate it and draw the second one
+						rectfill_state_1[0]=1
+						check_state[0]=rectfill_state_1[0]
+						check_label$[0]=rectfill_label_1$[0]
+						rectfill_state=1
+						call checkbox(rectfill_1_elements, rectfill_1_locx, rectfill_1_locy_top, rectfill_1_locy_bot)
+						check_state[0]=0
+						refresh
+						clickclear
+						pause 0.5
+					else
+						# active checkbox clicked, so deactivatte it and remove everything
+						rectfill_state_1[0]=0
+						check_state[0]=rectfill_state_1[0]
+						check_label$[0]=rectfill_label_1$[0]
+						rectfill_state=0   # Fix4: was wrong spraytype_state=0
+						call checkbox(rectfill_1_elements, rectfill_1_locx, rectfill_1_locy_top, rectfill_1_locy_bot)
+						refresh
+						clickclear
+						pause 0.5
+					endif
+				endif
+			endif # not in "Draw filled"
+			while mousex>penw_up_x and mousex < penw_up_x+penw_updown_width and mousey >penw_up_y and mousey < penw_down_y+penw_updown_heigth
+				if clickb=1 then
+					if mousey >penw_up_y and mousey < penw_up_y+penw_updown_heigth then
+						penw_shown=penw_shown +penw_inc
+						if penw_shown>penw_max then penw_shown=penw_max
+						recpenw=penw_shown
+						call spinner(penw_color, penw_locx, penw_locy, penw_width, penw_heigth, penw_offsetx, penw_offsety, penw_insetx, penw_insety, penw_array, penw_shown, penw_max, penw_min, penw_inc)
+						refresh
+						clickclear
+						#endif
+					else
+						if mousey >penw_down_y and mousey < penw_down_y+penw_updown_heigth then
+							penw_shown=penw_shown - penw_inc
+							if penw_shown<penw_min then penw_shown=penw_min
+							recpenw=penw_shown
+							call spinner(penw_color, penw_locx, penw_locy, penw_width, penw_heigth, penw_offsetx, penw_offsety, penw_insetx,penw_insety, penw_array, penw_shown, penw_max, penw_min, penw_inc)
+							refresh
+							clickclear
+						endif # not in spinner down button
+					endif # not in spinner up button
+				endif # no click
+				clickclear
+			end while # not in spinner area
+			oldmx = mousex
+			oldmy = mousey
+		endif
+	end while
+	oldmx=mousex
+	oldmy=mousey
+end while
+return
+
+#**********************
+# Polyline tool
+#**********************
+polyline:
+#clickclear
+color colorid
+oldmx=mousex
+oldmy=mousey
+polyactive=1
+while polyactive=1
+	sw_clicked=0
+	gosub commands
+	if sw_clicked=1 then
+		return
+	endif
+	while clickb=1 > 0 #while leftclick
+		if clickx > 77 and clickx < size_x-6 and clicky > 109 and clicky < size_y-69 then
+			#drawing area
+			firstx=clickx
+			firsty=clicky
+			origx=firstx
+			origy=firsty
+			#show first point
+			pix$=getslice(firstx-2,firsty-2,5,4)
+			sw_fp=1
+			color grey
+			circle firstx,firsty,1
+			refresh
+			penwidth slinewidth
+			color colorid
+			clickclear # clickb now is 0
+			a=1
+			while a=1
+				color darkred
+				font "Tahoma",8,100
+				text 100,90,"Point selected. Select next point or right-click"
+				refresh
+				#wait for second point
+				if clickx > 77 and clickx < size_x-6 and clicky > 109 and clicky < size_y-69 then
+					if clickb=2 then # right click found! set end line to start of poly!
+						if poly_open_state_1[0]=1 then
+							secondx=origx
+							secondy=origy
+						endif
+						a=3
+					else             # left click found. Register end of line
+						secondx=mousex
+						secondy=mousey
+						a=2
+					endif
+					clickclear
+					color grey
+					rect 100,90,300,14
+					refresh
+					sw_fp=0
+				endif
+				if a=2 or a=3 then
+					# erase marker and draw first to second line
+					putslice firstx-2,firsty-2, pix$
+					color colorid
+ml_x1=firstx: ml_y1=firsty: ml_x2=secondx: ml_y2=secondy
+					gosub mirrorline
+					pix$=getslice(secondx-2,secondy-2,5,5)
+				endif # not in line drawing mode
+				if a = 2  then
+					firstx=secondx
+					firsty=secondy
+					a=1
+				else
+					if a = 3  then
+						firstx=secondx
+						firsty=secondy
+						secondx=origx
+						secondy=origy
+					endif
+				endif
+				#        endif # second point found so line drawn
+			end while
+			penwidth 1
+			refresh
+		else # not in drawing area
+			gosub colorstuff
+			gosub checkmirror
+			if mousex > poly_open_locx and mousex < poly_open_locx+11 and mousey > poly_open_locy_top and mousey < poly_open_locy_bot+10 then
+				if poly_open_state_1[0] = 0 then
+					# inactive checkbox clicked, so activate it and draw the second one
+					poly_open_state_1[0]=1
+					check_state[0]=poly_open_state_1[0]
+					check_label$[0]=poly_open_label_1$[0]
+					poly_open_state=1
+					call checkbox(poly_open_elements, poly_open_locx, poly_open_locy_top, poly_open_locy_bot)
+					clickclear
+					pause 0.5
+				else
+					# active checkbox clicked, so deactivatte it and remove everything
+					poly_open_state_1[0]=0
+					check_state[0]=poly_open_state_1[0]
+					check_label$[0]=poly_open_label_1$[0]
+					poly_open_state=0
+					call checkbox(poly_open_elements, poly_open_locx, poly_open_locy_top, poly_open_locy_bot)
+					refresh
+					clickclear
+					pause 0.5
+				endif #done with close poly handling
+			endif #not on close poly checkbox
+			while mousex>slinew_up_x and mousex < slinew_up_x+slinew_updown_width and mousey >slinew_up_y and mousey < slinew_down_y+slinew_updown_heigth
+				# line width area
+				if clickb=1 then
+					if mousey >slinew_up_y and mousey < slinew_up_y+slinew_updown_heigth then
+						slinew_shown=slinew_shown +slinew_inc
+						if slinew_shown>slinew_max then slinew_shown=slinew_max
+						slinewidth=slinew_shown
+						call spinner(slinew_color, slinew_locx, slinew_locy, slinew_width, slinew_heigth, slinew_offsetx, slinew_offsety, slinew_insetx, slinew_insety, slinew_array, slinew_shown, slinew_max, slinew_min, slinew_inc)
+						refresh
+						clickclear
+						#endif
+					else
+						if mousey >slinew_down_y and mousey < slinew_down_y+slinew_updown_heigth then
+							slinew_shown=slinew_shown - slinew_inc
+							if slinew_shown<slinew_min then slinew_shown=slinew_min
+							slinewidth=slinew_shown
+							call spinner(slinew_color, slinew_locx, slinew_locy, slinew_width, slinew_heigth, slinew_offsetx, slinew_offsety, slinew_insetx,slinew_insety, slinew_array, slinew_shown, slinew_max, slinew_min, slinew_inc)
+							refresh
+							clickclear
+						endif
+					endif # not in spinner up button
+				endif # no click
+				clickclear
+			end while # not in spinner area
+			clickclear
+		endif # not in drawing area
+		clickclear
+	end while # mouse not active
+	gosub showcoords
+	refresh
+	oldmx=mousex
+	oldmy=mousey
+end while
+return
+
+#**********************
+# Line tool
+#**********************
+lineseg:
+#clickclear
+color colorid
+oldmx=mousex
+oldmy=mousey
+lineactive=1
+while lineactive=1
+	sw_clicked=0
+	gosub commands
+	if sw_clicked=1 then
+		return
+	endif
+	while clickb=1 > 0
+		if clickx > 77 and clickx < size_x-6 and clicky > 109 and clicky < size_y-69 then
+			#drawing area
+			firstx=clickx
+			firsty=clicky
+			pix$=getslice(firstx-2,firsty-2,5,5)
+			sw_fp=1
+			color grey
+			circle firstx,firsty,2
+			rect size_x-70,size_y-25,60,18
+			refresh
+			if Perspective_state=1 then
+				#starburst!!!
+				greyscale=220
+				colorgrey = (255+greyscale)*256*256+greyscale*256+ greyscale
+				a=1
+				while a=1
+					if clickb>0 then
+						newx=mousex
+						newy=mousey
+						clickclear
+						a=2
+					endif
+				end while
+				incr=0.00655
+				new=0
+				for j = 1 to 63
+					if j <31 then
+						incr= incr *1.2
+						ang=pi/2+incr
+					else
+						incr= incr/1.2
+						ang=3*pi/2-incr
+					endif
+					x2=newx : y2 = newy
+					x1=2000*sin(ang)+newx
+					y1=2000*cos(ang)+newy
+					A1 = y2-y1
+					B1 = x1-x2
+					C1 = x1*A1 + y1*B1
+x1=77:x2=77:y1=109:y2=size_y-69
+					A2 = y2-y1
+					B2 = x1-x2
+					C2 = x1*A2 + y1*B2
+					det=A1*B2-A2*B1
+					if det <> 0 then
+						pointx=(B2*C1 - B1*C2)/det
+						pointy=(A1*C2 - A2*C1) /det
+						if (pointy > newy or pointy = newy) and sw_ground=1 then
+							if pointy <size_y-69 and pointy>109 then
+								color rgb(200,200,200,100)
+								line newx,newy, pointx,pointy
+							endif
+						else
+							if pointy <size_y-69 and pointy>109 and sw_ground=0 then
+								color rgb(200,200,200,100)
+								line newx,newy, pointx,pointy
+							endif
+						endif
+					endif
+x1=77:x2=size_x-6:y1=109:y2=109
+					A2 = y2-y1
+					B2 = x1-x2
+					C2 = x1*A2 + y1*B2
+					det=A1*B2-A2*B1
+					if det <> 0 then
+						pointx=(B2*C1 - B1*C2)/det
+						pointy=(A1*C2 - A2*C1) /det
+						if sw_ground=0 then
+							if (pointx <size_x-6 and pointx>77) then
+								color rgb(200,200,200,100)
+								line newx,newy, pointx,pointy+1
+							endif
+						endif
+					endif
+x1=size_x-6:x2=size_x-6:y1=109:y2=size_y-69
+					A2 = y2-y1
+					B2 = x1-x2
+					C2 = x1*A2 + y1*B2
+					det=A1*B2-A2*B1
+					if det <> 0 then
+						pointx=(B2*C1 - B1*C2)/det
+						pointy=(A1*C2 - A2*C1) /det
+						if pointy > newy and sw_ground=1 then
+							if pointy <size_y-69 and pointy>109 then
+								color rgb(200,200,200,100)
+								line newx,newy, pointx,pointy
+							endif
+						else
+							if pointy <size_y-69 and pointy>109 and sw_ground=0 then
+								color rgb(200,200,200,100)
+								line newx,newy, pointx,pointy
+							endif
+						endif
+					endif
+x1=77:x2=size_x-6:y1=size_y-69:y2=size_y-69
+					A2 = y2-y1
+					B2 = x1-x2
+					C2 = x1*A2 + y1*B2
+					det=A1*B2-A2*B1
+					if det <> 0 then
+						pointx=(B2*C1 - B1*C2)/det
+						pointy=(A1*C2 - A2*C1) /det
+						if (pointx <size_x-6 and pointx>77) then
+							color rgb(200,200,200,100)
+							line newx,newy, pointx,pointy-1
+						endif
+					endif
+				next j
+			else
+				penwidth slinewidth
+				color grey
+				rect size_x-70,size_y-25,60,18
+				color colorid
+				clickclear
+				a=1
+				while a=1
+					color black
+					font "Tahoma",8,100
+					text 100,90,"First point selected"
+					refresh
+					#wait for second point
+					if clickx > 77 and clickx < size_x-6 and clicky > 109 and clicky < size_y-69 then
+						secondx=mousex
+						secondy=mousey
+						clickclear
+						color grey
+						rect 100,90,120,14
+						refresh
+						sw_fp=0
+						a=2
+					endif
+				end while
+				# erase marker and draw first to second line
+				putslice firstx-2,firsty-2, pix$
+				color colorid
+				if Loc_vert_state_1[0] = 1 then
+					if Mir_vert_state_1[0] = 1 and Mir_hori_state_1[0] = 1 then
+						line firstx, firsty, firstx, secondy
+						line firstx, mir_yoff-firsty, firstx, mir_yoff-secondy
+						line mir_xoff-firstx, firsty, mir_xoff-firstx, secondy
+						line mir_xoff-firstx,mir_yoff-firsty,mir_xoff-firstx,mir_yoff-secondy
+					else
+						if Mir_hori_state_1[0] = 1 then
+							line firstx, firsty, firstx, secondy
+							line firstx, mir_yoff-firsty, firstx, mir_yoff-secondy
+						else
+							if Mir_vert_state_1[0] = 1 then
+								line firstx, firsty, firstx, secondy
+								line mir_xoff-firstx, firsty, mir_xoff-firstx, secondy
+							else
+								line firstx, firsty, firstx, secondy
+							endif
+						endif
+					endif
+				else
+					if Loc_hori_state_1[0] = 1 then
+						if Mir_vert_state_1[0] = 1 and Mir_hori_state_1[0] = 1 then
+							line firstx, firsty, secondx, firsty
+							line firstx, mir_yoff-firsty, secondx, mir_yoff-firsty
+							line mir_xoff-firstx, firsty, mir_xoff-secondx, firsty
+							line mir_xoff-firstx, mir_yoff-firsty, mir_xoff-secondx, mir_yoff-firsty
+						else
+							if Mir_hori_state_1[0] = 1 then
+								line firstx, mir_yoff-firsty, secondx, mir_yoff-firsty
+								line firstx, firsty, secondx, firsty
+							else
+								if Mir_vert_state_1[0] = 1 then
+									line firstx, firsty, secondx, firsty
+									line mir_xoff-firstx, firsty, mir_xoff-secondx, firsty
+								else
+									line firstx, firsty, secondx, firsty
+								endif
+							endif
+						endif
+					else
+ml_x1=firstx: ml_y1=firsty: ml_x2=secondx: ml_y2=secondy
+						gosub mirrorline
+					endif
+				endif # not in line drawing mode
+				penwidth 1
+				refresh
+			endif # no starburst
+		else # not in drawing area
+			gosub colorstuff
+			gosub checkmirror
+			while mousex>slinew_up_x and mousex < slinew_up_x+slinew_updown_width and mousey >slinew_up_y and mousey < slinew_down_y+slinew_updown_heigth
+				# line width area
+				if clickb=1 then
+					if mousey >slinew_up_y and mousey < slinew_up_y+slinew_updown_heigth then
+						slinew_shown=slinew_shown +slinew_inc
+						if slinew_shown>slinew_max then slinew_shown=slinew_max
+						slinewidth=slinew_shown
+						call spinner(slinew_color, slinew_locx, slinew_locy, slinew_width, slinew_heigth, slinew_offsetx, slinew_offsety, slinew_insetx, slinew_insety, slinew_array, slinew_shown, slinew_max, slinew_min, slinew_inc)
+						refresh
+						clickclear
+						#endif
+					else
+						if mousey >slinew_down_y and mousey < slinew_down_y+slinew_updown_heigth then
+							slinew_shown=slinew_shown - slinew_inc
+							if slinew_shown<slinew_min then slinew_shown=slinew_min
+							slinewidth=slinew_shown
+							call spinner(slinew_color, slinew_locx, slinew_locy, slinew_width, slinew_heigth, slinew_offsetx, slinew_offsety, slinew_insetx,slinew_insety, slinew_array, slinew_shown, slinew_max, slinew_min, slinew_inc)
+							refresh
+							clickclear
+						endif
+					endif # not in spinner up button
+
+				endif # no click
+				clickclear
+			end while # not in spinner area
+			if mousex > Loc_hori_1_locx and mousex < Loc_hori_1_locx+11 and mousey > Loc_hori_1_locy_top and mousey < Loc_hori_1_locy_bot+10 then
+				if Loc_hori_state_1[0] = 0 then
+					# inactive checkbox clicked, so activate it and draw the second one
+					Loc_hori_state_1[0]=1
+					check_state[0]=Loc_hori_state_1[0]
+					check_label$[0]=Loc_hori_label_1$[0]
+					Loc_hori_state=1
+					call checkbox(Loc_hori_1_elements, Loc_hori_1_locx, Loc_hori_1_locy_top, Loc_hori_1_locy_bot)
+					Loc_vert_state_1[0]=0
+					check_state[0]=0
+					check_label$[0]=Loc_vert_label_1$[0]
+					Loc_vert_state=0
+					call checkbox(Loc_vert_1_elements, Loc_vert_1_locx, Loc_vert_1_locy_top, Loc_vert_1_locy_bot)
+					Perspective_state_1[0]=0
+					PerspecGround_state_1[0]=0
+					clickclear
+					pause 0.5
+				else
+					# active checkbox clicked, so deactivatte it and remove everything
+					Loc_hori_state_1[0]=0
+					check_state[0]=Loc_hori_state_1[0]
+					check_label$[0]=Loc_hori_label_1$[0]
+					Loc_hori_state=0
+					call checkbox(Loc_hori_1_elements, Loc_hori_1_locx, Loc_hori_1_locy_top, Loc_hori_1_locy_bot)
+					refresh
+					clickclear
+					pause 0.5
+				endif
+			else
+				if mousex > Loc_vert_1_locx and mousex < Loc_vert_1_locx+11 and mousey > Loc_vert_1_locy_top and mousey < Loc_vert_1_locy_bot+10 then
+					if Loc_vert_state_1[0] = 0 then
+						# inactive checkbox clicked, so activate it and draw the second one
+						Loc_vert_state_1[0]=1
+						check_state[0]=Loc_vert_state_1[0]
+						check_label$[0]=Loc_vert_label_1$[0]
+						Loc_vert_state=1
+						call checkbox(Loc_vert_1_elements,Loc_vert_1_locx, Loc_vert_1_locy_top, Loc_vert_1_locy_bot)
+						Loc_hori_state_1[0]=0
+						check_state[0]=0
+						check_label$[0]=Loc_hori_label_1$[0]
+						Loc_hori_state=0
+						call checkbox(Loc_hori_1_elements, Loc_hori_1_locx, Loc_hori_1_locy_top, Loc_hori_1_locy_bot)
+						Perspective_state_1[0]=0
+						PerspecGround_state_1[0]=0
+						clickclear
+						pause 0.5
+					else
+						# active checkbox clicked, so deactivatte it and remove everything
+						Loc_vert_state_1[0]=0
+						check_state[0]=Loc_vert_state_1[0]
+						check_label$[0]=Loc_vert_label_1$[0]
+						Loc_vert_state=0
+						call checkbox(Loc_vert_1_elements, Loc_vert_1_locx, Loc_vert_1_locy_top,Loc_vert_1_locy_bot)
+						refresh
+						clickclear
+						pause 0.5
+					endif
+				else
+					if mousex > Perspective_locx and mousex < Perspective_locx+11 and mousey > Perspective_locy_top and mousey < Perspective_locy_bot+10 then
+						if Perspective_state_1[0] = 0 then
+							# inactive checkbox clicked, so activate it and draw the second one
+							Perspective_state_1[0]=1
+							check_state[0]=Perspective_state_1[0]
+							check_label$[0]=Perspective_label_1$[0]
+							Perspective_state=1
+							call checkbox(Perspective_elements,Perspective_locx, Perspective_locy_top, Perspective_locy_bot)
+							# One-Point perspective starburst - ground only option
+							PerspecGround_state_1[0]=0
+							PerspecGround_elements=1
+							PerspecGround_locx=430
+							PerspecGround_locy_top=80 #top of first checkbox element
+							PerspecGround_locy_bot=80 #top of last checkbox element
+							check_label$[0]=PerspecGround_label_1$[0]
+							check_state[0]=PerspecGround_state_1[0]
+							PerspecGround_state=0
+							call checkbox(PerspecGround_elements, PerspecGround_locx, PerspecGround_locy_top, PerspecGround_locy_bot)
+							clickclear
+							pause 0.5
+						else
+							# active checkbox clicked, so deactivatte it and remove everything
+							Perspective_state_1[0]=0
+							PerspecGround_state_1[0]=0
+							check_state[0]=Perspective_state_1[0]
+							check_label$[0]=Perspective_label_1$[0]
+							Perspective_state=0
+							PerspecGround_state=0
+							call checkbox(Perspective_elements, Perspective_locx, Perspective_locy_top,Perspective_locy_bot)
+							color grey
+							rect 430,80,110,25
+							refresh
+							clickclear
+							pause 0.5
+						endif
+					else
+						if mousex > PerspecGround_locx and mousex < PerspecGround_locx+11 and mousey > PerspecGround_locy_top and mousey < PerspecGround_locy_bot+10 and Perspective_state=1 then
+							if PerspecGround_state_1[0] = 0 then
+								# inactive checkbox clicked, so activate it and draw the second one
+								PerspecGround_state_1[0]=1
+								sw_ground=1
+								check_state[0]=PerspecGround_state_1[0]
+								check_label$[0]=PerspecGround_label_1$[0]
+								PerspecGround_state=1
+								call checkbox(PerspecGround_elements,PerspecGround_locx, PerspecGround_locy_top, PerspecGround_locy_bot)
+								clickclear
+								pause 0.5
+							else
+								# active checkbox clicked, so deactivatte it and remove everything
+								PerspecGround_state_1[0]=0
+								sw_ground=0
+								check_state[0]=PerspecGround_state_1[0]
+								check_label$[0]=PerspecGround_label_1$[0]
+								PerspecGround_state=0
+								call checkbox(PerspecGround_elements, PerspecGround_locx, PerspecGround_locy_top,PerspecGround_locy_bot)
+								refresh
+								clickclear
+								pause 0.5
+							endif
+						endif
+					endif
+				endif
+			endif # not in checkbox
+			clickclear
+		endif # not in drawing area
+		clickclear
+	end while # mouse not active
+	gosub showcoords
+	refresh
+	oldmx=mousex
+	oldmy=mousey
+end while
+return
+
+#**********************
+# Bezier tool
+#**********************
+bezier:
+# [removed debug print]
+#clickclear
+color colorid
+oldmx=mousex
+oldmy=mousey
+polyactive=1
+while polyactive=1
+	sw_clicked=0
+	gosub commands
+	if sw_clicked=1 then
+		return
+	endif
+	while clickb=1 > 0 #while leftclick
+		if clickx > 77 and clickx < size_x-6 and clicky > 109 and clicky < size_y-69 then
+			#drawing area
+			i=0
+			a=1
+			while a=1
+				if clickb>0 then
+					if clickb=2 then
+						a=2
+						if i < 6 then
+							color grey
+							rect 100,90,400,15
+							color darkred
+							font "Tahoma",8,100
+							text 100,90, "You need to left-click at least 3 points before right-click!"
+							color colorid
+							refresh
+							a=1
+							clickclear
+						else
+							a=2
+							for z = 0 to i-2 step 2
+								# comment out the next line to better see your points on the curve
+								putslice pointarray[z]-3,pointarray[z+1]-3,bezierslice$[z/2]
+							next z
+						endif
+					else
+						clickclear
+						color grey
+						rect 100,90,400,15
+						if (mousex < 77 or mousex > size_x-6) or mousey < 109 or mousey > size_y-69 then
+							color darkred
+							font "Tahoma",8,100
+							text 100,90, "Still in point mode. Please click in drawing area or rightclick"
+							refresh
+							color colorid
+						else
+							color black
+							bezierslice$[i/2]=getslice(mousex-3, mousey-3, 6, 6)
+							circle mousex,mousey,2
+							pointarray[i]=mousex
+							pointarray[i+1]=mousey
+							i=i+2
+							refresh
+						endif
+					endif
+				endif
+			end while
+			maxpoint = i
+			p=0
+			if bezier_open_state=0 then
+				counter = i-6
+			else
+				pointarray[i]=pointarray[0]
+				pointarray[i+1]=pointarray[1]
+				pointarray[i+2]=pointarray[2]
+				pointarray[i+3]=pointarray[3]
+				counter = i-2
+			endif
+			for k = 0 to counter step 2
+				t=0.5
+				x0=pointarray[k]
+				y0=pointarray[k+1]
+				x1=pointarray[k+2]
+				y1=pointarray[k+3]
+				x2=pointarray[k+4]
+				y2=pointarray[k+5]
+				d01=sqrt((x1-x0)^2+(y1-y0)^2)
+				d12=sqrt((x2-x1)^2+(y2-y1)^2)
+				if d01+d12=0 then
+					d01=1
+					d12=1
+				endif
+				fa=t*d01/(d01+d12)	#scaling factor for triangle Ta
+				fb=t*d12/(d01+d12)	#ditto for Tb, simplifies to fb=t-fa
+				p1x=x1-fa*(x2-x0)	#x2-x0 is the width of triangle T
+				p1y=y1-fa*(y2-y0)	#y2-y0 is the height of T
+				p2x=x1+fb*(x2-x0)
+				p2y=y1+fb*(y2-y0)
+				controlpoint[p]=p1x
+				controlpoint[p+1]=p1y
+				controlpoint[p+2]=p2x
+				controlpoint[p+3]=p2y
+				p=p+4
+				#           i=i+4
+				# Uncomment the next lines to see the bezier control points
+				# Color red
+				# circle p1x,p1y,2
+				# circle p2x,p2y,2
+			next k
+			penwidth slinewidth
+			#draw square bezier from first point
+			if bezier_open_state= 0 then
+				oldpx=int(pointarray[0])
+				oldpy=int(pointarray[1])
+				color colorid
+				dist=sqrt((pointarray[0]-pointarray[2])^2+ (pointarray[1]-pointarray[3])^2)
+				for i = 0 to dist*2 step 1
+					if dist=0 then dist = 0.5
+					ix=i/(dist*2)
+					x1=(1-ix)*(1-ix)*pointarray[0]
+					y1=(1-ix)*(1-ix)*pointarray[1]
+					x2=2*(1-ix)*ix*controlpoint[0]
+					y2=2*(1-ix)*ix*controlpoint[1]
+					x3= ix*ix*pointarray[2]
+					y3= ix*ix*pointarray[3]
+					if Mir_vert_state_1[0] = 1 and Mir_hori_state_1[0] = 1 then
+						line oldpx,oldpy, (x1+x2+x3),(y1+y2+y3)
+						line oldpx, size_y-(oldpy-40), (x1+x2+x3), mir_yoff-(y1+y2+y3)
+						line size_x-(oldpx-71), oldpy, mir_xoff-(x1+x2+x3), (y1+y2+y3)
+						line size_x-(oldpx-71), size_y-(oldpy-40), mir_xoff-(x1+x2+x3), mir_yoff-(y1+y2+y3)
+					else
+						if Mir_hori_state_1[0] = 1 then
+							line oldpx, size_y-(oldpy-40), (x1+x2+x3), mir_yoff-(y1+y2+y3)
+							line oldpx,oldpy, x1+x2+x3,y1+y2+y3
+						else
+							if Mir_vert_state_1[0] = 1 then
+								line oldpx,oldpy, x1+x2+x3,y1+y2+y3
+								line size_x-(oldpx-71), oldpy, mir_xoff-(x1+x2+x3), (y1+y2+y3)
+							else
+								line oldpx,oldpy, x1+x2+x3,y1+y2+y3
+							endif
+						endif
+					endif
+					oldpx=int(x1+x2+x3)
+					oldpy=int(y1+y2+y3)
+				next i
+			else
+				# first line of a closed curve, so 2 control points
+				oldpx=int(pointarray[0])
+				oldpy=int(pointarray[1])
+				color colorid
+				dist=sqrt((pointarray[0]-pointarray[2])^2+ (pointarray[1]-pointarray[3])^2)
+				for i = 0 to dist*2 step 1
+					if dist=0 then dist = 0.5
+					ix=i/(dist*2)
+					x1=(1-ix)*(1-ix)*(1-ix)*pointarray[0]
+					y1=(1-ix)*(1-ix)*(1-ix)*pointarray[1]
+					x2=3*(1-ix)*(1-ix)*ix*controlpoint[p-2]
+					y2=3*(1-ix)*(1-ix)*ix*controlpoint[p-1]
+					x3=3*(1-ix)*ix*ix*controlpoint[0]
+					y3=3*(1-ix)*ix*ix*controlpoint[1]
+					x4= ix*ix*ix*pointarray[2]
+					y4= ix*ix*ix*pointarray[3]
+					if Mir_vert_state_1[0] = 1 and Mir_hori_state_1[0] = 1 then
+						line oldpx,oldpy, (x1+x2+x3+x4),(y1+y2+y3+y4)
+						line oldpx, size_y-(oldpy-40), (x1+x2+x3+x4), mir_yoff-(y1+y2+y3+y4)
+						line size_x-(oldpx-71), oldpy, mir_xoff-(x1+x2+x3+x4), (y1+y2+y3+y4)
+						line size_x-(oldpx-71), size_y-(oldpy-40), mir_xoff-(x1+x2+x3+x4), mir_yoff-(y1+y2+y3+y4)
+					else
+						if Mir_hori_state_1[0] = 1 then
+							line oldpx, size_y-(oldpy-40), (x1+x2+x3+x4), mir_yoff-(y1+y2+y3+y4)
+							line oldpx,oldpy, x1+x2+x3+x4,y1+y2+y3+y4
+						else
+							if Mir_vert_state_1[0] = 1 then
+								line oldpx,oldpy, x1+x2+x3+x4,y1+y2+y3+y4
+								line mir_xoff-oldpx, oldpy, mir_xoff-(x1+x2+x3+x4), (y1+y2+y3+y4)
+							else
+								line oldpx,oldpy, x1+x2+x3+x4,y1+y2+y3+y4
+							endif
+						endif
+					endif
+
+					oldpx=(x1+x2+x3+x4)
+					oldpy=(y1+y2+y3+y4)
+				next i
+				p=p+4
+			endif
+			if maxpoint>6  then
+				#draw qube bezier between next points
+				p=2
+				if bezier_open_state=0 then
+					maxmid=maxpoint-5
+				else
+					maxmid=maxpoint - 3
+				endif
+				for k = 2 to (maxmid) step 2
+					oldpx=int(pointarray[k])
+					oldpy=int(pointarray[k+1])
+					color colorid
+					dist=sqrt((pointarray[k]-pointarray[k+2])^2+ (pointarray[k+1]-pointarray[k+3])^2)
+					for i = 0 to dist*2 step 1
+						if dist=0 then dist = 0.5
+						ix=i/(dist*2)
+						x1=(1-ix)*(1-ix)*(1-ix)*pointarray[k]
+						y1=(1-ix)*(1-ix)*(1-ix)*pointarray[k+1]
+						x2=3*(1-ix)*(1-ix)*ix*controlpoint[p]
+						y2=3*(1-ix)*(1-ix)*ix*controlpoint[p+1]
+						x3=3*(1-ix)*ix*ix*controlpoint[p+2]
+						y3=3*(1-ix)*ix*ix*controlpoint[p+3]
+						x4= ix*ix*ix*pointarray[k+2]
+						y4= ix*ix*ix*pointarray[k+3]
+						if Mir_vert_state_1[0] = 1 and Mir_hori_state_1[0] = 1 then
+							line oldpx,oldpy, (x1+x2+x3+x4),(y1+y2+y3+y4)
+							line oldpx, size_y-(oldpy-40), (x1+x2+x3+x4), mir_yoff-(y1+y2+y3+y4)
+							line size_x-(oldpx-71), oldpy, mir_xoff-(x1+x2+x3+x4), (y1+y2+y3+y4)
+							line size_x-(oldpx-71), size_y-(oldpy-40), mir_xoff-(x1+x2+x3+x4), mir_yoff-(y1+y2+y3+y4)
+						else
+							if Mir_hori_state_1[0] = 1 then
+								line oldpx, size_y-(oldpy-40), (x1+x2+x3+x4), mir_yoff-(y1+y2+y3+y4)
+								line oldpx,oldpy, x1+x2+x3+x4,y1+y2+y3+y4
+							else
+								if Mir_vert_state_1[0] = 1 then
+									line oldpx,oldpy, x1+x2+x3+x4,y1+y2+y3+y4
+									line mir_xoff-oldpx, oldpy, mir_xoff-(x1+x2+x3+x4), (y1+y2+y3+y4)
+								else
+									line oldpx,oldpy, x1+x2+x3+x4,y1+y2+y3+y4
+								endif
+							endif
+						endif
+
+						oldpx=(x1+x2+x3+x4)
+						oldpy=(y1+y2+y3+y4)
+					next i
+					p=p+4
+				next k
+			endif
+			if bezier_open_state=0 then
+				#draw square bezier to last point
+				oldpx=int(pointarray[maxpoint-4])
+				oldpy=int(pointarray[maxpoint-3])
+				color colorid
+				dist=sqrt((pointarray[maxpoint-4]-pointarray[maxpoint-2])^2+ (pointarray[maxpoint-3]-pointarray[maxpoint-1])^2)
+				for i = 0 to dist*2 step 1
+					if dist=0 then dist = 0.5
+					ix=i/(dist*2)
+					x1=(1-ix)*(1-ix)*pointarray[maxpoint-4]
+					y1=(1-ix)*(1-ix)*pointarray[maxpoint-3]
+					if maxpoint = 6 then
+						x2=2*(1-ix)*ix*controlpoint[2]
+						y2=2*(1-ix)*ix*controlpoint[3]
+					else
+						x2=2*(1-ix)*ix*controlpoint[p]
+						y2=2*(1-ix)*ix*controlpoint[p+1]
+					endif
+					x3= ix*ix*pointarray[maxpoint-2]
+					y3= ix*ix*pointarray[maxpoint-1]
+					if Mir_vert_state_1[0] = 1 and Mir_hori_state_1[0] = 1 then
+						line oldpx,oldpy, (x1+x2+x3),(y1+y2+y3)
+						line oldpx, size_y-(oldpy-40), (x1+x2+x3), mir_yoff-(y1+y2+y3)
+						line size_x-(oldpx-71), oldpy, mir_xoff-(x1+x2+x3), (y1+y2+y3)
+						line size_x-(oldpx-71), size_y-(oldpy-40), mir_xoff-(x1+x2+x3), mir_yoff-(y1+y2+y3)
+					else
+						if Mir_hori_state_1[0] = 1 then
+							line oldpx, size_y-(oldpy-40), (x1+x2+x3), mir_yoff-(y1+y2+y3)
+							line oldpx,oldpy, x1+x2+x3,y1+y2+y3
+						else
+							if Mir_vert_state_1[0] = 1 then
+								line oldpx,oldpy, x1+x2+x3,y1+y2+y3
+								line size_x-(oldpx-71), oldpy, mir_xoff-(x1+x2+x3), (y1+y2+y3)
+							else
+								line oldpx,oldpy, x1+x2+x3,y1+y2+y3
+							endif
+						endif
+					endif
+					oldpx=int(x1+x2+x3)
+					oldpy=int(y1+y2+y3)
+				next i
+				penwidth 1
+				refresh
+			else
+				#closed bezier
+				if maxpoint=6 then # draw cubic bezier before-last to last
+					oldpx=int(pointarray[maxpoint-4])
+					oldpy=int(pointarray[maxpoint-3])
+					color colorid
+					dist=sqrt((pointarray[maxpoint-4]-pointarray[maxpoint-2])^2+ (pointarray[maxpoint-3]-pointarray[maxpoint-1])^2)
+					for i = 0 to dist*2 step 1
+						if dist=0 then dist = 0.5
+						ix=i/(dist*2)
+						x1=(1-ix)*(1-ix)*(1-ix)*pointarray[maxpoint-4]
+						y1=(1-ix)*(1-ix)*(1-ix)*pointarray[maxpoint-3]
+						x2=3*(1-ix)*(1-ix)*ix*controlpoint[2]
+						y2=3*(1-ix)*(1-ix)*ix*controlpoint[3]
+						x3=3*(1-ix)*ix*ix*controlpoint[4]
+						y3=3*(1-ix)*ix*ix*controlpoint[5]
+						x4= ix*ix*ix*pointarray[maxpoint-2]
+						y4= ix*ix*ix*pointarray[maxpoint-1]
+						if Mir_vert_state_1[0] = 1 and Mir_hori_state_1[0] = 1 then
+							line oldpx,oldpy, (x1+x2+x3+x4),(y1+y2+y3+y4)
+							line oldpx, size_y-(oldpy-40), (x1+x2+x3+x4), mir_yoff-(y1+y2+y3+y4)
+							line size_x-(oldpx-71), oldpy, mir_xoff-(x1+x2+x3+x4), (y1+y2+y3+y4)
+							line size_x-(oldpx-71), size_y-(oldpy-40), mir_xoff-(x1+x2+x3+x4), mir_yoff-(y1+y2+y3+y4)
+						else
+							if Mir_hori_state_1[0] = 1 then
+								line oldpx, size_y-(oldpy-40), (x1+x2+x3+x4), mir_yoff-(y1+y2+y3+y4)
+								line oldpx,oldpy, x1+x2+x3+x4,y1+y2+y3+y4
+							else
+								if Mir_vert_state_1[0] = 1 then
+									line oldpx,oldpy, x1+x2+x3+x4,y1+y2+y3+y4
+									line size_x-(oldpx-71), oldpy, mir_xoff-(x1+x2+x3+x4), (y1+y2+y3+y4)
+								else
+									line oldpx,oldpy, x1+x2+x3+x4,y1+y2+y3+y4
+								endif
+							endif
+						endif
+						oldpx=int(x1+x2+x3+x4)
+						oldpy=int(y1+y2+y3+y4)
+					next i
+					penwidth 1
+					refresh
+				endif
+				#last to first cubic
+				oldpx=int(pointarray[maxpoint-2])
+				oldpy=int(pointarray[maxpoint-1])
+				color colorid
+				dist=sqrt((pointarray[maxpoint-2]-pointarray[maxpoint])^2+ (pointarray[maxpoint-1]-pointarray[maxpoint+1])^2)
+				for i = 0 to dist*2 step 1
+					if dist=0 then dist = 0.5
+					ix=i/(dist*2)
+					x1=(1-ix)*(1-ix)*(1-ix)*pointarray[maxpoint-2]
+					y1=(1-ix)*(1-ix)*(1-ix)*pointarray[maxpoint-1]
+					if maxpoint=6 then
+						x2=3*(1-ix)*(1-ix)*ix*controlpoint[6]
+						y2=3*(1-ix)*(1-ix)*ix*controlpoint[7]
+						x3=3*(1-ix)*ix*ix*controlpoint[8]
+						y3=3*(1-ix)*ix*ix*controlpoint[9]
+					else
+						x2=3*(1-ix)*(1-ix)*ix*controlpoint[p]
+						y2=3*(1-ix)*(1-ix)*ix*controlpoint[p+1]
+						x3=3*(1-ix)*ix*ix*controlpoint[p+2]
+						y3=3*(1-ix)*ix*ix*controlpoint[p+3]
+					endif
+					x4= ix*ix*ix*pointarray[maxpoint]
+					y4= ix*ix*ix*pointarray[maxpoint+1]
+					if Mir_vert_state_1[0] = 1 and Mir_hori_state_1[0] = 1 then
+						line oldpx,oldpy, (x1+x2+x3+x4),(y1+y2+y3+y4)
+						line oldpx, size_y-(oldpy-40), (x1+x2+x3+x4), mir_yoff-(y1+y2+y3+y4)
+						line size_x-(oldpx-71), oldpy, mir_xoff-(x1+x2+x3+x4), (y1+y2+y3+y4)
+						line size_x-(oldpx-71), size_y-(oldpy-40), mir_xoff-(x1+x2+x3+x4), mir_yoff-(y1+y2+y3+y4)
+					else
+						if Mir_hori_state_1[0] = 1 then
+							line oldpx, size_y-(oldpy-40), (x1+x2+x3+x4), mir_yoff-(y1+y2+y3+y4)
+							line oldpx,oldpy, x1+x2+x3+x4,y1+y2+y3+y4
+						else
+							if Mir_vert_state_1[0] = 1 then
+								line oldpx,oldpy, x1+x2+x3+x4,y1+y2+y3+y4
+								line size_x-(oldpx-71), oldpy, mir_xoff-(x1+x2+x3+x4), (y1+y2+y3+y4)
+							else
+								line oldpx,oldpy, x1+x2+x3+x4,y1+y2+y3+y4
+							endif
+						endif
+					endif
+					oldpx=int(x1+x2+x3+x4)
+					oldpy=int(y1+y2+y3+y4)
+				next i
+				penwidth 1
+				refresh
+			endif
+		else # not in drawing area
+			gosub colorstuff
+			gosub checkmirror
+			if mousex > bezier_open_locx and mousex < bezier_open_locx+11 and mousey > bezier_open_locy_top and mousey < bezier_open_locy_bot+10 then
+				if bezier_open_state_1[0] = 0 then
+					# inactive checkbox clicked, so activate it and draw the second one
+					bezier_open_state_1[0]=1
+					check_state[0]=bezier_open_state_1[0]
+					check_label$[0]=bezier_open_label_1$[0]
+					bezier_open_state=1
+					call checkbox(bezier_open_elements, bezier_open_locx, bezier_open_locy_top, bezier_open_locy_bot)
+					clickclear
+					pause 0.5
+				else
+					# active checkbox clicked, so deactivatte it and remove everything
+					bezier_open_state_1[0]=0
+					check_state[0]=bezier_open_state_1[0]
+					check_label$[0]=bezier_open_label_1$[0]
+					bezier_open_state=0
+					call checkbox(bezier_open_elements, bezier_open_locx, bezier_open_locy_top, bezier_open_locy_bot)
+					refresh
+					clickclear
+					pause 0.5
+				endif #done with close bezier handling
+			endif #not on close bezier checkbox
+			while mousex>slinew_up_x and mousex < slinew_up_x+slinew_updown_width and mousey >slinew_up_y and mousey < slinew_down_y+slinew_updown_heigth
+				# line width area
+				if clickb=1 then
+					if mousey >slinew_up_y and mousey < slinew_up_y+slinew_updown_heigth then
+						slinew_shown=slinew_shown +slinew_inc
+						if slinew_shown>slinew_max then slinew_shown=slinew_max
+						slinewidth=slinew_shown
+						call spinner(slinew_color, slinew_locx, slinew_locy, slinew_width, slinew_heigth, slinew_offsetx, slinew_offsety, slinew_insetx, slinew_insety, slinew_array, slinew_shown, slinew_max, slinew_min, slinew_inc)
+						refresh
+						clickclear
+						#endif
+					else
+						if mousey >slinew_down_y and mousey < slinew_down_y+slinew_updown_heigth then
+							slinew_shown=slinew_shown - slinew_inc
+							if slinew_shown<slinew_min then slinew_shown=slinew_min
+							slinewidth=slinew_shown
+							call spinner(slinew_color, slinew_locx, slinew_locy, slinew_width, slinew_heigth, slinew_offsetx, slinew_offsety, slinew_insetx,slinew_insety, slinew_array, slinew_shown, slinew_max, slinew_min, slinew_inc)
+							refresh
+							clickclear
+						endif
+					endif # not in spinner up button
+				endif # no click
+				clickclear
+			end while # not in spinner area
+			clickclear
+		endif # not in drawing area
+		clickclear
+	end while # mouse not active
+	gosub showcoords
+	refresh
+	oldmx=mousex
+	oldmy=mousey
+end while
+return
+
+#**********************
+# Background color tool
+#**********************
+backgrd:
+clickclear
+color colorid
+oldmx=mousex
+oldmy=mousey
+rectactive=1
+while rectactive=1
+	sw_clicked=0
+	gosub commands
+	if sw_clicked=1 then
+		return
+	endif
+	while mouseb > 0
+		if mousex > can_left and mousex < can_right and mousey > can_top and mousey < can_bot then
+			# drawing area
+			color colorid
+			rect 78,110,size_x-84,size_y-179
+			refresh
+			clickclear
+			# [removed debug print]
+			rectactive=0
+			pause 0.2
+		else
+			gosub colorstuff
+			pause 0.2
+		endif
+	end while
+end while
+return
+
+#*********************************
+# Actions on the Mirror checboxes
+#*********************************
+checkmirror:
+if mousex > Mir_hori_1_locx and mousex < Mir_hori_1_locx+11 and mousey > Mir_hori_1_locy_top and mousey < Mir_hori_1_locy_bot+10 then
+	if Mir_hori_state_1[0] = 0 then
+		# inactive checkbox clicked, so activate it and draw the second one
+		Mir_hori_state_1[0]=1
+		check_state[0]=Mir_hori_state_1[0]
+		check_label$[0]=Mir_hori_label_1$[0]
+		Mir_hori_state=1
+		call checkbox(Mir_hori_1_elements, Mir_hori_1_locx, Mir_hori_1_locy_top, Mir_hori_1_locy_bot)
+		color rgb(220,220,220)
+		line 78,109+(size_y-178)/2, size_x-6,109+(size_y-178)/2
+		refresh
+		clickclear
+		pause 0.5
+	else
+		# active checkbox clicked, so deactivatte it and remove everything
+		Mir_hori_state_1[0]=0
+		check_state[0]=Mir_hori_state_1[0]
+		check_label$[0]=Mir_hori_label_1$[0]
+		Mir_hori_state=0
+		call checkbox(Mir_hori_1_elements, Mir_hori_1_locx, Mir_hori_1_locy_top, Mir_hori_1_locy_bot)
+
+		refresh
+		clickclear
+		pause 0.5
+	endif
+else
+	if mousex > Mir_vert_1_locx and mousex < Mir_vert_1_locx+11 and mousey > Mir_vert_1_locy_top and mousey < Mir_vert_1_locy_bot+10 then
+		if Mir_vert_state_1[0] = 0 then
+			# inactive checkbox clicked, so activate it and draw the second one
+			Mir_vert_state_1[0]=1
+			check_state[0]=Mir_vert_state_1[0]
+			check_label$[0]=Mir_vert_label_1$[0]
+			Mir_vert_state=1
+			call checkbox(Mir_vert_1_elements,Mir_vert_1_locx, Mir_vert_1_locy_top, Mir_vert_1_locy_bot)
+			color rgb(220,220,220)
+			line 78+(size_x-84)/2, 109, 78+(size_x-84)/2,size_y-69
+			refresh
+			#mousex > can_left and mousex < can_right
+			clickclear
+			pause 0.5
+		else
+			# active checkbox clicked, so deactivatte it and remove everything
+			Mir_vert_state_1[0]=0
+			check_state[0]=Mir_vert_state_1[0]
+			check_label$[0]=Mir_vert_label_1$[0]
+			Mir_vert_state=0
+			call checkbox(Mir_vert_1_elements, Mir_vert_1_locx, Mir_vert_1_locy_top, Mir_vert_1_locy_bot)
+			refresh
+			clickclear
+			pause 0.5
+		endif
+	endif
+endif # not in checkbox
+return
+
+#***************************
+# Actions in the Color area
+#***************************
+colorstuff:
+if ((mousex > 85 and mousex < 324) or (mousex > 420 and mousex < 547)) and mousey > size_y-57 and mousey < size_y-15 then
+	# Predefined and custom color selection
+	colorid=pixel(mousex,mousey)
+	draw2_color = 2
+	call drawing(draw2_elements_x, draw2_elements_y, draw2_locx, draw2_locy, draw2_width,draw2_height, draw2_offsetx, draw2_offsety, draw2_color)
+	newcolor=colorid
+	color white
+	rect draw2_locx,draw2_locy,draw2_width,draw2_height
+	color colorid
+	rect draw2_locx,draw2_locy,draw2_width,draw2_height
+	#  coloridb = abs(blauw(newcolor))
+	#   coloridg = abs(groen(newcolor))
+	#   coloridr = abs(rood(newcolor))
+	alpha= 255
+	spriteplace 2,slalpha_locx_top+alpha/2,slalpha_locy_top+4
+	#   colorid=rgb(alpha, coloridr, coloridg, coloridb)
+	#   color rgb(alpha, coloridr, coloridg, coloridb)
+	color colorid
+	refresh
+	gosub fillit
+	refresh
+else
+	if mousex > 350 and mousex < 390 and mousey > size_y-58 and mousey < size_y-18 then
+		# color picker
+		if sw_colors=0 then
+			sw_colors=1
+			gosub colorpick
+		else
+			imgload size_x/2,size_y/2,"bpaintundo.png"
+			sw_colors=0
+			spriteshow 2
+		endif
+		#        endif # not in color picker
+		oldmx = mousex
+		oldmy = mousey
+		#      endif # not in color area
+	else #not in color picker
+		if mousex > slalpha_locx_top and mousex < slalpha_locx_bot then
+			if abs(mousey-slalpha_locy_top)<8 and action$ <> "fillit" then
+				#alphaslider
+				if mousex > slalpha_locx_bot then
+					alpha=255
+					spriteplace 2,slalpha_locx_top+alpha/2,slalpha_locy_top+4
+				else
+					if mousex < slalpha_locx_top then
+						alpha=0
+					else
+						alpha=(mousex-slalpha_locx_top) *2
+					endif
+				end if
+				spriteplace 2,slalpha_locx_top+alpha/2,slalpha_locy_top+4
+				refresh
+				pause 0.01
+				# update the square of the active color
+				draw2_elements_x=1
+				draw2_elements_y=1
+draw2_locx=19:draw2_locy=size_y-58
+draw2_width=40:draw2_height=40
+draw2_offsetx=5:draw2_offsety= 5
+				draw2_color = 2
+				call drawing(draw2_elements_x, draw2_elements_y, draw2_locx, draw2_locy, draw2_width,draw2_height,                             draw2_offsetx, draw2_offsety, draw2_color)
+				color white
+				rect draw2_locx,draw2_locy,draw2_width,draw2_height
+				color black
+				for i = 0 to 39 step 8
+					for j = 0 to 39 step 8
+						rect draw2_locx+2,draw2_locy+2,4,4
+						rect draw2_locx+i+2,draw2_locy+j+2,4,4
+					next j
+				next i
+				newcolor=colorid
+				coloridb = blauw(newcolor)
+				coloridg = groen(newcolor)
+				coloridr = rood(newcolor)
+				colorid=rgb(coloridr, coloridg, coloridb, alpha)
+				color colorid
+				rect draw2_locx,draw2_locy,draw2_width,draw2_height
+				refresh
+			endif
+		endif # not in alphaslider
+	endif # not in color picker
+endif # not in predefined and custom color selection
+oldmx=mousex
+oldmy=mousey
+return
+
+#*******************
+# (re)draw interface
+#*******************
+draw_interface:
+# Draw outer border
+if sw_circborder=0 then
+	color black
+	rect 0,0, size_x, size_y
+	color grey
+	rect 2,2,size_x-4,size_y-4
+	color black
+	rect 4,4,size_x-8,size_y-8
+	color white
+	rect 6,6,size_x-12,size_y-12
+else
+	color black
+	rect 0,0, size_x, 2
+	rect 0,0, 2, size_y
+	rect size_x-2,0, size_x, size_y
+	rect 0,size_y-2, size_x, size_y
+	color grey
+	rect 2,2,size_x-4,4
+	rect 2,2,4,size_y-4
+	rect size_x-4,2,2,size_y-4
+	rect 2,size_y-4,size_x-4,2
+	color black
+	rect 4,4,size_x-8,2
+	rect 4,4,2,size_y-8
+	rect size_x-8,4,2,size_y-8
+	rect 4,size_y-8,size_x-8,2
+endif
+# Draw Title bar
+color rgb(100,100,250)
+rect 6,6,size_x-12,20
+color black
+font "Tahoma",10,100
+text size_x/2-20,7,"Basic Paint"
+color black
+#   draw separator
+line 6,26,size_x-6,26
+line 6,27,size_x-6,27
+
+if sw_title=0 then
+	# Draw Program Title
+	font "Tahoma",30,100
+	text size_x/2-100,size_y/2-30,"Basic Paint"
+	font "Tahoma",12,100
+	text size_x/2+50,size_y/2+20,"By UglyMike"
+	refresh
+endif
+
+# Draw Toolbox
+#   draw buttons
+color gray
+rect 6,107,70,size_y-113
+for i= 0 to 5
+	call button (8,109+i*35,32,32," ",8,10,11,0)
+	call button (42,109+i*35,32,32," ",8,6,11,0)
+next i
+#   draw button content
+gosub drawpencil
+gosub drawspray
+gosub drawerase
+if sw_title=0 then colorid=-16777216	#set fill icon color to red
+#if sw_title=0 then colorid=255*256*256	#set fill icon color to red
+gosub drawfill
+gosub drawcolpic
+gosub drawpen
+gosub drawcirc
+gosub drawrecta
+gosub drawline
+gosub drawpoly
+gosub drawbezier
+gosub drawbackgrd
+#   draw separator
+color black
+line 76,108,76, size_y-6
+line 77,108,77, size_y-6
+
+# Draw command button / Tool option area
+call button (6,28,43,39,"New",8,10,11,0)
+call button (6,68,43,39,"Save",8,6,11,0)
+call button (49,28,43,39,"Undo",8,8,11,0)
+call button (49,68,43,39,"Quit",8,8,11,0)
+color grey
+if sw_circborder=0 then
+	rect 92,28,size_x-92-6,80
+	color Darkgrey
+	font "Tahoma",8,100
+	text 98,35,"Options:"
+else
+	gosub options_circle
+	gosub drawcirc
+endif
+#   draw separator
+color black
+line 76,108,size_x-6, 108
+line 76,109,size_x-6, 109
+#Mirroring
+color black
+font "Tahoma",9,100
+text 10,370,"Mirroring:"
+# Horizontal Mirror
+Mir_hori_1_elements=1
+Mir_hori_1_locx=10
+Mir_hori_1_locy_top=420 #top of first checkbox element
+Mir_hori_1_locy_bot=420 #top of last checkbox element
+check_label$[0]=Mir_hori_label_1$[0]
+check_state[0]=Mir_hori_state_1[0]
+Mir_hori_state=0
+call checkbox(Mir_hori_1_elements, Mir_hori_1_locx, Mir_hori_1_locy_top, Mir_hori_1_locy_bot)
+# Vertical Mirror
+Mir_vert_1_elements=1
+Mir_vert_1_locx=10
+Mir_vert_1_locy_top=400 #top of first checkbox element
+Mir_vert_1_locy_bot=400 #top of last checkbox element
+check_label$[0]=Mir_vert_label_1$[0]
+check_state[0]=Mir_vert_state_1[0]
+Mir_vert_state=0
+call checkbox(Mir_vert_1_elements, Mir_vert_1_locx, Mir_vert_1_locy_top, Mir_vert_1_locy_bot)
+
+if sw_title=0 then colorid=-16777216		# set color first time to default black
+# draw bottom area
+color grey
+rect 7,size_y-67,size_x-13,61
+color black
+line 76,size_y-68,size_x-6,size_y-68
+line 76,size_y-69,size_x-6,size_y-69
+# draw a grid of color areas
+dim draw(10,10)
+draw1_elements_x=9
+draw1_elements_y=2
+draw1_locx=85:draw1_locy=size_y-59
+draw1_width=15:draw1_height=15
+draw1_offsetx=5:draw1_offsety= 5
+draw1_color = 1
+call drawing(draw1_elements_x, draw1_elements_y, draw1_locx, draw1_locy, draw1_width,draw1_height, draw1_offsetx, draw1_offsety, draw1_color)
+
+# draw a square of the active color
+draw2_elements_x=1
+draw2_elements_y=1
+draw2_locx=19:draw2_locy=size_y-58
+draw2_width=40:draw2_height=40
+draw2_offsetx=5:draw2_offsety= 5
+draw2_color = 2
+call drawing(draw2_elements_x, draw2_elements_y, draw2_locx, draw2_locy, draw2_width,draw2_height, draw2_offsetx, draw2_offsety, draw2_color)
+color white
+rect draw2_locx,draw2_locy,draw2_width,draw2_height
+color black
+color colorid
+rect draw2_locx,draw2_locy,draw2_width,draw2_height
+if sw_circborder=0 then refresh
+
+# draw the color selector
+draw3_elements_x=1
+draw3_elements_y=1
+draw3_locx=350:draw3_locy=size_y-58
+draw3_width=39:draw3_height=39
+draw3_offsetx=5:draw3_offsety= 5
+draw3_color = 2
+call drawing(draw3_elements_x, draw3_elements_y, draw3_locx, draw3_locy, draw3_width,draw3_height, draw3_offsetx, draw3_offsety, draw3_color)
+colre=255:colgr=0:colbl=0:zz=27
+for i = 0 to 36 step 4
+	colre=255
+	for j = 0 to 36 step 4
+		color rgb(colre, colgr, colbl)
+		rect draw3_locx+i, draw3_locy+j,4,4
+		colre= colre-25
+		colbl=colbl + zz
+	next j
+	colgr=colgr+25
+	zz=zz-3
+	colbl=0
+next i
+if sw_circborder=0 then refresh
+
+#draw custom color slots
+draw4_elements_x=5
+draw4_elements_y=2
+draw4_locx=420:draw4_locy=size_y-59
+draw4_width=15:draw4_height=15
+draw4_offsetx=5:draw4_offsety= 5
+draw4_color = 3
+call drawing(draw4_elements_x, draw4_elements_y, draw4_locx, draw4_locy, draw4_width,draw4_height, draw4_offsetx, draw4_offsety, draw4_color)
+
+#Draw the alpha slider
+color black
+font "Tahoma",9,100
+text 580,size_y-55,"Opacity:"
+slidetype$="Alpha"
+slalpha_locx_top=580: slalpha_locy_top=size_y-25: slalpha_locx_bot=707: slalpha_locy_bot=size_y-25: slalpha_orient=1
+call drawslider(slalpha_locx_top, slalpha_locy_top, slalpha_locx_bot, slalpha_locy_bot, slalpha_orient)
+
+# delete Program Title
+if sw_circborder=0 then
+	color white
+	rect 200,200,size_x-300,size_y-300
+	refresh
+endif
+# set default values
+pointer=0		# pointer to the fill stack
+sw_done=0
+oldcol=0
+oldmx=100		# previous line point x-axis
+oldmy=100		# previous line point x-axis
+starting=0
+pen_deltax=4
+pen_deltay=4
+mouse_size=20
+spraytype_state=0
+if sw_title=0 then
+	# activate default tool
+	action$="pencil"
+	call button (8,109,32,32," ",8,10,11,1)
+	gosub drawpencil
+	gosub options_pencil
+	refresh
+	starting=0
+endif
+return
+
+# *********************
+# Option presentation
+# *********************
+# Spray Options
+options_spray:
+color grey
+rect 92,28,size_x-92-6,80
+color black
+font "Tahoma",8,100
+text 98,35,"Options:"
+text 110,55,"Spray Size"
+text 110,80,"Spray Density"
+# size & dense slider
+slidetype$="size"
+slsize_locx_top=200: slsize_locy_top=60: slsize_locx_bot=320: slsize_locy_bot=60: slsize_orient=1
+call drawslider(slsize_locx_top, slsize_locy_top, slsize_locx_bot, slsize_locy_bot, slsize_orient)
+spray_size=30
+slidetype$="dense"
+sldense_locx_top=200: sldense_locy_top=85: sldense_locx_bot=320: sldense_locy_bot=85: sldense_orient=1
+call drawslider(sldense_locx_top, sldense_locy_top, sldense_locx_bot, sldense_locy_bot, sldense_orient)
+spray_dense=12
+spriteplace 0,slsize_locx_top+spray_size-30,slsize_locy_top+4
+spriteplace 1,sldense_locx_top+60,sldense_locy_top+4
+# Draw spray sample
+color darkgrey
+circle 400,67,spray_size/2
+color grey
+circle 400,67,spray_size/2-2
+for i = 0 to spray_dense*4
+	randi=rand*pi*2
+	rands=spray_size/2*rand^0.5
+	plotx=sin(randi)*rands
+	ploty=cos(randi)*rands
+	newmx=398
+	newmy=67
+	color colorid
+	plot plotx+newmx,ploty+newmy
+next i
+# draw Image Hose checkbox
+imgfill_1_elements=1
+imgfill_1_locx=500
+imgfill_1_locy_top=60 #top of first checkbox element
+imgfill_1_locy_bot=60 #top of last checkbox element
+check_label$[0]=imgfill_label_1$[0]
+check_state[0]=imgfill_state_1[0]
+call checkbox(imgfill_1_elements, imgfill_1_locx, imgfill_1_locy_top, imgfill_1_locy_bot)
+# penwidth spinner
+imgc_color = 1
+imgc_locx=600: imgc_locy=55
+imgc_width=100: imgc_heigth=20
+imgc_offsetx=8: imgc_offsety= 0
+imgc_insetx=0.02: imgc_insety=0.1
+# type specific (array or incremental)
+imgc_array=1
+imgc_min=0
+imgc_shown=img_ind
+imgc_max=3
+imgc_inc=1
+imgc_list$={"Stars","Bubbles","Leaves","Hearts"}
+dim sp_array_list$(4)
+for i = 0 to imgc_max
+	sp_array_list$[i]=imgc_list$[i]
+next i
+call spinner(imgc_color,imgc_locx,imgc_locy, imgc_width, imgc_heigth, imgc_offsetx, imgc_offsety, imgc_insetx, imgc_insety, imgc_array, imgc_shown, imgc_max, imgc_min, imgc_inc)
+imgc_up_x=sp_up_topleft_x
+imgc_up_y=sp_up_topleft_y
+imgc_down_x=sp_up_botright_x
+imgc_down_y=sp_up_botright_y
+imgc_updown_width=sp_heigth
+imgc_updown_heigth=sp_heigth/2
+refresh
+return
+
+#Eraser Options
+options_erase:
+spritehide 0
+spritehide 1
+color grey
+rect 92,28,size_x-92-6,80
+color black
+font "Tahoma",8,100
+text 98,35,"Options:"
+text 170,40,"Gum Size"
+# size
+mouse_size_elements=4
+mouse_size_locx=240:mouse_size_locy_top=45:mouse_size_locy_bot=90
+mouse_size_active=1
+for i= 0 to mouse_size_elements-1
+	radio$[i]=opt_mouse_size$[i]
+next i
+call drawradio(mouse_size_elements, mouse_size_locx, mouse_size_locy_top,  mouse_size_locy_bot, mouse_size_active)
+mouse_size=10*mouse_size_active
+refresh
+return
+
+# Pencil 0ptions
+options_pencil:
+spritehide 0
+spritehide 1
+color grey
+rect 92,28,size_x-92-6,80
+color black
+font "Tahoma",8,100
+text 98,35,"Options for the freehand tool:"
+text 100,55,"Line thickness:"
+text 430,50, "This is a freehand tool, drawing lines from"
+text 430,70, "1 to 10 pixels wide in the color of your choice"
+# linewidth spinner
+linew_color = 1
+linew_locx=200: linew_locy=55
+linew_width=30: linew_heigth=20
+linew_offsetx=8: linew_offsety= 0
+linew_insetx=0.1: linew_insety=0.1
+# type specific (array or incremental)
+linew_array=0
+linew_min=1
+linew_shown=linewidth
+linew_max=10
+linew_inc=1
+call spinner(linew_color,linew_locx,linew_locy, linew_width, linew_heigth, linew_offsetx, linew_offsety, linew_insetx, linew_insety, linew_array, linew_shown, linew_max, linew_min, linew_inc)
+linew_up_x=sp_up_topleft_x
+linew_up_y=sp_up_topleft_y
+linew_down_x=sp_up_botright_x
+linew_down_y=sp_up_botright_y
+linew_updown_width=sp_heigth
+linew_updown_heigth=sp_heigth/2
+return
+
+# Colorpicker 0ptions
+options_colpic:
+spritehide 0
+spritehide 1
+color grey
+rect 92,28,size_x-92-6,80
+color black
+font "Tahoma",8,100
+text 98,35,"Options:"
+text 160,60,"This allows you to pick a color from the drawing area as well as from the color selection area."
+text 160, 75,"It will be usefull once the alpha blending is implemented"
+return
+
+# Circle 0ptions
+options_circle:
+spritehide 0
+spritehide 1
+color grey
+rect 92,28,size_x-92-6,80
+color black
+font "Tahoma",8,100
+text 98,35,"Options for Circle tool:"
+text 160,60,"This draws an outlined or a filled circle."
+text 160, 75,"The filling only occurs at the end of your mouse event."
+circfill_1_elements=1
+circfill_1_locx=550
+circfill_1_locy_top=60 #top of first checkbox element
+circfill_1_locy_bot=60 #top of last checkbox element
+check_label$[0]=circfill_label_1$[0]
+check_state[0]=circfill_state_1[0]
+call checkbox(circfill_1_elements, circfill_1_locx, circfill_1_locy_top, circfill_1_locy_bot)
+# penwidth spinner
+penwc_color = 1
+penwc_locx=650: penwc_locy=55
+penwc_width=30: penwc_heigth=20
+penwc_offsetx=8: penwc_offsety= 0
+penwc_insetx=0.1: penwc_insety=0.1
+# type specific (array or incremental)
+penwc_array=0
+penwc_min=1
+penwc_shown=cirpenw
+penwc_max=10
+penwc_inc=1
+call spinner(penwc_color,penwc_locx,penwc_locy, penwc_width, penwc_heigth, penwc_offsetx, penwc_offsety, penwc_insetx, penwc_insety, penwc_array, penwc_shown, penwc_max, penwc_min, penwc_inc)
+penwc_up_x=sp_up_topleft_x
+penwc_up_y=sp_up_topleft_y
+penwc_down_x=sp_up_botright_x
+penwc_down_y=sp_up_botright_y
+penwc_updown_width=sp_heigth
+penwc_updown_heigth=sp_heigth/2
+return
+
+# Rectangle 0ptions
+options_recta:
+spritehide 0
+spritehide 1
+color grey
+rect 92,28,size_x-92-6,80
+color black
+font "Tahoma",8,100
+text 98,35,"Options for Rectangle:"
+text 160,60,"This draws an outlined or a filled rectangle."
+text 160, 75,"The filling only occurs at the end of your mouse event."
+rectfill_1_elements=1
+rectfill_1_locx=550
+rectfill_1_locy_top=60 #top of first checkbox element
+rectfill_1_locy_bot=60 #top of last checkbox element
+check_label$[0]=rectfill_label_1$[0]
+check_state[0]=rectfill_state_1[0]
+call checkbox(rectfill_1_elements, rectfill_1_locx, rectfill_1_locy_top, rectfill_1_locy_bot)
+# penwidth spinner
+penw_color = 1
+penw_locx=650: penw_locy=55
+penw_width=30: penw_heigth=20
+penw_offsetx=8: penw_offsety= 0
+penw_insetx=0.1: penw_insety=0.1
+# type specific (array or incremental)
+penw_array=0
+penw_min=1
+penw_shown=recpenw
+penw_max=10
+penw_inc=1
+call spinner(penw_color,penw_locx,penw_locy, penw_width, penw_heigth, penw_offsetx, penw_offsety, penw_insetx, penw_insety, penw_array, penw_shown, penw_max, penw_min, penw_inc)
+penw_up_x=sp_up_topleft_x
+penw_up_y=sp_up_topleft_y
+penw_down_x=sp_up_botright_x
+penw_down_y=sp_up_botright_y
+penw_updown_width=sp_heigth
+penw_updown_heigth=sp_heigth/2
+return
+
+# Bucket 0ptions
+options_fill:
+spritehide 0
+spritehide 1
+color grey
+rect 92,28,size_x-92-6,80
+color black
+font "Tahoma",8,100
+text 98,35,"Options for Fill tool:"
+text 160,60,"This is a simple fill tool, replacing the color of the area you click in with a color of your choice"
+# eliminate alpha from fill tool
+newcolor=colorid
+color white
+rect draw2_locx,draw2_locy,draw2_width,draw2_height
+color black
+for i = 0 to 39 step 8
+	for j = 0 to 39 step 8
+		rect draw2_locx+2,draw2_locy+2,4,4
+		rect draw2_locx+i+2,draw2_locy+j+2,4,4
+	next j
+next i
+coloridb = blauw(newcolor)
+coloridg = groen(newcolor)
+coloridr = rood(newcolor)
+alpha= 255
+spriteplace 2,slalpha_locx_top+alpha/2,slalpha_locy_top+4
+spriteshow 2
+draw2_color = 2
+call drawing(draw2_elements_x, draw2_elements_y, draw2_locx, draw2_locy, draw2_width,draw2_height, draw2_offsetx, draw2_offsety, draw2_color)
+color colorid
+rect draw2_locx,draw2_locy,draw2_width,draw2_height
+refresh
+# alpha eliminated
+return
+
+# Pen 0ptions
+options_pen:
+spritehide 0
+spritehide 1
+color grey
+rect 92,28,size_x-92-6,80
+color black
+font "Tahoma",8,100
+text 98,35,"Options for Pen:"
+text 170,45,"X slant:"
+text 170,85,"Y slant:"
+text 350,45,": X slant on 0"
+text 350,80,": Y slant on 0"
+text 470,45,": X slant and Y slant opposite"
+text 470,80,": X & Y slant both same"
+rect 330,43,2,17
+rect 322,84,16,2
+#  line 453,43,438,58
+#  line 454,43,439,58
+line 438,43,453,58
+line 439,43,454,58
+line 453,80,438,95
+line 454,80,439,95
+# X-slant
+deltax_color = 1
+deltax_locx=220: deltax_locy=40
+deltax_width=30: deltax_heigth=20
+deltax_offsetx=8: deltax_offsety= 0
+deltax_insetx=0.1: deltax_insety=0.1
+# type specific (array or incremental)
+deltax_array=0
+deltax_min=-10
+deltax_shown=-2
+deltax_max=10
+deltax_inc=2
+call spinner(deltax_color, deltax_locx, deltax_locy, deltax_width, deltax_heigth, deltax_offsetx, deltax_offsety, deltax_insetx, deltax_insety, deltax_array, deltax_shown, deltax_max, deltax_min, deltax_inc)
+deltax_up_x=sp_up_topleft_x
+deltax_up_y=sp_up_topleft_y
+deltax_down_x=sp_up_botright_x
+deltax_down_y=sp_up_botright_y
+deltax_updown_width=sp_heigth
+deltax_updown_heigth=sp_heigth/2
+# y-slant
+deltay_color = 1
+deltay_locx=220: deltay_locy=80
+deltay_width=30: deltay_heigth=20
+deltay_offsetx=8: deltay_offsety= 0
+deltay_insetx=0.1: deltay_insety=0.1
+# type specific (array or incremental)
+deltay_array=0
+deltay_min=-10
+deltay_shown=4
+deltay_max=10
+deltay_inc=2
+call spinner(deltay_color, deltay_locx, deltay_locy, deltay_width, deltay_heigth, deltay_offsetx, deltay_offsety, deltay_insetx, deltay_insety, deltay_array, deltay_shown, deltay_max, deltay_min, deltay_inc)
+deltay_up_x=sp_up_topleft_x
+deltay_up_y=sp_up_topleft_y
+deltay_down_x=sp_up_botright_x
+deltay_down_y=sp_up_botright_y
+deltay_updown_width=sp_heigth
+deltay_updown_heigth=sp_heigth/2
+# draw Fake 3D checkbox
+fake3d_1_elements=1
+fake3d_1_locx=630
+fake3d_1_locy_top=80 #top of first checkbox element
+fake3d_1_locy_bot=80 #top of last checkbox element
+check_label$[0]=fake3d_label_1$[0]
+check_state[0]=fake3d_state_1[0]
+call checkbox(fake3d_1_elements, fake3d_1_locx, fake3d_1_locy_top, fake3d_1_locy_bot)
+return
+
+# Line 0ptions
+options_line:
+spritehide 0
+spritehide 1
+color grey
+rect 92,28,size_x-92-6,80
+color black
+font "Tahoma",8,100
+text 98,35,"Options for the Line tool"
+text 100,55,"Line thickness:"
+#  text 290,50,"force hori."
+#  text 290,75,"force vert."
+text 550,30, "This is a line tool, drawing lines from"
+text 550,50, "1 to 10 pixels wide in the color of your choice"
+text 550,70, "You can constrain the line in the horizonal/vertical plane"
+text 550,90, "There is also a 1-point perspective guideline option"
+# linewidth spinner
+slinew_color = 1
+slinew_locx=200: slinew_locy=55
+slinew_width=30: slinew_heigth=20
+slinew_offsetx=8: slinew_offsety= 0
+slinew_insetx=0.1: slinew_insety=0.1
+# type specific (array or incremental)
+slinew_array=0
+slinew_min=1
+slinew_shown=slinewidth
+slinew_max=10
+slinew_inc=1
+call spinner(slinew_color,slinew_locx,slinew_locy, slinew_width, slinew_heigth, slinew_offsetx, slinew_offsety, slinew_insetx, slinew_insety, slinew_array, slinew_shown, slinew_max, slinew_min, slinew_inc)
+slinew_up_x=sp_up_topleft_x
+slinew_up_y=sp_up_topleft_y
+slinew_down_x=sp_up_botright_x
+slinew_down_y=sp_up_botright_y
+slinew_updown_width=sp_heigth
+slinew_updown_heigth=sp_heigth/2
+# Horizontal lock
+Loc_hori_1_elements=1
+Loc_hori_1_locx=290
+Loc_hori_1_locy_top=50 #top of first checkbox element
+Loc_hori_1_locy_bot=50 #top of last checkbox element
+check_label$[0]=Loc_hori_label_1$[0]
+check_state[0]=Loc_hori_state_1[0]
+Loc_hori_state=Loc_hori_state_1[0]
+call checkbox(Loc_hori_1_elements, Loc_hori_1_locx, Loc_hori_1_locy_top, Loc_hori_1_locy_bot)
+# Vertical lock
+Loc_vert_1_elements=1
+Loc_vert_1_locx=290
+Loc_vert_1_locy_top=75 #top of first checkbox element
+Loc_vert_1_locy_bot=75 #top of last checkbox element
+check_label$[0]=Loc_vert_label_1$[0]
+check_state[0]=Loc_vert_state_1[0]
+Loc_vert_state=Loc_vert_state_1[0]
+call checkbox(Loc_vert_1_elements, Loc_vert_1_locx, Loc_vert_1_locy_top, Loc_vert_1_locy_bot)
+# One-Point perspective starburst
+Perspective_elements=1
+Perspective_locx=400
+Perspective_locy_top=50 #top of first checkbox element
+Perspective_locy_bot=50 #top of last checkbox element
+check_label$[0]=Perspective_label_1$[0]
+check_state[0]=Perspective_state_1[0]
+Perspective_state=0
+call checkbox(Perspective_elements, Perspective_locx, Perspective_locy_top, Perspective_locy_bot)
+color black
+font "Tahoma",8,100
+text 420,65,"(starburst)"
+# One-Point perspective starburst - ground only option
+PerspecGround_elements=1
+PerspecGround_locx=430
+PerspecGround_locy_top=80 #top of first checkbox element
+PerspecGround_locy_bot=80 #top of last checkbox element
+check_label$[0]=PerspecGround_label_1$[0]
+check_state[0]=PerspecGround_state_1[0]
+if PerspecGround_state=1 then
+	call checkbox(PerspecGround_elements, PerspecGround_locx, PerspecGround_locy_top, PerspecGround_locy_bot)
+endif
+return
+
+# Polyline 0ptions
+options_poly:
+spritehide 0
+spritehide 1
+color grey
+rect 92,28,size_x-92-6,80
+color black
+font "Tahoma",8,100
+text 98,35,"Options for PolyLine"
+text 100,55,"Line thickness:"
+text 400, 40,"This is a simple polyline tool, , drawing lines from 1 to 10"
+text 400, 60, "pixels wide in the color of your choice. Just keep clicking to build"
+text 400, 80,"you polygon. To stop and connect first to last point, right-click."
+# open/close polyline
+poly_open_elements=1
+poly_open_locx=290
+poly_open_locy_top=60 #top of first checkbox element
+poly_open_locy_bot=60 #top of last checkbox element
+check_label$[0]=poly_open_label_1$[0]
+check_state[0]=poly_open_state_1[0]
+poly_open_state=poly_open_state_1[0]
+call checkbox(poly_open_elements, poly_open_locx, poly_open_locy_top, poly_open_locy_bot)
+# linewidth spinner
+slinew_color = 1
+slinew_locx=200: slinew_locy=55
+slinew_width=30: slinew_heigth=20
+slinew_offsetx=8: slinew_offsety= 0
+slinew_insetx=0.1: slinew_insety=0.1
+# type specific (array or incremental)
+slinew_array=0
+slinew_min=1
+slinew_shown=slinewidth
+slinew_max=10
+slinew_inc=1
+call spinner(slinew_color,slinew_locx,slinew_locy, slinew_width, slinew_heigth, slinew_offsetx, slinew_offsety, slinew_insetx, slinew_insety, slinew_array, slinew_shown, slinew_max, slinew_min, slinew_inc)
+slinew_up_x=sp_up_topleft_x
+slinew_up_y=sp_up_topleft_y
+slinew_down_x=sp_up_botright_x
+slinew_down_y=sp_up_botright_y
+slinew_updown_width=sp_heigth
+slinew_updown_heigth=sp_heigth/2
+return
+
+# Bezier 0ptions
+options_bezier:
+spritehide 0
+spritehide 1
+color grey
+rect 92,28,size_x-92-6,80
+color black
+font "Tahoma",8,100
+text 98,35,"Options for curve:"
+text 100,55,"Line thickness:"
+text 400, 40,"This allows you to fit a curve to a series of points"
+text 400, 55,"You can have either an open curve or a closed one"
+text 400, 70,"You need at least 3 points (clicks)"
+# open/close polyline
+bezier_open_elements=1
+bezier_open_locx=290
+bezier_open_locy_top=60 #top of first checkbox element
+bezier_open_locy_bot=60 #top of last checkbox element
+check_label$[0]=bezier_open_label_1$[0]
+check_state[0]=bezier_open_state_1[0]
+bezier_open_state=bezier_open_state_1[0]
+call checkbox(bezier_open_elements, bezier_open_locx, bezier_open_locy_top, bezier_open_locy_bot)
+# linewidth spinner
+slinew_color = 1
+slinew_locx=200: slinew_locy=55
+slinew_width=30: slinew_heigth=20
+slinew_offsetx=8: slinew_offsety= 0
+slinew_insetx=0.1: slinew_insety=0.1
+# type specific (array or incremental)
+slinew_array=0
+slinew_min=1
+slinew_shown=slinewidth
+slinew_max=10
+slinew_inc=1
+call spinner(slinew_color,slinew_locx,slinew_locy, slinew_width, slinew_heigth, slinew_offsetx, slinew_offsety, slinew_insetx, slinew_insety, slinew_array, slinew_shown, slinew_max, slinew_min, slinew_inc)
+slinew_up_x=sp_up_topleft_x
+slinew_up_y=sp_up_topleft_y
+slinew_down_x=sp_up_botright_x
+slinew_down_y=sp_up_botright_y
+slinew_updown_width=sp_heigth
+slinew_updown_heigth=sp_heigth/2
+return
+
+# Background color 0ptions
+options_backgrd:
+spritehide 0
+spritehide 1
+color grey
+rect 92,28,size_x-92-6,80
+color black
+font "Tahoma",8,100
+text 98,35,"Options:"
+text 160,60,"Select this button and click in the drawing area to set it to a uniform color."
+text 160, 75,"of your choice. There are no special options"
+return
+
+#*********************************
+#  Color Selector code
+#*********************************
+colorpick:
+sw_colors=1
+spritehide 2
+imgsave "bpaintundo.png"   # kept: colorpick window save
+spriteshow 2
+#screen draw
+fromright=165
+offsetx=10
+offsety=size_y-320 # offset for big color area
+#color picker 'window'
+b_init=0
+b_locx=fromright
+b_locy=size_y-335
+b_width=330
+b_height= 250
+b_text$=" "
+b_textsize=8
+b_offsetx=0
+b_offsety=0
+call button(b_locx, b_locy, b_width, b_height, b_text$, b_textsize, b_offsetx, b_offsety, b_init)
+# color picker color area
+draw_elements_x=1
+draw_elements_y=1
+draw_locx=fromright+offsetx
+draw_locy=offsety
+draw_width=180
+draw_height=180
+draw_offsetx=0
+draw_offsety=0
+draw_color=0
+call drawing(draw_elements_x, draw_elements_y, draw_locx, draw_locy, draw_width,draw_height, draw_offsetx, draw_offsety, draw_color)
+# current color square
+draw_elements_x=1
+draw_elements_y=1
+draw_locx=fromright+250
+draw_locy=offsety
+draw_width=40
+draw_height=40
+draw_offsetx=0
+draw_offsety=0
+draw_color=0
+call drawing(draw_elements_x, draw_elements_y, draw_locx, draw_locy, draw_width,draw_height, draw_offsetx, draw_offsety, draw_color)
+# current color components
+font "Tahoma",8,100
+color black
+text fromright+235,offsety+70,"red  :"
+text fromright+235,offsety+90,"green:"
+text fromright+235,offsety+110,"blue :"
+rood=255:groen=0:blauw=0
+color rgb(rood,groen,blauw)
+rect fromright+250,offsety,40,40
+draw_elements_x=1
+draw_elements_y=3
+draw_locx=fromright+280
+draw_locy=offsety+70
+draw_width=30
+draw_height=12
+draw_offsetx=0
+draw_offsety=0
+draw_color=0
+call drawing(draw_elements_x, draw_elements_y, draw_locx, draw_locy, draw_width,draw_height, draw_offsetx, draw_offsety, draw_color)
+color black
+text fromright+285,offsety+70,rood
+text fromright+285,offsety+90,groen
+text fromright+285,offsety+110,blauw
+refresh
+#color picker 'OK' button
+b_init=0
+b_locx=fromright+240
+b_locy=size_y-335+170
+b_width=60
+b_height= 20
+b_text$="OK"
+b_textsize=8
+b_offsetx=22
+b_offsety=3
+call button(b_locx, b_locy, b_width, b_height, b_text$, b_textsize, b_offsetx, b_offsety, b_init)
+
+#color picker 'Save as Custom' button
+b_init=0
+b_locx=fromright+225
+b_locy=size_y-335+200
+b_width=90
+b_height= 20
+b_text$="Save Custom"
+b_textsize=8
+b_offsetx=4
+b_offsety=3
+call button(b_locx, b_locy, b_width, b_height, b_text$, b_textsize, b_offsetx, b_offsety, b_init)
+
+# fill color picker color area
+colmax=255
+init=0
+incr=colmax/30
+for j=0 to 180
+	rood=colmax
+	groen=init
+	blauw=init
+	sw_red=0
+	for i = 0 to 180
+		color rgb(rood, groen, blauw)
+		plot fromright+offsetx+i,offsety+j
+		if rood = colmax and blauw= init then groen=groen+incr
+		if groen >colmax -1 or groen = colmax then
+			groen = colmax
+			rood=rood-incr
+		endif
+		if rood <= incr and groen >= colmax-1 then blauw=blauw+incr
+		if blauw >= colmax and groen >init and  rood<=init then
+			groen = groen -incr
+		endif
+		if blauw >=colmax and groen <=init then
+			rood = rood +incr
+		endif
+		if blauw >=colmax and groen <=init and rood >= colmax then
+			sw_red=1
+		endif
+		if sw_red=1 then blauw = blauw-incr
+		if groen > colmax then groen = colmax
+		if groen <init then groen = init
+		if rood > colmax then rood = colmax
+		if rood <init then rood = init
+		if blauw > colmax then blauw = colmax
+		if blauw <init then blauw = init
+	next i
+next j
+
+#fade to grey and white to black
+orood=255:ogroen=0:oblauw=0
+gosub fadetogrey
+gosub whitetoblack
+
+# stamps for sliders
+color black
+dim triwb(6)
+dim trigrey(6)
+triwb = {4, 0, 4, 8, 0, 4}
+trig = {4, 0, 8, 4, 0, 4}
+# stamp the triangle at 0,0 (full size)
+stamp fromright+219, 90+offsety, triwb
+stamp fromright+offsetx, 209+offsety, trig
+refresh
+
+#now comes the code
+# [removed debug print]
+while 1=1
+	# in main color area
+	while mouseb> 0 and mousex>fromright+offsetx and mousey>offsety and mousex< fromright+offsetx+180 and mousey< offsety+180
+		fullcolor= pixel(mousex, mousey)
+		rood= rood(fullcolor)
+		groen = groen(fullcolor)
+		blauw= blauw(fullcolor)
+		color grey
+		rect fromright+offsetx,209+offsety,200, 5
+		rect fromright+219,offsety-10, 5,200
+		color black
+		stamp fromright+219, 90+offsety, triwb
+		stamp fromright+offsetx, 209+offsety, trig
+		if rood>255 then rood=255
+		if groen>255 then groen=255
+		if blauw>255 then blauw=255
+		if rood<0 then rood=0
+		if groen<0 then groen=0
+		if blauw<0 then blauw=0
+		color rgb(rood, groen, blauw)
+		rect fromright+250,offsety,40,40
+		color white
+		rect  fromright+280,offsety+70,30,12
+		rect  fromright+280,offsety+90,30,12
+		rect  fromright+280,offsety+110,30,12
+		color black
+		text fromright+285,offsety+70,rood
+		text fromright+285,offsety+90,groen
+		text fromright+285,offsety+110,blauw
+		gosub fadetogrey
+		gosub whitetoblack
+		refresh
+	end while
+	#in white to black slider
+	while  mousex>fromright+217 and mousey>offsety and mousex< fromright+224 and mousey< offsety+180
+		while mouseb> 0 and mousey>offsety and mousey< offsety+180
+			fullcolor= pixel(fromright+215, mousey)
+			rood= rood(fullcolor)
+			groen = groen(fullcolor)
+			blauw= blauw(fullcolor)
+			gosub fadetogrey
+			if rood>255 then rood=255
+			if groen>255 then groen=255
+			if blauw>255 then blauw=255
+			if rood<0 then rood=0
+			if groen<0 then groen=0
+			if blauw<0 then blauw=0
+			color rgb(rood, groen, blauw)
+			rect fromright+250,offsety,40,40
+			color grey
+			rect 219+fromright,offsety-10, 5,200
+			color black
+			stamp 219+fromright, mousey-3, triwb
+			color white
+			rect  fromright+280,offsety+70,30,12
+			rect  fromright+280,offsety+90,30,12
+			rect  fromright+280,offsety+110,30,12
+			color black
+			text fromright+285,offsety+70,rood
+			text fromright+285,offsety+90,groen
+			text fromright+285,offsety+110,blauw
+			refresh
+		end while
+	end while
+	#in grey slider
+	while  mousex>fromright+offsetx and mousey>offsety+207 and mousex< fromright+190 and mousey< offsety+214
+		while mouseb> 0 and mousex>fromright+offsetx and mousex< fromright+190
+			fullcolor= pixel(mousex, offsety+203)
+			rood= rood(fullcolor)
+			groen = groen(fullcolor)
+			blauw= blauw(fullcolor)
+			gosub whitetoblack
+			if rood>255 then rood=255
+			if groen>255 then groen=255
+			if blauw>255 then blauw=255
+			if rood<0 then rood=0
+			if groen<0 then groen=0
+			if blauw<0 then blauw=0
+			color rgb(rood, groen, blauw)
+			rect fromright+250,offsety,40,40
+			color grey
+			rect fromright+5,209+offsety,200, 5
+			color black
+			if mousex> fromright+7 then
+				stamp mousex-3, 209+offsety,  trig
+			else
+				stamp fromright+7, 209+offsety,  trig
+			endif
+			color white
+			rect  fromright+280,offsety+70,30,12
+			rect  fromright+280,offsety+90,30,12
+			rect  fromright+280,offsety+110,30,12
+			color black
+			text fromright+285,offsety+70,rood
+			text fromright+285,offsety+90,groen
+			text fromright+285,offsety+110,blauw
+			refresh
+		end while
+	end while
+	#on the OK button
+	while  sw_colors=1 and mouseb>0 and mousex>fromright+240 and mousey>size_y-335+170 and mousex< fromright+300 and mousey< size_y-335+190
+		sw_colors=0
+		b_init=2
+		b_locx=fromright+240
+		b_locy=size_y-335+170
+		b_width=60
+		b_height= 20
+		b_text$="OK"
+		b_textsize=8
+		b_offsetx=22
+		b_offsety=3
+		call button(b_locx, b_locy, b_width, b_height, b_text$, b_textsize, b_offsetx, b_offsety, b_init)
+		imgload size_x/2,size_y/2,"bpaintundo.png"
+		spriteshow 2
+		colorid=rgb(rood, groen, blauw)
+		draw2_color = 2
+		call drawing(draw2_elements_x, draw2_elements_y, draw2_locx, draw2_locy, draw2_width,draw2_height, draw2_offsetx, draw2_offsety, draw2_color)
+		color colorid
+		rect draw2_locx,draw2_locy,draw2_width,draw2_height
+		if custcol > -1 then
+			for i = 0 to 9
+				if custcols[i] <> 0 then
+					color custcols[i]
+				else
+					color white
+				endif
+				if i < 5 then
+					rect 420+i*28,size_y-59,15,15
+				else
+					rect 420+(i-5)*28,size_y-31,15,15
+				end if
+			next i
+			refresh
+		end if
+		return
+	end while
+	#on the Save Custom button
+	while  sw_colors=1 and mouseb>0 and mousex>fromright+225 and mousey>size_y-335+200 and mousex< fromright+315 and mousey< size_y-335+220
+		b_init=2
+		b_locx=fromright+225
+		b_locy=size_y-335+200
+		b_width=90
+		b_height= 20
+		b_text$="Save Custom"
+		b_textsize=8
+		b_offsetx=4
+		b_offsety=3
+		call button(b_locx, b_locy, b_width, b_height, b_text$, b_textsize, b_offsetx, b_offsety, b_init)
+		colorid=rgb(rood, groen, blauw)
+		draw2_color = 2
+		call drawing(draw2_elements_x, draw2_elements_y, draw2_locx, draw2_locy, draw2_width,draw2_height, draw2_offsetx, draw2_offsety, draw2_color)
+		color colorid
+		rect draw2_locx,draw2_locy,draw2_width,draw2_height
+		custcol=custcol+1
+		if custcol>9 then custcol=0
+		custcols[custcol]=colorid
+		if custcol>4 then
+			custcolrow=2
+		else
+			custcolrow=1
+		endif
+		if custcolrow=1 then
+			rect 420+custcol*28,size_y-59,15,15
+		else
+			rect 420+(custcol-5)*28,size_y-31,15,15
+		endif
+		custcols[custcol]=colorid
+		refresh
+		pause 0.2
+	end while
+end while
+return
+
+fadetogrey:
+#fade togrey
+grood=rood:ggroen=groen:gblauw=blauw
+grinc=(grood-128)/180
+gginc=(ggroen-128)/180
+gbinc=(gblauw-128)/180
+for i = 0 to 180
+	grood=grood-grinc
+	ggroen=ggroen-gginc
+	gblauw=gblauw-gbinc
+	if grood>255 then grood=255
+	if ggroen>255 then ggroen=255
+	if gblauw>255 then gblauw=255
+	if grood<0 then grood=0
+	if ggroen<0 then ggroen=0
+	if gblauw<0 then gblauw=0
+	color rgb(grood, ggroen, gblauw)
+	line fromright+offsetx+i,200+offsety,fromright+offsetx+i,205+offsety
+next i
+return
+
+whitetoblack:
+#white to black
+urood=rood:ugroen=groen:ublauw=blauw
+urinc=(255-urood)/90
+uginc=(255-ugroen)/90
+ubinc=(255-ublauw)/90
+for j = 90 to 1 step -1
+	urood=urood+urinc
+	ugroen=ugroen+ uginc
+	ublauw=ublauw+ ubinc
+	if urood>255 then urood=255
+	if ugroen>255 then ugroen=255
+	if ublauw>255 then ublauw=255
+	if urood<0 then urood=0
+	if ugroen<0 then ugroen=0
+	if ublauw<0 then ublauw=0
+	color rgb(urood, ugroen, ublauw)
+	line fromright+210,j+offsety,fromright+215,j+offsety
+next j
+drood=rood:dgroen=groen:dblauw=blauw
+drinc=drood/90
+dginc=dgroen/90
+dbinc=dblauw/90
+for j=91 to 180
+	drood=drood- drinc
+	dgroen=dgroen- dginc
+	dblauw=dblauw- dbinc
+	if drood>255 then drood=255
+	if dgroen>255 then dgroen=255
+	if dblauw>255 then dblauw=255
+	if drood<0 then drood=0
+	if dgroen<0 then dgroen=0
+	if dblauw<0 then dblauw=0
+	color rgb(drood, dgroen, dblauw)
+	line fromright+210,j+offsety,fromright+215,j+offsety
+next j
+return
+
+#*****************
+# Program end
+#*****************
+alldone:
+graphsize (300,200)
+color white
+rect 0,0, 300,200
+color black
+rect 0,0,300,4
+rect 0,196,300,200
+rect 0,0,4,200
+rect 296,0,300,200
+font "Tahoma",12,100
+text 15,70,"Thanks for trying out Basic Paint!"
+font "Tahoma",8,100
+text 70,120,"  "
+refresh
+editvisible 1
+outputvisible 1
+end
+return
+
+#**********************
+# Program save and end
+#**********************
+savequit:
+spritehide 2
+imgsave "bpaintundo.png"   # kept: savequit file export
+spriteshow 2
+color grey
+font "Tahoma",14,100
+text size_x/2-60,size_y/2-15,"Please wait"
+refresh
+graphsize (size_x-84,size_y-179)
+color red
+rect 0,0, size_x-84,size_y-177
+imgload (size_x-155)/2,(size_y-221)/2, "bpaintundo.png"
+h = hour
+if h > 12 then h = h - 12
+if h = 0 then h = 12
+timestamp$= right("0" + h, 2) + "-" + right("0" + minute, 2) + "-" + right("0" + second, 2)
+savefile$="MyBasicPainting-"+timestamp$+".png"
+imgsave savefile$
+graphsize (size_x,size_y)
+sw_title=1
+gosub draw_interface
+return
+
+clearbutton:
+#look at action$ and call correct button with b_init=0
+for i = 0 to 5
+	if tools$[i]=action$ then
+		loc=i
+		i=10
+	endif
+next i
+if toolloc[loc*2+1]=1 then
+	startposx=8
+else
+	startposx=42
+endif
+startposy=109+(toolloc[loc*2]-1)*35
+call button (startposx,startposy,32,32," ",8,6,11,0)
+gosub drawpencil
+gosub drawspray
+gosub drawerase
+gosub drawfill
+gosub drawcolpic
+gosub drawpen
+gosub drawcirc
+gosub drawrecta
+gosub drawline
+gosub drawpoly
+gosub drawbezier
+gosub drawbackgrd
+refresh
+return
+
+pushbutton:
+#look at action$ and call correct button with b_init=1
+redraw$="draw"+action$
+for i = 0 to 11
+	if tools$[i]=action$ then
+		loc=i
+		i=12
+	endif
+next i
+if toolloc[loc*2+1]=1 then
+	startposx=8
+else
+	startposx=42
+endif
+startposy=109+(toolloc[loc*2]-1)*35
+call button (startposx,startposy,32,32," ",8,6,11,1)
+refresh
+return
+
+
+drawtoolbox:
+color gray
+rect 6,107,70,size_y-113
+for i= 0 to 6
+	call button (8,109+i*35,32,32," ",8,10,11,0)
+	call button (42,109+i*35,32,32," ",8,6,11,0)
+next i
+
+gosub drawpencil
+gosub drawspray
+gosub drawerase
+gosub drawfill
+gosub drawcolpic
+gosub drawpen
+gosub drawcirc
+gosub drawrecta
+gosub drawline
+gosub drawpoly
+gosub drawbezier
+gosub drawbackgrd
+return
+
+drawspray:
+color rgb(200,200,200)
+circle 63,128,6
+color rgb(120,150,255)
+poly {61,136,70,136,70,127,67,125,58,132}
+color rgb(100,100,255)
+line 61,136,58,132
+line 58,132,67,125
+line 67,125,71,127
+color white
+poly {58,125,60,123,58,121,56,123}
+color orange
+poly {55,124,47,124,47,134}
+if sw_circborder=0 then refresh
+return
+
+drawerase:
+color rgb(255,113,159)
+poly {15,159,24,164,24,170,35,159,35,155,29,151}
+color rgb(255,174,201)
+poly {15,159,24,165,24,170,15,164}
+color rgb(255,70,70)
+line 15,159,24,165
+line 24,165,24,170
+line 24,165,35,155
+if sw_circborder=0 then refresh
+return
+
+drawfill:
+color green
+poly {55,160,62,170,69,163,63,154}
+color darkcyan
+line 55,160,62,170
+line 62,170,69,163
+line 69,163,63,154
+color colorid
+poly{55,160,55,169,58,171,48,171,53,169,53,160,57,156}
+color black
+line 60,148,60,160
+color darkgrey
+line 61,150,61,160
+if sw_circborder=0 then refresh
+return
+
+drawcolpic:
+color blue
+poly{21,190,25,190,29,185,33,185,34,186,34,190,29,195,29,198}
+color darkgrey
+poly{22,194,15,201,15,204,18,204,25,197}
+color white
+poly{25,196,18,203,17,203,24,196}
+color rgb(150,150,255)
+poly{27,195,33,189,32,188,26,193}
+#circle 24,195,15
+if sw_circborder=0 then refresh
+return
+
+drawpen:
+color rgb(200,120,0)
+poly {59,188,62,183,70,183,70,188,66,192}
+color rgb(210,210,210)
+circle 62,192,5
+poly {51,204,67,194,56,192}
+color rgb(50,50,50)
+circle 61,193,2
+line 61,193,51,204
+#poly {61,191,51,204,63,193}
+if sw_circborder=0 then refresh
+return
+
+drawcirc:
+penwidth 2
+color rgb(100,100,100),yellow
+circle 24,230,9
+penwidth 1
+#color grey
+#circle 24,230,7
+if sw_circborder=0 then refresh
+return
+
+drawrecta:
+penwidth 2
+color rgb(100,100,100),yellow
+rect 49,221,18,18
+penwidth 1
+#color grey
+#rect 51,223,14,14
+if sw_circborder=0 then refresh
+return
+
+drawline:
+penwidth 2
+color blue
+#color rgb(100,100,100)
+line 18,257,30,273
+line 19,257,31,273
+penwidth 1
+if sw_circborder=0 then refresh
+return
+
+drawpoly:
+color green
+penwidth 2
+#color rgb(100,100,100)
+line 48,261,57,266
+line 57,266,53,257
+line 53,257,63,255
+line 63,255,61,263
+line 61,263,65,272
+line 65,272,50,270
+line 50,270,48,261
+penwidth 1
+if sw_circborder=0 then refresh
+return
+
+drawbezier:
+startx=23: width=10
+starty=292: height=10
+color red
+penwidth 2
+arc startx,starty,width,height,pi/4,pi
+a= sqrt((width^2)/2)
+arc startx-a,starty+a,width,height,5*pi/4,pi
+b=sqrt((width/2)^2/2)
+penwidth 1
+color green
+circle startx+width/2+b,starty+height/2-b,1
+circle startx+width/2-b,starty+height/2+b,1
+circle startx+width/2-3*b,starty+height/2+3*b,1
+if sw_circborder=0 then refresh
+return
+
+drawbackgrd:
+color colorid
+rect 47, 289, 22, 22
+if sw_circborder=0 then refresh
+return
+
+drawpencil:
+x=17
+y=128
+color darkgrey
+line x,y,x+10,y-10
+line x+3,y+3,x+13,y-7
+color yellow
+line (x,y+1,x+10,y-9)
+line (x+1,y+1,x+11,y-9)
+line (x+1,y+2,x+11,y-8)
+color orange
+line (x+2,y+2,x+12,y-8)
+line (x+3,y+2,x+12,y-7)
+color grey
+line  (x+11, y-10,x+11,y-11)
+line  (x+12, y-9,x+12,y-11)
+line  (x+13, y-8,x+13,y-10)
+line  (x+14, y-8,x+14,y-9)
+color orange
+line (x+12,y-12,x+14,y-14)
+line (x+13,y-11,x+15,y-13)
+line (x+13,y-11,x+15,y-13)
+line (x+13,y-12,x+14,y-13)
+line (x+14,y-11,x+15,y-12)
+line (x+14,y-10,x+16,y-12)
+line (x+15,y-10,x+16,y-11)
+color red
+line (x+15,y-9,x+17,y-11)
+color rgb(239,228,176)
+rect (x-1,y+2,3,3)
+plot(x+2,y+3)
+color black
+rect (x-2,y+4,2,2)
+if sw_circborder=0 then refresh
+return
+
+# *******************************
+# push coordinate on the stack
+# *******************************
+subroutine push(x,y)
+	if pointer < 1000000-1 then
+		pointer=pointer+1
+		stack[pointer]= graphheight*x+y
+	else
+		pointer =0
+		print "Stack overflow. Program terminating"
+		end
+	endif
+end subroutine
+
+# *****************************************************
+# fill routine with 4 neighbourgs (n-e-s-w) and a stack
+# *****************************************************
+subroutine fillstack(fill_x, fill_y, oldcol, setcol)
+	if(oldcol <> setcol) then
+	while pointer > 0
+		if pointer > 0 then
+			p=stack[pointer]
+			fill_x=int(p/graphheight)
+			fill_y=int(p%graphheight)
+			pointer=pointer-1
+		else
+			print "Empty stack. Program terminating"
+		endif
+		color setcol
+		plot(fill_x,fill_y)
+		if fill_x + 1 < size_x-5 and (pixel(fill_x + 1,fill_y)= oldcol) then
+			if pointer < 1000000-1 then
+				pointer=pointer+1
+				stack[pointer]= graphheight*(fill_x +1 )+fill_y
+			else
+				print pointer
+				refresh
+				print "Stack overflow. Program terminating"
+				end
+			endif
+		endif
+		if fill_x - 1 >= 5 and (pixel(fill_x - 1,fill_y) = oldcol) then
+			if pointer < 1000000-1 then
+				pointer=pointer+1
+				stack[pointer]= graphheight*(fill_x - 1)+fill_y
+			else
+				print pointer
+				refresh
+				print "Stack overflow. Program terminating"
+				end
+			endif
+		endif
+		if fill_y + 1 < size_y-5 and (pixel(fill_x,fill_y + 1) = oldcol) then
+			if pointer < 1000000-1 then
+				pointer=pointer+1
+				stack[pointer]= graphheight*fill_x+fill_y + 1
+			else
+				print pointer
+				refresh
+				print "Stack overflow. Program terminating"
+				end
+			endif
+		endif
+		if fill_y - 1 >= 5 and (pixel(fill_x,fill_y - 1) = oldcol) then
+			if pointer < 1000000-1 then
+				pointer=pointer+1
+				stack[pointer]= graphheight*fill_x+fill_y - 1
+			else
+				print pointer
+				refresh
+				print "Stack overflow. Program terminating"
+				end
+			endif
+		endif
+	end while
+	# we're done
+endif
+end subroutine
+
+#***************************************
+# sub routine "Draw a radio button list"
+#***************************************
+subroutine drawradio(elements, locx, locy_top, locy_bot, active)
+	# Do not forget to declare and initialize a global array 'radio$' before calling the subroutine
+	color black
+	font "Tahoma",8,100
+	radio_spacing = (locy_bot-locy_top)/(elements-1)
+	for i = 0 to (elements -1)
+		color black
+		circle locx, locy_top+(radio_spacing*i), 5
+		color white
+		circle locx+1, locy_top+(radio_spacing*i)+1,4
+	next i
+	#radio text captions
+	color black
+	for i = 0 to elements-1
+		text locx + 15,locy_top + (radio_spacing*i)-8, radio$[i]
+	next i
+	# paint active radio button
+	if active > 0 then circle locx+1, locy_top+(radio_spacing*(active-1))+1,2
+	refresh
+end subroutine
+
+#*********************************
+# sub routine "Draw a button"
+#*********************************
+# Inputs are
+#   x,y location of the upper left corner of the button front
+#   height and width of the button
+#   Size of caption (small:8, medium:10, large:14)
+#   Caption
+#   offset of text from left and top button side
+#   init: 0 (draw unclicked), 1 (draw clicked) or 2 (on/off click)
+subroutine button(b_locx, b_locy, b_width, b_height, b_text$, b_textsize, b_offsetx, b_offsety, b_init)
+	if b_init=2 then #draw pressed, wait, draw unpressed
+		color darkgrey
+		if b_width>b_height then
+			half=(b_height)/2
+		else
+			half=(b_width)/2
+		endif
+		poly {b_locx, b_locy, b_locx, b_locy+b_height, b_locx +half, b_locy +half}
+		poly {b_locx , b_locy , b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy }
+		color rgb(200,200,200)
+		poly {b_locx , b_locy +b_height, b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy +b_height}
+		poly {b_locx +b_width-half, b_locy +half, b_locx +b_width, b_locy +b_height, b_locx +b_width, b_locy }
+		color rgb(150,150,150)
+		if b_height < 17 or b_width < 17 then
+			rect b_locx  + 1, b_locy  + 1, b_width-2, b_height-2
+		else
+			if b_height < 25 or b_width < 25 then
+				rect b_locx  + 2, b_locy  + 2, b_width-4, b_height-4
+			else
+				rect b_locx  + 4, b_locy  + 4, b_width-8, b_height-8
+			endif
+		endif
+		color black
+		font "Tahoma",b_textsize,100
+		text b_locx+b_offsetx+2,b_locy+b_offsety+2,b_text$
+		refresh
+		pause 0.25
+		color rgb(200,200,200)
+		poly {b_locx, b_locy, b_locx, b_locy+b_height, b_locx +half, b_locy +half}
+		poly {b_locx , b_locy , b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy }
+		color darkgrey
+		poly {b_locx , b_locy +b_height, b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy +b_height}
+		poly {b_locx +b_width-half, b_locy +half, b_locx +b_width, b_locy +b_height, b_locx +b_width, b_locy }
+		color grey
+		if b_height < 17 or b_width < 17 then
+			rect b_locx  + 1, b_locy  + 1, b_width-2, b_height-2
+		else
+			if b_height < 25 or b_width < 25 then
+				rect b_locx  + 2, b_locy  + 2, b_width-4, b_height-4
+			else
+				rect b_locx  + 4, b_locy  + 4, b_width-8, b_height-8
+			endif
+		endif
+		color black
+		font "Tahoma",b_textsize,100
+		text b_locx+b_offsetx,b_locy+b_offsety,b_text$
+		refresh
+	else
+		if b_init=1 then #draw pressed
+			color darkgrey
+			if b_width>b_height then
+				half=(b_height)/2
+			else
+				half=(b_width)/2
+			endif
+			poly {b_locx, b_locy, b_locx, b_locy+b_height, b_locx +half, b_locy +half}
+			poly {b_locx , b_locy , b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy }
+			color rgb(200,200,200)
+			poly {b_locx , b_locy +b_height, b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy +b_height}
+			poly {b_locx +b_width-half, b_locy +half, b_locx +b_width, b_locy +b_height, b_locx +b_width, b_locy }
+			color rgb(150,150,150)
+			if b_height < 17 or b_width < 17 then
+				rect b_locx  + 1, b_locy  + 1, b_width-2, b_height-2
+			else
+				if b_height < 25 or b_width < 25 then
+					rect b_locx  + 2, b_locy  + 2, b_width-4, b_height-4
+				else
+					rect b_locx  + 4, b_locy  + 4, b_width-8, b_height-8
+				endif
+			endif
+			color black
+			font "Tahoma",b_textsize,100
+			text b_locx+b_offsetx+2,b_locy+b_offsety+2,b_text$
+			pause 0.25
+		else #draw unpressed
+			color rgb(200,200,200)
+			if b_width>b_height then
+				half=(b_height)/2
+			else
+				half=(b_width)/2
+			endif
+			poly {b_locx, b_locy, b_locx, b_locy+b_height, b_locx +half, b_locy +half}
+			poly {b_locx , b_locy , b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy }
+			color darkgrey
+			poly {b_locx , b_locy +b_height, b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy +b_height}
+			poly {b_locx +b_width-half, b_locy +half, b_locx +b_width, b_locy +b_height, b_locx +b_width, b_locy }
+			color grey
+			if b_height < 17 or b_width < 17 then
+				rect b_locx  + 1, b_locy  + 1, b_width-2, b_height-2
+			else
+				if b_height < 25 or b_width < 25 then
+					rect b_locx  + 2, b_locy  + 2, b_width-4, b_height-4
+				else
+					rect b_locx  + 4, b_locy  + 4, b_width-8, b_height-8
+				endif
+			endif
+			color black
+			font "Tahoma",b_textsize,100
+			text b_locx+b_offsetx,b_locy+b_offsety,b_text$
+			pause 0.2
+		endif
+	end if
+end subroutine
+
+#******************************************
+# sub routine "Draw a drawing element grid"
+#******************************************
+# You are responsible for the size of the drawing element versus the size of the canvas
+# Inputs are
+#   number of elements in the grid in x and in y direction
+#	draw_elements_x  -  draw_elements_x
+#   x,y location of the upper left corner
+#	draw_locx  -  draw_locy
+#   height and width of the drawing element. A 4 pixel border will be added outside to give a 3D look
+#	draw_width  -  draw_height
+#   spacing (offset) between the elements (=0 if only 1 element)
+#	draw_offsetx  -  draw_offsety
+#   black or white background (can easily be changed to give an exact color)
+#	draw_color
+subroutine drawing(draw_elements_x, draw_elements_y, draw_locx, draw_locy, draw_width,draw_height, draw_offsetx, draw_offsety, draw_color)
+	draw_locx=draw_locx-4
+	draw_locy=draw_locy-4
+	colsel=0
+	for i=1 to draw_elements_x
+		for j =1 to draw_elements_y
+			widthfiller=draw_width+draw_offsetx+8
+			heightfiller= draw_height+draw_offsety+8
+			color darkgrey
+			if draw_width>draw_height then
+				half=(draw_height+8)/2
+			else
+				half=(draw_width+8)/2
+			endif
+			poly {draw_locx+((i-1)*widthfiller), draw_locy+((j-1)*heightfiller), draw_locx+((i-1)*widthfiller), draw_locy+((j-1)*heightfiller)+draw_height+8, draw_locx+((i-1)*widthfiller)+half, draw_locy+((j-1)*heightfiller)+half}
+			poly {draw_locx+((i-1)*widthfiller), draw_locy+((j-1)*heightfiller), draw_locx+((i-1)*widthfiller)+half, draw_locy+((j-1)*heightfiller)+half, draw_locx+((i-1)*widthfiller)+draw_width+8-half, draw_locy+((j-1)*heightfiller)+half, draw_locx+((i-1)*widthfiller)+draw_width+8,draw_locy+((j-1)*heightfiller)}
+			color rgb(200,200,200)
+			poly {draw_locx+((i-1)*widthfiller), draw_locy+((j-1)*heightfiller)+draw_height+8, draw_locx+((i-1)*widthfiller)+half, draw_locy+((j-1)*heightfiller)+half, draw_locx+((i-1)*widthfiller)+draw_width+8-half, draw_locy+((j-1)*heightfiller)+half, draw_locx+((i-1)*widthfiller)+draw_width+8,draw_locy+((j-1)*heightfiller)+draw_height+8}
+			poly {draw_locx+((i-1)*widthfiller)+draw_width+8-half, draw_locy+((j-1)*heightfiller)+half, draw_locx+((i-1)*widthfiller)+draw_width+8, draw_locy+((j-1)*heightfiller)+draw_height+8, draw_locx+((i-1)*widthfiller)+draw_width+8, draw_locy+((j-1)*heightfiller)}
+
+			if draw_color = 1 then
+				color col[colsel]
+				colsel=colsel+1
+			else
+				if draw_color = 2 then
+					color black
+				else
+					color white
+				endif
+			endif
+			rect draw_locx+(i-1)*widthfiller + 4, draw_locy+(j-1)*heightfiller + 4, draw_width,draw_height
+			# rect draw_locx+(i-1)*widthfiller,draw_locy+(j-1)*heightfiller, draw_width-draw_width* 2+2,draw_height-draw_height* 1.5
+		next j
+	next i
+	refresh
+end subroutine
+#******************************************
+# sub routine "Draw a spin entry button"
+subroutine spinner(sp_color, sp_locx, sp_locy, sp_width, sp_heigth, sp_offsetx, sp_offsety, sp_insetx, sp_insety, sp_array, sp_shown, sp_max, sp_min, sp_inc)
+	widthfiller=sp_offsetx
+	heigthfiller= sp_offsety
+	color darkgrey
+	poly {sp_locx, sp_locy, sp_locx, sp_locy+sp_heigth, sp_locx+sp_heigth/2, sp_locy+sp_heigth/2}
+	poly {sp_locx, sp_locy, sp_locx+sp_heigth/2, sp_locy+sp_heigth/2, sp_locx+sp_width-sp_heigth/2, sp_locy+sp_heigth/2, sp_locx+sp_width, sp_locy}
+	color rgb(200,200,200)
+	poly {sp_locx, sp_locy+sp_heigth, sp_locx+sp_heigth/2, sp_locy+sp_heigth/2, sp_locx+sp_width-sp_heigth/2, sp_locy+sp_heigth/2, sp_locx+sp_width, sp_locy+sp_heigth}
+	poly {sp_locx+sp_width-sp_heigth/2, sp_locy+sp_heigth/2, sp_locx+sp_width, sp_locy+sp_heigth, sp_locx+sp_width, sp_locy}
+	if sp_color = 1 then
+		color white
+	else
+		color grey
+	endif
+	rect sp_locx+(sp_width*sp_insetx), sp_locy+(sp_heigth*sp_insety), sp_width-sp_width*2*sp_insetx+2, sp_heigth-sp_heigth* 1.5*sp_insety
+	color rgb(200,200,200)
+	#Spin-up mini button
+	sp_up_topleft_x = sp_locx+widthfiller+sp_width+sp_width/15
+	sp_up_topleft_y = sp_locy+heigthfiller-2
+	rect sp_up_topleft_x, sp_up_topleft_y ,sp_heigth ,sp_heigth/2
+	#Spin-down mini button
+	sp_up_botright_x = sp_locx+widthfiller+sp_width+sp_width/15
+	sp_up_botright_y = sp_locy+heigthfiller+sp_heigth/2
+	rect sp_up_botright_x, sp_up_botright_y, sp_heigth ,sp_heigth/2
+	color darkgrey
+	# upper mini button lower shadow line
+	line sp_locx+widthfiller+sp_width+sp_width/15, sp_locy+heigthfiller-2+sp_heigth/2, sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth, sp_locy+heigthfiller-2+sp_heigth/2
+	line sp_locx+widthfiller+sp_width+sp_width/15, sp_locy+heigthfiller-3+sp_heigth/2, sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth, sp_locy+heigthfiller-3+sp_heigth/2
+	# lower mini button lower lower shadow line
+	line sp_locx+widthfiller+sp_width+sp_width/15,sp_locy+heigthfiller+sp_heigth/2+2+sp_heigth/2,sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth,sp_locy+heigthfiller+sp_heigth/2+2+sp_heigth/2
+	line sp_locx+widthfiller+sp_width+sp_width/15,sp_locy+heigthfiller+sp_heigth/2+1+sp_heigth/2,sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth,sp_locy+heigthfiller+sp_heigth/2+1+sp_heigth/2
+	# upper mini button right shadow line
+	line sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15, sp_locy+heigthfiller-2, sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15, sp_locy+heigthfiller-2+sp_heigth/2
+	line sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15+1, sp_locy+heigthfiller-1, sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15+1, sp_locy+heigthfiller-2+sp_heigth/2
+	#lower mini button right shadow line
+	line sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15, sp_locy+heigthfiller+sp_heigth/2+2, sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15, sp_locy+heigthfiller+sp_heigth
+	line sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15+1, sp_locy+heigthfiller+sp_heigth/2+3, sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15+1, sp_locy+heigthfiller+sp_heigth-1
+	#Up arrow
+	color rgb(100,100,100)
+	poly { sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4, sp_locy+heigthfiller+(sp_heigth/8*3)-2, sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4*3, sp_locy+heigthfiller+(sp_heigth/8*3)-2, sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4*2, sp_locy+heigthfiller+(sp_heigth/8)-2}
+	#down Arrow
+	poly { sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4, sp_locy+heigthfiller+sp_heigth/2+(sp_heigth/8), sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4*3, sp_locy+heigthfiller+sp_heigth/2+(sp_heigth/8), sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4*2, sp_locy+heigthfiller+sp_heigth/2+(sp_heigth/8*3)}
+
+	#initialize
+	if sp_array=0 then
+		color black
+		font "Tahoma",sp_heigth/2,10
+		text sp_locx+sp_width/5,sp_locy+3,sp_shown
+	else
+		color black
+		font "Tahoma",sp_heigth/2,10
+		text sp_locx+10,sp_locy+3,sp_array_list$[sp_shown]
+	endif
+	refresh
+end subroutine
+
+#**********************************
+# sub routine "Draw a checkbox"
+subroutine checkbox(elements, ch_locx,  ch_locy_top, ch_locy_bot)
+	if elements=1 then
+		ch_spacing = 0
+	else
+		ch_spacing = (ch_locy_bot-ch_locy_top)/(elements-1)
+	endif
+	for i = 0 to (elements -1)
+		color white
+		rect ch_locx,ch_locy_top + (ch_spacing*i),12,12
+		color darkgrey
+		line ch_locx,ch_locy_top + (ch_spacing*i),ch_locx+11, ch_locy_top + (ch_spacing*i)
+		line ch_locx,ch_locy_top + (ch_spacing*i),ch_locx,ch_locy_top + (ch_spacing*i)+11
+		color black
+		line ch_locx+1,ch_locy_top + (ch_spacing*i)+1,ch_locx+10, ch_locy_top + (ch_spacing*i)+1
+		line ch_locx+1,ch_locy_top + (ch_spacing*i)+1,ch_locx+1, ch_locy_top + (ch_spacing*i)+10
+		color grey
+		line ch_locx+1,ch_locy_top + (ch_spacing*i)+11,ch_locx+11, ch_locy_top + (ch_spacing*i)+11
+		line ch_locx+11, ch_locy_top + (ch_spacing*i)+1,ch_locx+11, ch_locy_top + (ch_spacing*i)+11
+		color black
+		font "Tahoma",8,100
+		text ch_locx+20, ch_locy_top  + (ch_spacing*i), check_label$[i]
+	next i
+	for i = 0 to (elements -1)
+		if check_state[i]=1 then
+			color black
+			line ch_locx+3, ch_locy_top  + (ch_spacing*i)+6, ch_locx+6, ch_locy_top  + (ch_spacing*i)+9
+			line ch_locx+3, ch_locy_top  + (ch_spacing*i)+5, ch_locx+6, ch_locy_top  + (ch_spacing*i)+8
+			line ch_locx+3, ch_locy_top  + (ch_spacing*i)+4, ch_locx+6, ch_locy_top  + (ch_spacing*i)+8
+			line ch_locx+6, ch_locy_top  + (ch_spacing*i)+9, ch_locx+12, ch_locy_top  + (ch_spacing*i)
+			line ch_locx+6, ch_locy_top  + (ch_spacing*i)+8, ch_locx+12, ch_locy_top  + (ch_spacing*i)
+			line ch_locx+6, ch_locy_top  + (ch_spacing*i)+7, ch_locx+12, ch_locy_top  + (ch_spacing*i)
+		else
+			color white
+			rect ch_locx+2, ch_locy_top  + (ch_spacing*i)+2,6,6
+		endif
+		#      refresh
+	next i
+	#   refresh
+end subroutine
+#**********************************
+# sub routine "Draw a grouping area"
+subroutine grouper(g_locx, g_locy, g_width, g_height, g_label$)
+	#get background color
+	backgr=pixel(g_locx+g_width-1,g_locy+g_height-1)
+	color darkgrey
+	line g_locx,g_locy,g_locx+g_width,g_locy
+	line g_locx+g_width,g_locy,g_locx+g_width,g_locy+g_height
+	line g_locx+g_width,g_locy+g_height,g_locx,g_locy+g_height
+	line g_locx,g_locy+g_height,g_locx,g_locy
+	color rgb(200,200,200)
+	line g_locx+1,g_locy+1,g_locx+g_width-1, g_locy+1
+	line g_locx+g_width+1, g_locy,g_locx+g_width+1,g_locy+g_height+1
+	line g_locx+g_width+1,g_locy+g_height+1,g_locx,g_locy+g_height+1
+	line g_locx+1,g_locy+1,g_locx+1,g_locy+g_height-1
+	color backgr
+	# if g_label$ has content, write it on the top left side of the grouper element
+	if length(g_label$)>0 then
+		rect g_locx+10,g_locy-10,g_width/5*2,20
+		color black
+		font "Tahoma",10,100
+		text g_locx+g_width/7,g_locy-7,g_label$
+	endif
+	color black
+	refresh
+end subroutine
+#***************************************
+# sub routine "Draw a slider"
+subroutine drawslider(sl_locx_top, sl_locy_top, sl_locx_bot, sl_locy_bot, sl_orient)
+	if sl_orient=1 then
+		sl_lenght = (sl_locx_bot-sl_locx_top)
+		color darkgrey
+		line sl_locx_top,sl_locy_top, sl_locx_bot,sl_locy_bot
+		line sl_locx_top,sl_locy_top+1, sl_locx_bot,sl_locy_bot+1
+		line sl_locx_top,sl_locy_top+2, sl_locx_bot,sl_locy_bot+2
+		poly {sl_locx_top-1, sl_locy_top,sl_locx_top-1, sl_locy_top+3,sl_locx_top-6, sl_locy_top+3}
+		poly {sl_locx_bot+1, sl_locy_bot,sl_locx_bot+1, sl_locy_bot+3,sl_locx_bot+6, sl_locy_bot+3}
+		#  poly
+		color black
+		line sl_locx_top,sl_locy_top+3, sl_locx_bot,sl_locy_bot+3
+		line sl_locx_top,sl_locy_top+4, sl_locx_bot,sl_locy_bot+4
+		color rgb(200,200,200)
+		line sl_locx_top,sl_locy_top+5, sl_locx_bot,sl_locy_bot+5
+		line sl_locx_top,sl_locy_top+6, sl_locx_bot,sl_locy_bot+6
+		line sl_locx_top,sl_locy_top+7, sl_locx_bot,sl_locy_bot+7
+		poly {sl_locx_top-1, sl_locy_top+4,sl_locx_top-1, sl_locy_top+7,sl_locx_top-6, sl_locy_top+4}
+		poly {sl_locx_bot+1, sl_locy_bot+4,sl_locx_bot+1, sl_locy_bot+7,sl_locx_bot+6, sl_locy_bot+4}
+		sl_posx = sl_locx_top
+		sl_posy = sl_locy_top+5
+	else
+		sl_lenght = (sl_locy_bot-sl_locx_top)
+		color darkgrey
+		line sl_locx_top,sl_locy_top, sl_locx_bot,sl_locy_bot
+		line sl_locx_top+1,sl_locy_top, sl_locx_bot+1,sl_locy_bot
+		line sl_locx_top+2,sl_locy_top, sl_locx_bot+2,sl_locy_bot
+		poly {sl_locx_top, sl_locy_top-1, sl_locx_top+3,sl_locy_top-1,sl_locx_top+3,sl_locy_top-6}
+		poly {sl_locx_bot, sl_locy_bot+1, sl_locx_bot+3,sl_locy_bot+1,sl_locx_bot+3,sl_locy_bot+6}
+		color black
+		line sl_locx_top+3,sl_locy_top, sl_locx_bot+3,sl_locy_bot
+		line sl_locx_top+4,sl_locy_top, sl_locx_bot+4,sl_locy_bot
+		color rgb(200,200,200)
+		line sl_locx_top+5,sl_locy_top, sl_locx_bot+5,sl_locy_bot
+		line sl_locx_top+6,sl_locy_top, sl_locx_bot+6,sl_locy_bot
+		line sl_locx_top+7,sl_locy_top, sl_locx_bot+7,sl_locy_bot
+		poly {sl_locx_top+4, sl_locy_top-1, sl_locx_top+7,sl_locy_top-1,sl_locx_top+4,sl_locy_top-6}
+		poly {sl_locx_bot+4, sl_locy_bot+1, sl_locx_bot+7,sl_locy_bot+1,sl_locx_bot+4,sl_locy_bot+6}
+		sl_posx = sl_locx_top+5
+		sl_posy = sl_locy_top
+	end if
+	if slidetype$="size" then item=0
+	if slidetype$="dense" then item=1
+	if slidetype$="Alpha" then item=2
+	if item <2 then
+		spriteplace item,sl_posx,sl_posy
+	else
+		spriteplace item,sl_locx_bot+5,sl_posy
+	endif
+	spriteshow item
+	#   refresh
+end subroutine
+commands:
+while mouseb >0 and mousex < 78 and  mousey< 317 and mousey > 108
+	#tool selection area
+	a=2
+	pencilactive=0
+	sw_clicked=1
+	return
+end while
+while mouseb>0 and  mousex>48 and mousex< 93 and mousey> 28  and mousey<67
+	#top undo command button row
+	a=2
+	if action$="pencil" then linewidth=1
+	if action$="recta" then
+		recpenw=1
+		penw_shown=1
+		rectfill_state_1={1}
+	endif
+	if action$="circ" then
+		cirpenw=1
+		penwc_shown=1
+		circfill_state_1={1}
+	endif
+	if Loc_vert_state_1[0]=1 then
+		Loc_vert_state_1[0]=0
+		check_state[0]=Loc_vert_state_1[0]
+		check_label$[0]=Loc_vert_label_1$[0]
+		Loc_vert_state=Loc_vert_state_1[0]
+		call checkbox(Loc_vert_1_elements, Loc_vert_1_locx, Loc_vert_1_locy_top, Loc_vert_1_locy_bot)
+	endif
+	if Loc_hori_state_1[0]=1 then
+		Loc_hori_state_1[0]=0
+		check_state[0]=Loc_hori_state_1[0]
+		check_label$[0]=Loc_hori_label_1$[0]
+		Loc_hori_state=Loc_hori_state_1[0]
+		call checkbox(Loc_hori_1_elements, Loc_hori_1_locx, Loc_hori_1_locy_top, Loc_hori_1_locy_bot)
+	endif
+	if Mir_vert_state_1[0]=1 then
+		Mir_vert_state_1[0]=0
+		check_state[0]=Mir_vert_state_1[0]
+		check_label$[0]=Mir_vert_label_1$[0]
+		Mir_vert_state=Mir_vert_state_1[0]
+		call checkbox(Mir_vert_1_elements, Mir_vert_1_locx, Mir_vert_1_locy_top, Mir_vert_1_locy_bot)
+	endif
+	if Mir_hori_state_1[0]=1 then
+		Mir_hori_state_1[0]=0
+		check_state[0]=Mir_hori_state_1[0]
+		check_label$[0]=Mir_hori_label_1$[0]
+		Mir_hori_state=Mir_hori_state_1[0]
+		call checkbox(Mir_hori_1_elements, Mir_hori_1_locx, Mir_hori_1_locy_top, Mir_hori_1_locy_bot)
+	endif
+	sw_clicked=1
+	return
+end while
+while mouseb>0 and  mousex<49 and mousex> 6 and mousey> 28  and mousey<67
+	#top new command button row
+	call button (6,28,43,39,"New",8,10,11,2)
+	font "Tahoma",14,100
+	text size_x/2-60,size_y/2-15,"Please wait"
+	refresh
+	linewidth=1
+	recpenw=1
+	penw_shown=1
+	cirpenw=1
+	penwc_shown=1
+	rectfill_state_1={1}
+	circfill_state_1={1}
+	Mir_vert_state_1[0]=0
+	Mir_hori_state_1[0]=0
+	gosub draw_interface
+	call button (8,109,32,32," ",8,10,11,1)
+	gosub drawpencil
+	gosub options_pencil
+	action$="pencil"
+	linewidth=1
+	color black
+	colorid=-16777216
+	rect draw2_locx,draw2_locy,draw2_width,draw2_height
+	refresh
+	gosub saveundo
+	a=2
+	sw_clicked=1
+	return
+end while
+while mouseb>0 and  mousex>48 and mousex< 93 and mousey> 67  and mousey<106
+	#quit command button
+	call button (49,68,43,39,"Quit",8,6,11,2)
+	a=2
+	gosub alldone
+	end
+end while
+while mouseb>0 and  mousex<49 and mousex> 6 and mousey> 67  and mousey<106
+	#save command button
+	call button (6,68,43,39,"Save",8,6,11,2)
+	a=2
+	sw_title=1
+	oldcolorid=colorid
+	gosub savequit
+	colorid=oldcolorid
+	color grey
+	font "Tahoma",14,100
+	text size_x/2-70,size_y/2-15,"Image saved as"
+	font "Tahoma",14,100
+	text size_x/2-140,size_y/2+15,"MyBasicPainting-"+timestamp$+".png"
+	refresh
+	pause 2
+	imgload size_x/2,size_y/2,"bpaintundo.png"
+	spriteshow 2
+	if action$="spray" then
+		spriteshow 1
+		spriteshow 0
+	endif
+	refresh
+	color colorid
+end while
+return
+#*******************************************************
+# Displays canvas-relative mouse position in the
+# status area (bottom-right corner of the window).
+# Uses: mousex, mousey, can_left, can_top
+showcoords:
+color grey
+rect size_x-70,size_y-25,60,18
+color black
+font "Tahoma",8,100
+sc_cx = mousex - can_left - 1
+sc_cy = mousey - can_top  - 1
+if sc_cx < 0 then sc_cx = 0
+if sc_cy < 0 then sc_cy = 0
+text size_x-70,size_y-20, sc_cx
+text size_x-40,size_y-20, sc_cy
+return
+
+#*******************************************************
+# Sprite 10 holds the canvas snapshot for undo.
+# canvas_x1/y1 are defined in the startup globals block.
+saveundo:
+spriteslice 10, canvas_x1, canvas_y1, canvas_x2-canvas_x1, canvas_y2-canvas_y1
+sw_undo=1
+return
+
+restoreundo:
+if sw_undo=1 then
+	spriteplace 10, canvas_x1, canvas_y1
+	spriteshow 10
+	refresh
+	spritehide 10
+	sw_undo=0
+endif
+return
+
+#*******************************************************
+# Sets the drawing color from colorid + alpha without
+# baking alpha into colorid (pure RGB stays in colorid).
+applycolor:
+color rgb(rood(colorid), groen(colorid), blauw(colorid), alpha)
+return
+
+#*******************************************************
+# Set clamp_v, clamp_lo, clamp_hi before calling.
+# Result is in clamp_result.
+clampval:
+clamp_result = clamp_v
+if clamp_result < clamp_lo then clamp_result = clamp_lo
+if clamp_result > clamp_hi then clamp_result = clamp_hi
+return
+
+#*******************************************************
+# mirrorline:   set ml_x1, ml_y1, ml_x2, ml_y2
+# mirrorcircle: set mc_cx, mc_cy, mc_r
+# mirrorrect:   set mr_x, mr_y, mr_w, mr_h
+#
+# Each draws the primary primitive and up to 3 mirror
+# copies depending on the active mirror flags.
+# Applied to: circ final draw, recta final draw, lineseg, polyline.
+# NOT applied to: pencil, bezier
+mirrorline:
+line ml_x1, ml_y1, ml_x2, ml_y2
+if Mir_vert_state_1[0]=1 then
+	line mir_xoff-ml_x1, ml_y1, mir_xoff-ml_x2, ml_y2
+endif
+if Mir_hori_state_1[0]=1 then
+	line ml_x1, mir_yoff-ml_y1, ml_x2, mir_yoff-ml_y2
+endif
+if Mir_vert_state_1[0]=1 and Mir_hori_state_1[0]=1 then
+	line mir_xoff-ml_x1, mir_yoff-ml_y1, mir_xoff-ml_x2, mir_yoff-ml_y2
+endif
+return
+
+mirrorcircle:
+circle mc_cx, mc_cy, mc_r
+if Mir_vert_state_1[0]=1 then
+	circle mir_xoff-mc_cx, mc_cy, mc_r
+endif
+if Mir_hori_state_1[0]=1 then
+	circle mc_cx, mir_yoff-mc_cy, mc_r
+endif
+if Mir_vert_state_1[0]=1 and Mir_hori_state_1[0]=1 then
+	circle mir_xoff-mc_cx, mir_yoff-mc_cy, mc_r
+endif
+return
+
+mirrorrect:
+rect mr_x, mr_y, mr_w, mr_h
+if Mir_vert_state_1[0]=1 then
+	rect mir_xoff-mr_x-mr_w, mr_y, mr_w, mr_h
+endif
+if Mir_hori_state_1[0]=1 then
+	rect mr_x, mir_yoff-mr_y-mr_h, mr_w, mr_h
+endif
+if Mir_vert_state_1[0]=1 and Mir_hori_state_1[0]=1 then
+	rect mir_xoff-mr_x-mr_w, mir_yoff-mr_y-mr_h, mr_w, mr_h
+endif
+return
+
+#*******************************************************
+# Draws a rubber-band rectangle outline: saves edge
+# strips, draws the outline, refreshes, restores.
+rubberband_rect:
+rb_w = rb_x2 - rb_x1
+rb_h = rb_y2 - rb_y1
+if rb_w < 2 then rb_w = 2
+if rb_h < 2 then rb_h = 2
+# Save the four edge strips
+rbt$ = getslice(rb_x1, rb_y1,   rb_w, 2)
+rbb$ = getslice(rb_x1, rb_y2-1, rb_w, 2)
+rbl$ = getslice(rb_x1, rb_y1,   2, rb_h)
+rbr$ = getslice(rb_x2-1, rb_y1, 2, rb_h)
+# Draw the outline
+line rb_x1, rb_y1, rb_x2, rb_y1
+line rb_x1, rb_y2, rb_x2, rb_y2
+line rb_x1, rb_y1, rb_x1, rb_y2
+line rb_x2, rb_y1, rb_x2, rb_y2
+refresh
+# Restore the edge strips
+putslice rb_x1,   rb_y1,   rbt$
+putslice rb_x1,   rb_y2-1, rbb$
+putslice rb_x1,   rb_y1,   rbl$
+putslice rb_x2-1, rb_y1,   rbr$
+return
+
+function alpha(hexcol)
+	alpha = int(((hexcol/256)/256)/256)%256
+end function
+function rood(hexcol)
+	rood = (hexcol & 0xff0000) \ 0x10000
+end function
+function groen(hexcol)
+	groen = (hexcol & 0xff00) \ 0x100
+end function
+function blauw(hexcol)
+	blauw = (hexcol & 0xff)
+end function

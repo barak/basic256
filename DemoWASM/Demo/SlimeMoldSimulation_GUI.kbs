@@ -309,8 +309,8 @@ width = 1120
 height = 820
 graphsize width, height
 graphvisible(1)
-editvisible(1)
-outputvisible(1)
+editvisible(0)
+outputvisible(0)
 color grey
 rect 0,0,width,height
 return
