@@ -1,0 +1,176 @@
+# testsuite_sort_include section for BASIC256
+
+# Modification History
+# date		programmer	description
+# 20260929	m.vilain	original coding
+
+currentsuite = "sort"
+
+wasbase = getarraybase
+arraybase 0
+
+###################################################
+# one dimensional arrays
+###################################################
+
+a = {5, 3, 9, 1, 7}
+sort a
+call s("sort numbers", implode(a, ","), "1,3,5,7,9")
+
+a = {5, 3, 9, 1, 7}
+sort a, ascending
+call s("sort numbers ascending", implode(a, ","), "1,3,5,7,9")
+
+a = {5, 3, 9, 1, 7}
+sort a, descending
+call s("sort numbers descending", implode(a, ","), "9,7,5,3,1")
+
+a = {2.5, -1, 2, 0.25, 10}
+sort a
+call s("sort integers and decimals together", implode(a, ","), "-1,0.25,2,2.5,10")
+
+a = {"pear", "apple", "fig", "banana"}
+sort a
+call s("sort strings", implode(a, ","), "apple,banana,fig,pear")
+
+a = {"pear", "apple", "fig", "banana"}
+sort a[], descending
+call s("sort strings descending, written a[]", implode(a, ","), "pear,fig,banana,apple")
+
+# upper case letters come before lower case ones unless case is ignored
+a = {"banana", "Cherry", "apple"}
+sort a
+call s("sort strings case sensitive", implode(a, ","), "Cherry,apple,banana")
+
+a = {"banana", "Cherry", "apple"}
+sort a, ignorecase
+call s("sort strings ignorecase", implode(a, ","), "apple,banana,Cherry")
+
+a = {"banana", "Cherry", "apple"}
+sort a, ignorecase, descending
+call s("sort ignorecase, descending (any order)", implode(a, ","), "Cherry,banana,apple")
+
+# numbers always come before strings, and the other way round descending
+a = {"10", 3, "abc", 20, "b", 0}
+sort a
+call s("sort mixed numbers and strings", implode(a, ","), "0,3,20,10,abc,b")
+
+a = {"10", 3, "abc", 20, "b", 0}
+sort a, descending
+call s("sort mixed descending", implode(a, ","), "b,abc,10,20,3,0")
+
+# unassigned elements go last, ascending or descending
+dim a(4)
+a[0] = 3 : a[1] = 1 : a[3] = 2
+unassign a[2]
+sort a
+call s("sort unassigned last", a[0] + "," + a[1] + "," + a[2], "1,2,3")
+call boolean("sort unassigned element moved to the end", not assigned(a[3]))
+
+dim a(4)
+a[0] = 3 : a[1] = 1 : a[3] = 2
+unassign a[2]
+sort a, descending
+call s("sort descending unassigned last", a[0] + "," + a[1] + "," + a[2], "3,2,1")
+call boolean("sort descending unassigned element at the end", not assigned(a[3]))
+
+a = {42}
+sort a
+call s("sort one element", implode(a, ","), "42")
+
+# the keywords are case insensitive, like every other
+a = {1, 3, 2}
+SORT a, DESCENDING
+call s("SORT upper case", implode(a, ","), "3,2,1")
+
+###################################################
+# two dimensional arrays - rows move as a whole
+###################################################
+
+dim t(4, 2)
+t[0,0] = "Wilma" : t[0,1] = 30
+t[1,0] = "Fred"  : t[1,1] = 35
+t[2,0] = "Betty" : t[2,1] = 30
+t[3,0] = "Barney": t[3,1] = 32
+
+sort t
+call s("sort 2D by first column", t[0,0] + t[1,0] + t[2,0] + t[3,0], "BarneyBettyFredWilma")
+call s("sort 2D rows stay together", t[0,1] + "," + t[1,1] + "," + t[2,1] + "," + t[3,1], "32,30,35,30")
+
+sort t, 1
+call s("sort 2D by column 1 is stable", t[0,0] + t[1,0] + t[2,0] + t[3,0], "BettyWilmaBarneyFred")
+
+sort t, 1, descending
+call s("sort 2D by column 1 descending is stable", t[0,0] + t[1,0] + t[2,0] + t[3,0], "FredBarneyBettyWilma")
+
+# two keys: sort on the second key first, then on the first key
+sort t, 0, descending
+sort t, 1
+call s("sort 2D on two keys", t[0,0] + t[1,0] + t[2,0] + t[3,0], "WilmaBettyBarneyFred")
+
+# the column counts from the array base
+arraybase 1
+dim u(3, 2)
+u[1,1] = "c" : u[1,2] = 1
+u[2,1] = "a" : u[2,2] = 3
+u[3,1] = "b" : u[3,2] = 2
+sort u, 2
+call s("sort 2D column with arraybase 1", u[1,1] + u[2,1] + u[3,1], "cba")
+sort u, 1
+call s("sort 2D first column with arraybase 1", u[1,1] + u[2,1] + u[3,1], "abc")
+arraybase 0
+
+# a single column array sorts like a list
+dim v(3, 1)
+v[0,0] = 2 : v[1,0] = 3 : v[2,0] = 1
+sort v, descending
+call s("sort 2D single column", v[0,0] + "," + v[1,0] + "," + v[2,0], "3,2,1")
+
+###################################################
+# arrays passed to a subroutine by reference
+###################################################
+
+subroutine sortsub(x)
+	sort x, descending
+end subroutine
+
+a = {1, 2, 3}
+call sortsub(ref(a))
+call s("sort array passed by reference", implode(a, ","), "3,2,1")
+
+###################################################
+# errors
+###################################################
+
+dim t(2, 2) fill 0
+try
+	sort t, 2
+	call boolean("sort with a column past the end should have raised an error", false)
+catch
+	call n("sort column out of range", lasterror, 15)
+end try
+
+try
+	sort t, -1
+	call boolean("sort with a negative column should have raised an error", false)
+catch
+	call n("sort negative column", lasterror, 15)
+end try
+
+m = {"b"->2, "a"->1}
+try
+	sort m
+	call boolean("sort of a map should have raised an error", false)
+catch
+	call n("sort a map", lasterror, 84)
+end try
+
+x = 5
+try
+	sort x
+	call boolean("sort of a single value should have raised an error", false)
+catch
+	call n("sort a single value", lasterror, 84)
+end try
+
+arraybase wasbase

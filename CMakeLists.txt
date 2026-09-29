@@ -63,6 +63,7 @@ set(SOURCES_CORE
     src/core/FileSecurity.cpp
     src/core/GraphicsBuffer.cpp
     src/core/Interpreter.cpp
+    src/core/Interpreter_arrays.cpp
     src/core/Interpreter_database.cpp
     src/core/Interpreter_files.cpp
     src/core/Interpreter_graphics.cpp

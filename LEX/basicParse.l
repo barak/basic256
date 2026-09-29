@@ -144,6 +144,7 @@ alert [Aa][Ll][Ee][Rr][Tt]
 and [Aa][Nn][Dd]
 arc [Aa][Rr][Cc]
 asc [Aa][Ss][Cc]
+ascending [Aa][Ss][Cc][Ee][Nn][Dd][Ii][Nn][Gg]
 arraybase [Aa][Rr][Rr][Aa][Yy][ \t]*[Bb][Aa][Ss][Ee]
 asin [Aa][Ss][Ii][Nn]
 assigned [Aa][Ss][Ss][Ii][Gg][Nn][Ee][Dd]
@@ -194,6 +195,7 @@ dbrow [Dd][Bb][Rr][Oo][Ww]
 dbstring [Dd][Bb][Ss][Tt][Rr][Ii][Nn][Gg]
 debuginfo [Dd][Ee][Bb][Uu][Gg][Ii][Nn][Ff][Oo]
 degrees [Dd][Ee][Gg][Rr][Ee][Ee][Ss]
+descending [Dd][Ee][Ss][Cc][Ee][Nn][Dd][Ii][Nn][Gg]
 dim [Dd][Ii][Mm]
 dir [Dd][Ii][Rr]
 dot [Dd][Oo][Tt]
@@ -364,6 +366,7 @@ green [Gg][Rr][Ee][Ee][Nn]
 hour [Hh][Oo][Uu][Rr]
 hsv [Hh][Ss][Vv]
 if [Ii][Ff]
+ignorecase [Ii][Gg][Nn][Oo][Rr][Ee][Cc][Aa][Ss][Ee]
 in [Ii][Nn]
 imageautocrop [Ii][Mm][Aa][Gg][Ee][Aa][Uu][Tt][Oo][Cc][Rr][Oo][Pp]
 imagecentered [Ii][Mm][Aa][Gg][Ee][Cc][Ee][Nn][Tt][Ee][Rr][Ee][Dd]
@@ -514,6 +517,7 @@ setgraph [Ss][Ee][Tt][Gg][Rr][Aa][Pp][Hh]
 setsetting [Ss][Ee][Tt][Ss][Ee][Tt][Tt][Ii][Nn][Gg]
 sin [Ss][Ii][Nn]
 size [Ss][Ii][Zz][Ee]
+sort [Ss][Oo][Rr][Tt]
 slice_all [Ss][Ll][Ii][Cc][Ee]_[Aa][Ll][Ll]
 slice_paint [Ss][Ll][Ii][Cc][Ee]_[Pp][Aa][Ii][Nn][Tt]
 slice_sprite [Ss][Ll][Ii][Cc][Ee]_[Ss][Pp][Rr][Ii][Tt][Ee]
@@ -701,6 +705,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {arc}						{ count(); return B256ARC; }
 {arraybase}					{ count(); return B256ARRAYBASE; }
 {asc}						{ count(); return B256ASC; }
+{ascending}					{ count(); return B256ASCENDING; }
 {assigned}					{ count(); return B256ASSIGNED; }
 {asin}						{ count(); return B256ASIN; }
 {atan}						{ count(); return B256ATAN; }
@@ -1065,6 +1070,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {dbexecute}					{ count(); return B256DBEXECUTE; }
 {dbopenset}					{ count(); return B256DBOPENSET; }
 {dbopen}					{ count(); return B256DBOPEN; }
+{descending}				{ count(); return B256DESCENDING; }
 {dim}						{ count(); return B256DIM; }
 {do}						{ count(); return B256DO; }
 {do}":"						{ count(); unputcolon(); return B256DO; }
@@ -1108,6 +1114,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {graphvisible}				{ count(); return B256GRAPHVISIBLE; }
 {graphtoolbarvisible}		{ count(); return B256GRAPHTOOLBARVISIBLE; }
 {if}						{ count(); return B256IF; }
+{ignorecase}				{ count(); return B256IGNORECASE; }
 {in}						{ count(); return B256IN; }
 {imageautocrop}					{ count(); return B256IMAGEAUTOCROP; }
 {imagecentered}					{ count(); return B256IMAGECENTERED; }
@@ -1209,6 +1216,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {soundwait}":"					{ count(); unputcolon(); return B256SOUNDWAIT; }
 {soundwaveform}					{ count(); return B256SOUNDWAVEFORM; }
 {sound}						{ count(); return B256SOUND; }
+{sort}						{ count(); return B256SORT; }
 {spritedim}					{ count(); return B256SPRITEDIM; }
 {spritehide}				{ count(); return B256SPRITEHIDE; }
 {spriteload}				{ count(); return B256SPRITELOAD; }

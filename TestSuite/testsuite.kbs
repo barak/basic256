@@ -365,6 +365,12 @@ call section("Array index base (arraybase 0/1)")
 ###################################################
 include "testsuite_arraybase_include.kbs"
 
+section_sort:
+###################################################
+call section("SORT")
+###################################################
+include "testsuite_sort_include.kbs"
+
 map_base:
 ###################################################
 call section("Map")

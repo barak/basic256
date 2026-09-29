@@ -120,6 +120,18 @@
 	unsigned int argstype[100];
 	int numargs = 0;
 
+	// SORT: the array being sorted and the options seen so far.  The option
+	// words are collected here and pushed as one number when the statement
+	// ends, so they can be written in any order and a clash is a compile
+	// error.  Bits 1-4 are what OP_SORT reads; SORTFLAG_ASCENDING only
+	// records that the word was written.
+	#define SORTFLAG_DESCENDING 1
+	#define SORTFLAG_IGNORECASE 2
+	#define SORTFLAG_COLUMN 4
+	#define SORTFLAG_ASCENDING 8
+	int sortvar;
+	int sortflags;
+
 	#define ARGSTYPEVALUE 0
         #define ARGSTYPEVARARRAY 1
 
@@ -429,6 +441,7 @@
 %token B256ARC
 %token B256ARRAYBASE
 %token B256ASC
+%token B256ASCENDING
 %token B256ASIN
 %token B256ASSIGNED
 %token B256ATAN
@@ -489,6 +502,7 @@
 %token B256DBSTRING
 %token B256DEBUGINFO
 %token B256DEGREES
+%token B256DESCENDING
 %token B256DIM
 %token B256DIR
 %token B256DIVEQUAL
@@ -681,6 +695,7 @@
 %token B256IMAGETYPE_JPG
 %token B256IMAGETYPE_PNG
 %token B256IMAGEWIDTH
+%token B256IGNORECASE
 %token B256IMGLOAD
 %token B256IMGSAVE
 %token B256IMPLODE
@@ -818,6 +833,7 @@
 %token B256SLICE_ALL
 %token B256SLICE_PAINT
 %token B256SLICE_SPRITE
+%token B256SORT
 %token B256SOUND
 %token B256SOUNDENVELOPE
 %token B256SOUNDFADE
@@ -2594,6 +2610,7 @@ statement:
 	| setclipboardimagestmt
 	| setclipboardstringstmt
 	| setsettingstmt
+	| sortstmt
 	| soundstmt
 	| soundpausestmt
 	| soundplayeroffstmt
@@ -4481,6 +4498,66 @@ outputtoolbarvisiblestmt:
 maximizestmt:
 			B256MAXIMIZE expr {
 				addOp(OP_MAXIMIZE);
+			}
+			;
+
+// SORT array [, column] [, ascending | descending] [, ignorecase]
+// The column (a 2D array's sort key) is pushed first, or a 0 when there is
+// none, and then the option flags - see SORTFLAG_* above.
+sortstmt:
+			sortstart {
+				addIntOp(OP_PUSHINT, 0);
+				addIntOp(OP_PUSHINT, sortflags);
+				addIntOp(OP_SORT, sortvar);
+			}
+			| sortstart ',' expr {
+				addIntOp(OP_PUSHINT, sortflags | SORTFLAG_COLUMN);
+				addIntOp(OP_SORT, sortvar);
+			}
+			| sortstart ',' sortoptions {
+				addIntOp(OP_PUSHINT, 0);
+				addIntOp(OP_PUSHINT, sortflags);
+				addIntOp(OP_SORT, sortvar);
+			}
+			| sortstart ',' expr ',' sortoptions {
+				addIntOp(OP_PUSHINT, sortflags | SORTFLAG_COLUMN);
+				addIntOp(OP_SORT, sortvar);
+			}
+			;
+
+sortstart:
+			B256SORT variable_a {
+				sortvar = varnumber[--nvarnumber];
+				sortflags = 0;
+			}
+			;
+
+sortoptions:
+			sortoption
+			| sortoptions ',' sortoption
+			;
+
+sortoption:
+			B256ASCENDING {
+				if (sortflags & (SORTFLAG_ASCENDING | SORTFLAG_DESCENDING)) {
+					errorcode = COMPERR_SORTOPTION;
+					return -1;
+				}
+				sortflags |= SORTFLAG_ASCENDING;
+			}
+			| B256DESCENDING {
+				if (sortflags & (SORTFLAG_ASCENDING | SORTFLAG_DESCENDING)) {
+					errorcode = COMPERR_SORTOPTION;
+					return -1;
+				}
+				sortflags |= SORTFLAG_DESCENDING;
+			}
+			| B256IGNORECASE {
+				if (sortflags & SORTFLAG_IGNORECASE) {
+					errorcode = COMPERR_SORTOPTION;
+					return -1;
+				}
+				sortflags |= SORTFLAG_IGNORECASE;
 			}
 			;
 			

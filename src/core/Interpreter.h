@@ -329,6 +329,7 @@ class Interpreter : public QThread
 		// an array is read as a matrix and what the element arithmetic does.
 		void matStatement(int, int, DataElement *, int, DataElement *, int);
 		// Opcodes execByteCode() hands on, one group per Interpreter_<group>.cpp
+		void execArrayOp(int opcode, int i);
 		void execFileOp(int opcode);
 		void execSoundOp(int opcode);
 		void execGraphicsOp(int opcode);

@@ -331,6 +331,7 @@ QString Interpreter::opname(int op) {
 	case OP_SETSETTING : return QString("OP_SETSETTING");
 	case OP_SIN : return QString("OP_SIN");
 	case OP_SIZE : return QString("OP_SIZE");
+	case OP_SORT : return QString("OP_SORT");
 	case OP_SOUND : return QString("OP_SOUND");
 	case OP_SOUNDENVELOPE : return QString("OP_SOUNDENVELOPE");
 	case OP_SOUNDFADE : return QString("OP_SOUNDFADE");
@@ -1146,6 +1147,9 @@ int Interpreter::compileProgram(char *code) {
 				break;
 			case COMPERR_NUMBERTOOLARGE:
 				msg += tr("Number too large");
+				break;
+			case COMPERR_SORTOPTION:
+				msg += tr("SORT option repeated, or both ASCENDING and DESCENDING given");
 				break;
 
 			default:
@@ -2260,6 +2264,11 @@ fprintf(stderr,"in foreach map %d\n", d->map->data.size());
 					watchvariable(debugMode, i);
 					delete left;
 				}
+				break;
+
+				// Arrays: the work is done in Interpreter_arrays.cpp
+				case OP_SORT:
+					execArrayOp(opcode, i);
 				break;
 
 				case OP_ARR_UN: {

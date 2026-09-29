@@ -137,6 +137,11 @@ call section("Array index base (arraybase 0/1)")
 include "testsuite_arraybase_include.kbs"
 
 ###################################################
+call section("SORT")
+###################################################
+include "testsuite_sort_include.kbs"
+
+###################################################
 call section("Map")
 ###################################################
 include "testsuite_map_include.kbs"

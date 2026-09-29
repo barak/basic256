@@ -77,6 +77,7 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "arc"								//arc
 			<< "array[ \t]*base"
 			<< "asc"								//asc
+			<< "ascending"
 			<< "assigned"
 			<< "asin"								//asin
 			<< "atan"								//atan
@@ -120,6 +121,7 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "dbstring"							//dbstring
 			<< "debuginfo"							//debuginfo
 			<< "degrees"							//degrees
+			<< "descending"
 			<< "dim"								//dim
 			<< "dir"								//dir
 			<< "dot"								//dot
@@ -178,6 +180,7 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "hour"								//hour
 			<< "hsv"								//hsv
 			<< "if"									//if
+			<< "ignorecase"
 			<< "in"
 			<< "imageautocrop"						//imageautocrop
 			<< "imagecentered"						//imagecentered
@@ -310,6 +313,7 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "setsetting"							//setsetting
 			<< "sin"								//sin
 			<< "size"								//size
+			<< "sort"
 			<< "sound"								//sound
 			<< "soundenvelope"                      //soundenvelope
 			<< "soundfade"                      	//soundfade
