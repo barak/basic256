@@ -59,7 +59,7 @@ benchscale = 1.0
 
 Turn it down on a slow machine (a Raspberry Pi, say) and up on a very fast one.
 It changes how many times each section repeats, never what a section measures:
-the matrix sizes, the sort length and the recursion depth are fixed whatever
+the matrix sizes, the sort lengths and the recursion depth are fixed whatever
 the scale.
 
 Two more things worth knowing before reading too much into a number:
@@ -74,7 +74,8 @@ Two more things worth knowing before reading too much into a number:
 
 Loops (`for`/`next` and `while`), integer and floating point arithmetic,
 modulo, `sin`/`cos`/`sqr`, function calls, subroutine calls, recursion,
-one- and two-dimensional array reads and writes, an insertion sort, `MAT`
+one- and two-dimensional array reads and writes, an insertion sort, the
+`SORT` statement on numbers, strings and a two-dimensional table, `MAT`
 add/transpose/multiply/invert, the `DOT`/`CROSS`/`NORM`/`UNIT` vector
 operators, string concatenation, search, replace, slicing, case conversion and
 number conversion, map insert and lookup, `NOISE` in one and two dimensions,

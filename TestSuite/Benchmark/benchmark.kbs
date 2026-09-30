@@ -267,6 +267,48 @@ for benchk = 1 to benchsortsize - 1
 next benchk
 call record("insertion sort (" + benchsortsize + " elements)", benchsortsize, msec - benchstart)
 
+# The SORT statement, against the same kind of data. It is far quicker than
+# the insertion sort above, so it is given more elements and repeated. Each
+# pass copies the unsorted array back first -- sorting an already sorted array
+# is a different, easier job -- and that whole-array copy is part of the time;
+# it is small beside the sort itself. The sizes are fixed like the one above.
+benchsortn = 20000
+dim benchsortsrc(benchsortn)
+dim benchsortsrc$(benchsortn)
+dim benchsorttab(benchsortn, 3)
+seed 20260930
+for benchk = 0 to benchsortn - 1
+   benchsortsrc[benchk] = rand
+   benchsortsrc$[benchk] = "item" + int(rand * 1000000)
+   benchsorttab[benchk, 0] = benchk
+   benchsorttab[benchk, 1] = rand
+   benchsorttab[benchk, 2] = int(rand * 100)
+next benchk
+
+benchn = reps(20 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   benchsortwork = benchsortsrc
+   sort benchsortwork
+next benchk
+call record("SORT numbers (" + benchsortn + " elements)", benchn * benchsortn, msec - benchstart)
+
+benchn = reps(20 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   benchsortwork$ = benchsortsrc$
+   sort benchsortwork$
+next benchk
+call record("SORT strings (" + benchsortn + " elements)", benchn * benchsortn, msec - benchstart)
+
+benchn = reps(20 * benchscale)
+benchstart = msec
+for benchk = 1 to benchn
+   benchsortwork = benchsorttab
+   sort benchsortwork, 1
+next benchk
+call record("SORT 2D by column (" + benchsortn + "x3)", benchn * benchsortn, msec - benchstart)
+
 ###################################################
 # MAT and vectors
 ###################################################
