@@ -96,66 +96,66 @@ The browser runs inside a sandbox, so some desktop features are unavailable:
 
 ### BASIC256 2.3.0
 
-### 🔒 Security & Filesystem
+#### 🔒 Security & Filesystem
 - **File Access Prompts:** Accessing files/folders outside the program's root directory now triggers a user confirmation prompt (`OPEN`, `KILL`, `MKDIR`, `IMGSAVE`, `DBOPEN`, SQL targets, etc.).
 - **Loopback Network Default:** `NETLISTEN` now listens exclusively on `127.0.0.1` by default. Network access can be enabled in *Preferences/Advanced*.
 - **Directory Commands:** `MKDIR` restored (works without `SYSTEM`). `RMDIR` has been permanently removed for safety.
 
-### 💻 Text & Console Enhancements
+#### 💻 Text & Console Enhancements
 - **`TEXTSCREEN` Added:** Convert the Text Output window into a true grid-based character screen with fixed dimensions and optional square cells (`TEXTSCREEN cols, rows [, square]`).
 - **Console Controls:** `LOCATE` positions the cursor for in-place overwriting. Added `TEXTCOLOR`, `TEXTBACKGROUND`, `TEXTFONT`, and `TEXTCHAR()`.
 
-### 🎨 Graphics & Audio
+#### 🎨 Graphics & Audio
 - **Color & Sprites:** Added `HSV(h, s, v [, a])` color function, 3D Noise support via `NOISE(x, y, z)`, and `SPRITETEXT` to render text directly onto sprites.
 - **Sprite Scaling:** `SPRITEW` and `SPRITEH` now accurately report transformed dimensions.
 - **Coordinate Mapping:** `IMGLOAD`, `GETSLICE`, and `PUTSLICE` now respect custom `WINDOW` coordinates.
 
-### ⚙️ Language & Core Fixes
+#### ⚙️ Language & Core Fixes
 - **Array Sorting:** New built-in `SORT` statement for 1D and 2D arrays (`SORT array [, col] [, ASCENDING|DESCENDING] [, IGNORECASE]`).
 - **Subroutine Pass-by-Reference Fix:** Subroutines declaring `ref()` parameters now correctly modify the caller's target variable passed without an explicit `ref()` wrapper.
 - **Syntax Improvements:** Fixed an issue where statements without arguments followed by a colon (e.g., `NEXT:`, `CLS:`) were misidentified as labels.
 
-### 📦 Platform & Suite Updates
+#### 📦 Platform & Suite Updates
 - **Raspberry Pi:** Fixed missing SQLite driver error for `DBOPEN`. Added `TestSuite` and `Benchmark` to Pi archives.
 - **Benchmarking & Examples:** Added `TestSuite/Benchmark` utility and a new SQLite console demo (`Examples/DataBase/GamesDB.kbs`). 
 
-### 🌐 Homepage Enhancements
+#### 🌐 Homepage Enhancements
 * **Gallery Page** There is now a Gallery page on basic256.org where you can run the examples directly in a pop-up Browser window.
 
 ### BASIC256 2.2.0
 
-### ⚡ Performance & Memory
+#### ⚡ Performance & Memory
 - **Execution Speedup:** Overall execution is 20–25% faster due to optimized runtime value handling across arithmetic, drawing, and array operations.
 - **Array Optimization:** Arrays use ~50% less memory. Whole-array operations (`DIM`, `REDIM`, array copying, `MAT` statements) run 3–5x faster.
 
-### 📐 New Features & Math Operators
+#### 📐 New Features & Math Operators
 - **Vector Operators:** Added `DOT`, `CROSS`, `NORM(v)`, and `UNIT(v)` for vector arithmetic on standard 1D/2D arrays.
 - **Matrix Operators:** New `MAT` statement adds following matrix operations: `MUL`, `ADD`, `SUB`, `INV` and `TRN`.
 - **Turtle Graphics Module:** Added `Modules/turtle.kbs` (`INCLUDE "turtle.kbs"`) for turtle-style relative drawing (`t_forward`, `t_left`, `t_goto`, etc.).
 - **`FRAMERATE` Control:** New `FRAMERATE fps` statement locks drawing loops to a target frame rate (e.g., `FRAMERATE 60`), automatically adjusting for system speed differences.
 - **OpenSimplex noise:** Added `NOISE` for smooth, repeatable OpenSimplex noise (ideal for terrain, clouds, and paths). Tied to `SEED` for deterministic output.
 
-### ⚙️ Core Enhancements & Fixes
+#### ⚙️ Core Enhancements & Fixes
 - **Unlimited File Size:** Removed the ~5,000-line program length limit (including `INCLUDE` files).
 - **Improved `PAUSE`:** Accurate millisecond-level precision across all platforms; instantly interruptible by clicking Stop.
 - **Syntax Adjustments:** `MOD` is now a case-insensitive keyword (reserved word).
 
-### 🎨 Custom Coordinates & Rendering
+#### 🎨 Custom Coordinates & Rendering
 * **`WINDOW` Statement:** Set custom coordinate systems and axis orientations (`WINDOW x1, y1, x2, y2`), with middle-point centering or graph paper orientation. `MOUSEX`, `MOUSEY`, `PIXEL`, etc. adapt automatically.
 * **Subpixel Drawing:** Graphics statements (`PLOT`, `LINE`, `CIRCLE`, `RECT`, `TEXT`, etc.) now accept fractional coordinates for precision positioning.
 
-### ⚙️ Code Readability
+#### ⚙️ Code Readability
 * **Multi-line Literals:** Array and map literals (`{ ... }`) can now span multiple lines with inline comments (`#`), allowing clean table and matrix layouts.
 
 ### BASIC256 2.1.1
 
-### ⚡ Performance Improvements
+#### ⚡ Performance Improvements
 * **Faster Execution:** Arithmetic-heavy loops run roughly 2x faster due to internal memory reuse for intermediate values and reduced interpreter step overhead. Gains are highest in the WASM/browser build.
 
-### 🌐 Browser (WASM) Enhancements
+#### 🌐 Browser (WASM) Enhancements
 * **Session Persistence:** Editor state, open tabs, active selection, and file names now auto-persist in the browser across tab closes, page refreshes, or browser restarts.
 
-### 🪟 Windows & UI Fixes
+#### 🪟 Windows & UI Fixes
 * **Windows 11 Scaling:** Menu bar titles (`File`, `Edit`, `View`, etc.) now properly scale and adjust spacing based on system text size settings.
 * **Streamlined Windows Installer:** Removed the redundant standalone Microsoft VC++ Redistributable installer file (still bundled within the main installer when needed).
 * **Updated Links:** Updated *Help/About* to include the main site (`https://basic256.org`) alongside the documentation portal.
@@ -164,21 +164,21 @@ The browser runs inside a sandbox, so some desktop features are unavailable:
 
 > **Major Update:** BASIC-256 has migrated to **Qt 6**, enabling WebAssembly (WASM) browser execution, modern UI features, and relicensing to **GPL v3 or later**.
 
-### 🖥️ IDE & Modernization
+#### 🖥️ IDE & Modernization
 * **Qt 6 & WASM Support:** Ported codebase to Qt 6 and CMake. You can now run BASIC-256 directly in a web browser!
 * **UI Themes & Layout:** Added **Light**, **Dark**, and **Follow System** themes (*View/Theme*). Window maximizing and docking now preserve balanced pane proportions.
 * **New `MAXIMIZE` Statement:** Programmatically maximize (`MAXIMIZE 1`) or restore (`MAXIMIZE 0`) the IDE window.
 * **Mascot & Visuals:** Introduced new program logo, transparent app icons across all platforms, and the **BitBot** mascot.
 * **Built-in Modules:** `INCLUDE` statements now directly access bundled libraries (e.g., `include "math.kbs"`) in the browser.
 
-### 🌐 WebAssembly (WASM) & Mobile
+#### 🌐 WebAssembly (WASM) & Mobile
 * **Mobile Audio & Touch:** Full audio/speech support on iPad/iPhone and touch-driven interaction for browser demos.
 
-### 💻 CLI & macOS
+#### 💻 CLI & macOS
 * **New CLI Flags:** `-f` (fullscreen run), `-s` (silent mode with suppressed screen output for background processing/testing), and `-g` (shows graphics pane only).
 * **macOS Sequoia:** Added official Intel macOS support (requires macOS 15+).
 
-### 📚 Documentation & Help
+#### 📚 Documentation & Help
 * **New Documentation Portal:** Replaced legacy docs with a modern Docusaurus site at `doc.basic256.org` (accessible via `F1` or *Help/Online Help*).
 * **Documented Features:** Added docs for `ELLIPSE`, `SETGRAPH`, `GETARRAYBASE`, optional `LET`, bit-shifts (`<<`, `>>`), and compound assignments (`&=`, `;=`).
 
