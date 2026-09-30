@@ -246,7 +246,7 @@ it manually from:$\nhttps://aka.ms/vs/17/release/vc_redist.x64.exe"
  Section "Test Suite"
      SectionIn 1
      SetOutPath $INSTDIR
-     File /r /x ".svn" /x "Basic256" TestSuite
+     File /r /x ".svn" /x "Basic256" /x "filegatesub" TestSuite
  SectionEnd
 
  ;---------------------------------

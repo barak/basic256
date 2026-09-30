@@ -147,5 +147,9 @@ sudo find / -iname "*texttospeech*" -not -path "*/proc/*" 2>/dev/null || echo "(
         fi
 
         cp -r Examples Basic256/
+        # the MKDIR test leaves an empty filegatesub behind whenever the
+        # TestSuite has been run in this checkout
+        rm -rf TestSuite/filegatesub
+        cp -r TestSuite Basic256/
         # Bundled module library, beside the binary so include "math.kbs" resolves
         cp -r Modules Basic256/

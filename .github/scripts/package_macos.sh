@@ -51,6 +51,9 @@ cp -r Examples/* "${APP_BUNDLE}/Contents/MacOS/Examples/"
 # Move the app bundle and copy your documentation/tests next to it
 mv "${APP_BUNDLE}" "${DIST_DIR}/"
 cp -r Examples "${DIST_DIR}/"
+# the TestSuite has just run here and its MKDIR test leaves an empty
+# filegatesub behind, which it has no way to remove
+rm -rf TestSuite/filegatesub
 cp -r TestSuite "${DIST_DIR}/"
 cp README.md "${DIST_DIR}/"
 cp Basic256-IDE.png Basic256-CLI.png Basic256-Web.png Basic256-Web_GraphicsOnly.png "${DIST_DIR}/"
