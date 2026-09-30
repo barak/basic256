@@ -134,6 +134,106 @@
 
 	#define ARGSTYPEVALUE 0
         #define ARGSTYPEVARARRAY 1
+	#define ARGSTYPEREF 2
+
+	// ref() parameters.  A parameter declared ref(x) has to receive the
+	// caller's variable itself, which is what OP_VAR_REF pushes - but the call
+	// may be compiled before the FUNCTION or SUBROUTINE it calls, so the
+	// argument is compiled as an ordinary value and fixed afterwards:
+	// - every argument of a call records where its code starts
+	//   (callargstart), and an argument that turns out to be nothing but a
+	//   variable, a single OP_VAR_GET, is remembered as a callrefcandidate
+	//   together with the routine called and its position in the call;
+	// - every parameter declared ref() is remembered as a refparam;
+	// - once the whole program is parsed, resolveRefArguments() turns the
+	//   OP_VAR_GET of each candidate that lands on a ref() parameter into
+	//   OP_VAR_REF, exactly the code ref(variable) at the call gives.
+	// Anything else passed to a ref() parameter, such as a[3] or a + 1, still
+	// goes by value, there being no variable to refer to.
+	struct refrecord { int symbol; int position; int offset; };
+	int *callargstart = NULL;			// start of each argument being compiled
+	int ncallargstart = 0, maxcallargstart = 0;
+	int *callargpending = NULL;		// per finished argument: its OP_VAR_GET, or -1
+	int ncallargpending = 0, maxcallargpending = 0;
+	struct refrecord *callrefcandidates = NULL;
+	int ncallrefcandidates = 0, maxcallrefcandidates = 0;
+	struct refrecord *refparams = NULL;	// offset unused
+	int nrefparams = 0, maxrefparams = 0;
+
+	void *growArray(void *p, int *max, int need, size_t size) {
+		if (need > *max) {
+			*max = need + 256;
+			p = realloc(p, *max * size);
+		}
+		return p;
+	}
+
+	void callArgumentStart() {
+		callargstart = growArray(callargstart, &maxcallargstart, ncallargstart + 1, sizeof(int));
+		callargstart[ncallargstart++] = wordOffset;
+	}
+
+	void callArgumentPending(int offset) {
+		callargpending = growArray(callargpending, &maxcallargpending, ncallargpending + 1, sizeof(int));
+		callargpending[ncallargpending++] = offset;
+	}
+
+	void callArgumentEnd() {
+		int start = callargstart[--ncallargstart];
+		callArgumentPending((wordOffset == start + 2 && wordCode[start] == OP_VAR_GET) ? start : -1);
+	}
+
+	// a call to symbol with count arguments has been compiled - its arguments
+	// are the last count pending ones (those of any call nested inside it
+	// were taken off when that call was compiled)
+	void callArguments(int symbol, int count) {
+		int k;
+		if (count > ncallargpending) count = ncallargpending;
+		for (k = 0; k < count; k++) {
+			int offset = callargpending[ncallargpending - count + k];
+			if (offset >= 0) {
+				callrefcandidates = growArray(callrefcandidates, &maxcallrefcandidates, ncallrefcandidates + 1, sizeof(struct refrecord));
+				callrefcandidates[ncallrefcandidates].symbol = symbol;
+				callrefcandidates[ncallrefcandidates].position = k;
+				callrefcandidates[ncallrefcandidates].offset = offset;
+				ncallrefcandidates++;
+			}
+		}
+		ncallargpending -= count;
+	}
+
+	// remember the ref() parameters of the FUNCTION or SUBROUTINE just defined
+	void recordRefParameters(int symbol) {
+		int t;
+		for (t = 0; t < numargs; t++) {
+			if (argstype[t] == ARGSTYPEREF) {
+				refparams = growArray(refparams, &maxrefparams, nrefparams + 1, sizeof(struct refrecord));
+				refparams[nrefparams].symbol = symbol;
+				refparams[nrefparams].position = t;
+				refparams[nrefparams].offset = -1;
+				nrefparams++;
+			}
+		}
+	}
+
+	void resolveRefArguments() {
+		int c, p;
+		for (c = 0; c < ncallrefcandidates; c++) {
+			for (p = 0; p < nrefparams; p++) {
+				if (refparams[p].symbol == callrefcandidates[c].symbol && refparams[p].position == callrefcandidates[c].position) {
+					wordCode[callrefcandidates[c].offset] = OP_VAR_REF;
+					break;
+				}
+			}
+		}
+	}
+
+	void clearRefArguments() {
+		ncallargstart = 0;
+		ncallargpending = 0;
+		ncallrefcandidates = 0;
+		nrefparams = 0;
+	}
 
 	// compiler workings - store in array so that interperter can display all of them
 	int parsewarningtable[PARSEWARNINGTABLESIZE];
@@ -379,6 +479,11 @@
 		free(symtableaddressargs);
 		symtableaddressargs=NULL;
 		maxsymtable = 0;
+		free(callargstart); callargstart = NULL; maxcallargstart = 0;
+		free(callargpending); callargpending = NULL; maxcallargpending = 0;
+		free(callrefcandidates); callrefcandidates = NULL; maxcallrefcandidates = 0;
+		free(refparams); refparams = NULL; maxrefparams = 0;
+		clearRefArguments();
 		maxwordoffset = 0;
 
 		while(include_filenames_counter>0){
@@ -1121,12 +1226,11 @@ functionvariable:
 			//printf("functionvariable %i %i %i\n", args[numargs-1], argstype[numargs-1],numargs);
 		}
 		| B256REF '(' variable_a ')' {
-			// ref(variable) parameter - the caller passes a T_REF (see callexpr's
-			// OP_VAR_REF) so the ordinary OP_VAR_SET / setData stores the reference
-			// and the parameter aliases the caller's variable. The keyword here is
-			// accepted for documentation/symmetry and generates the same code as a
-			// plain value parameter.
-			args[numargs] = varnumber[--nvarnumber]; argstype[numargs] = ARGSTYPEVALUE; numargs++;
+			// ref(variable) parameter - it receives a T_REF, which the ordinary
+			// OP_VAR_SET / setData stores so the parameter aliases the caller's
+			// variable.  The caller pushes one when it writes ref(a), and when it
+			// passes a bare variable resolveRefArguments() makes it push one.
+			args[numargs] = varnumber[--nvarnumber]; argstype[numargs] = ARGSTYPEREF; numargs++;
 		}
 		;
 
@@ -1217,8 +1321,12 @@ callexprlist:
 
 /* USED ONLY IN CALLING Functions and subroutines */
 callexpr:
-	expr
-	| B256REF '(' variable ')' { addIntOp(OP_VAR_REF, varnumber[--nvarnumber]); }
+	callexprstart expr { callArgumentEnd(); }
+	| B256REF '(' variable ')' { addIntOp(OP_VAR_REF, varnumber[--nvarnumber]); callArgumentPending(-1); }
+	;
+
+callexprstart:
+	/* empty */ { callArgumentStart(); }
 	;
 	
 
@@ -1347,6 +1455,7 @@ expr_function:
 		// function call with arguments
 		addIntOp(OP_PUSHINT, listlen); //push number of arguments passed to compare with FUNCTION definition
 		addIntOp(OP_CALLFUNCTION, varnumber[--nvarnumber]);
+		callArguments(varnumber[nvarnumber], listlen);
 		addIntOp(OP_CURRLINE, filenumber * 0x1000000 + linenumber);
 	}
 	| variable '(' ')' {
@@ -3452,6 +3561,7 @@ callstmt:	B256CALL variable '(' ')' {
 			| B256CALL variable '(' callexprlist ')' {
 					addIntOp(OP_PUSHINT, listlen); //push number of arguments passed to compare with SUBROUTINE definition
 					addIntOp(OP_CALLSUBROUTINE, varnumber[--nvarnumber]);
+					callArguments(varnumber[nvarnumber], listlen);
 					addIntOp(OP_CURRLINE, filenumber * 0x1000000 + linenumber);
 			}
 			;
@@ -4735,6 +4845,7 @@ functionstmt:
 				// store the number of the arguments required by FUNCTION
 				// to check if number of arguments passed match definition when is called
 				symtableaddressargs[functionDefSymbol] = numargs;
+				recordRefParameters(functionDefSymbol);
 				//
 				// add the assigns of the function arguments
 				addOp(OP_INCREASERECURSE);
@@ -4779,6 +4890,7 @@ subroutinestmt:
 				// store the number of the arguments required by SUBROUTINE
 				// to check if number of arguments passed match definition when is called
 				symtableaddressargs[subroutineDefSymbol] = numargs;
+				recordRefParameters(subroutineDefSymbol);
 				//
 				// add the assigns of the function arguments
 				addOp(OP_INCREASERECURSE);

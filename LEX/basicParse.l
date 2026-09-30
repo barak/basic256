@@ -77,6 +77,8 @@ extern int parsewarningtablecolumn[];
 extern char *parsewarningcolumnlexingfilename[];
 extern int numparsewarnings;
 
+extern void clearRefArguments();
+extern void resolveRefArguments();
 extern int numargs; //need to be set to 0 when basicParse() start otherwise after a COMPILER_ERROR, the next rul will use the last value
 
 int linenumber;
@@ -1589,6 +1591,7 @@ int basicParse(char *code) {
 	include_filenames_counter = 0;
 	filename = NULL;
 
+	clearRefArguments();
 	bp = yy_scan_string(code);
 	yy_switch_to_buffer(bp);
 	yyparse();
@@ -1611,6 +1614,11 @@ int basicParse(char *code) {
 		linenumber = testIfOnTable(0);
 		errorcode = testIfOnTableError(0);
 	}
+
+	// only now is every FUNCTION and SUBROUTINE known, wherever it was
+	// defined, so only now can a bare variable passed to a ref() parameter
+	// be turned into a reference
+	if (errorcode == COMPERR_NONE) resolveRefArguments();
 
 	return errorcode;
 }
