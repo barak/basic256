@@ -59,25 +59,25 @@ critsize=radio_active
 gosub critterpanel
 gosub programpanel
 for p = 0 to Critmax - 1
-   for z=0 to tailmax-1
-      Critter[p,z]= 0
-   next z
+	for z=0 to tailmax-1
+		Critter[p,z]= 0
+	next z
 next p
 for k = 1 to Critmax-1
-   if Critter[k,0] = 0 then
-      Critter[k,0] = (rand*(size_x-200))+195 #critter loc
-      Critter[k,1]= (rand*(size_y-10))+5
-      Critter[k,2]= (rand-0.5)*critterspeed
-      Critter[k,3]= (rand-0.5)*critterspeed
-      Critter[k,4]= 300
-   end if
+	if Critter[k,0] = 0 then
+		Critter[k,0] = (rand*(size_x-200))+195 #critter loc
+		Critter[k,1]= (rand*(size_y-10))+5
+		Critter[k,2]= (rand-0.5)*critterspeed
+		Critter[k,3]= (rand-0.5)*critterspeed
+		Critter[k,4]= 300
+	end if
 next k
 #Predator setup
 ptailmax=100
 ptail=40 #lenght of tail. 1 segment=4 elements
 Dim Pred(ptailmax)
 for p = 0 to ptailmax - 1
-   Pred[p]= 0
+	Pred[p]= 0
 next p
 predatorspeed=300
 predator_x=0
@@ -91,355 +91,356 @@ sp_range_shown=8
 #***********************************************
 xx=1
 while xx=1
-#Predator Lissajou movement
-maxph1=29
-maxph2=27
-a =maxph1
-b =maxph2
-ratio = a/b
-for ii = 0 to 200 step(2*pi)/predatorspeed
-#check for click event in the widget area
-  while mouseb > 0 and mousex > size_x-200 
-# Start of Click event handlng
-#******************************
-# Check for Active Tab
-    if mousey > tab_locy and mousey < tab_locy+tab_height then
-      if mousex > tab_locx and mousex < tab_locx+tab_width then
-        for i=0 to tab_elements
-          if mousex > tab_locx+(i-1)*tab_width_single and mousex < tab_locx+i*tab_width_single then
-            tab_active=i
-            color grey
-            rect tab_locx+2,tab_locy+tab_height,tab_width-2,tab_range
-            call drawtabs(tab_locx, tab_locy, tab_width, tab_height, tab_elements, tab_active, tab_width_single,tab_range)
-          end if
-        next i
-      end if
-    end if
-#If Active Tab is Predator
-#**************************
-    if tab_active=2 then
-      gosub predatorpanel
-      while mouseb > 0 and mousex > size_x-200
-        if mousey > sl_lenght_y_top and mousey < sl_lenght_y_bot then
-          if mousex > sl_lenght_x_top-5 and  mousex < sl_lenght_x_top+15 then
-            spriteplace sl_lenght_slice, sl_lenght_x_top+5, mousey
-            ptail= 2+int((mousey-61)/4)*2
-            if ptail < 4 then ptail=4
-            color grey
-            rect size_x-155,255,20,12
-            color black
-            font "Tahoma",8,100
-            text size_x-157,230,"Tail-"
-            text size_x-160,240,"lenght"
-            text size_x-152,253,ptail
-            refresh
-          endif
-        endif   
-       if mousey > sl_speed_y_top-5 and mousey < sl_speed_y_top+15 then
-          if mousex > sl_speed_x_top and  mousex < sl_speed_x_bot then
-            spriteplace sl_speed_slice,  mousex, sl_speed_y_top+5
-            speed= ((mousex-630)+1 ) /2000
-            color grey
-            rect size_x-137,360,25,12 
-            color black
-            font "Tahoma",8,100
-            text size_x-135,360,int(speed*2000)
-            refresh
-          endif
-        endif
-# Repulsion distance
-        if mousex>sp_up_topleft_x and mousex < sp_up_topleft_x+sp_heigth then
-          if mousey >sp_up_topleft_y and mousey < sp_up_topleft_y+sp_heigth/2 then
-            clickclear
-            #clicked up-button on Repulsion
-            sp_range_shown=(sp_range_shown -sp_range_inc)
-            if sp_range_shown<sp_range_min then sp_range_shown=sp_range_min
-            sp_range_shown2=13-sp_range_shown
-            call spinner(sp_range_color, sp_range_locx, sp_range_locy, sp_range_width, sp_range_heigth, sp_range_offsetx, sp_range_offsety, sp_range_insetx, sp_range_insety, sp_range_array, sp_range_shown2, sp_range_max, sp_range_min, sp_range_inc)
-            refresh
-            pause 0.1
-          else
-            if mousey >sp_up_botright_y and mousey < sp_up_botright_y+sp_heigth/2 then
-               clickclear
-               #clicked down-button on Repulsion
-               sp_range_shown=sp_range_shown + sp_range_inc
-               if sp_range_shown>sp_range_max then sp_range_shown=sp_range_max
-               sp_range_shown2=13-sp_range_shown
-               call spinner(sp_range_color, sp_range_locx, sp_range_locy, sp_range_width, sp_range_heigth, sp_range_offsetx, sp_range_offsety, sp_range_insetx, sp_range_insety, sp_range_array, sp_range_shown2, sp_range_max, sp_range_min, sp_range_inc)
-               refresh
-               pause 0.1
-            endif
-          endif
-        endif
-# About screen in program window
-        if mousey > 370 and mousey < 395 then
-          if mousex > size_x-45 and  mousex < size_x-20 then
-            a=1
-            gosub about
-            graphsize (size_x,size_y)
-            gosub critterpanel
-          endif
-        endif
-# 'Reset Values' button pressed
-        if mousey > 300 and mousey < 325 then
-          if mousex > size_x-160 and  mousex < size_x-70 then
-            clickclear
-            Critnum=300
-            tail=20
-            radio_active=2
-            critsize=2
-            ptail=40
-            speed=0.0005
-            b_init_reset=2
-            sp_range_shown=8
-            call button (b_locx_reset, b_locy_reset, b_width_reset, b_height_reset, b_text_reset$, b_textsize_reset, b_offsetx_reset, b_offsety_reset, b_init_reset)
-            if tab_active=2 then
-              gosub predatorpanel
-            else
-              gosub critterpanel
-            endif
-            gosub programpanel
-          endif
-        endif
-# Fast/Slow slider selected
-        if mousey > sl_speed_y_top-5 and mousey < sl_speed_y_top+15 then
-          if mousex > sl_speed_x_top and  mousex < sl_speed_x_bot then
-            spriteplace sl_speed_slice,  mousex, sl_speed_y_top+5
-            speed= ((mousex-630)+1 ) /2000
-            color grey
-            rect size_x-137,360,25,12
-            color black
-            font "Tahoma",8,100
-            text size_x-135,360,int(speed*2000)
-            refresh
-          endif
-        endif
-      end while
-    else
-#If Active Tab is Critters 
-#**************************
-      gosub critterpanel
-      while mouseb > 0 and mousex > size_x-200
-        if mousey > sl_quant_y_top and mousey < sl_quant_y_bot then
-          if mousex > sl_quant_x_top-5 and  mousex < sl_quant_x_top+15 then
-            spriteplace sl_quant_slice, sl_quant_x_top+5, mousey
-            Critnum= 601- (mousey-70)*4
-            if Critnum <0 then Critnum=1
-            color grey
-            rect size_x-175,245,20,15
-            color black
-            font "Tahoma",8,100
-            text size_x-175,243, (Critnum-1)
-            refresh
-          endif
-        endif
-        if mousey > sl_tail_y_top and mousey < sl_tail_y_bot then
-          if mousex > sl_tail_x_top-5 and  mousex < sl_tail_x_top+15 then
-            spriteplace sl_tail_slice, sl_tail_x_top+5, mousey
-            tail= 6+int((mousey-61)/5)
-            if tail < 9 then tail=9
-            color grey
-            rect size_x-117,230,25,12
-            color black
-            font "Tahoma",8,100
-            text size_x-113,227,tail-8
-            refresh
-          endif
-        endif
-# Critter head size
-        if mousex > radio_locx-5 and mousex < radio_locx+5 then
-          if mousey > radio_locy_top-4 and mousey < radio_locy_bot+5 then
-            for i=0 to radio_elements
-               if mousey > radio_locy_top-5+ (i*(radio_locy_bot-radio_locy_top) / (radio_elements-1)) and mousey < radio_locy_top+5+ (i*(radio_locy_bot-radio_locy_top) / (radio_elements-1)) then
-                 radio_active=i+1
-                 critsize=radio_active
-                 call drawradio(radio_elements, radio_locx, radio_locy_top, radio_locy_bot, radio_active)
-               end if
-            next i
-          end if
-        end if
-# About screen in program window
-        if mousey > 370 and mousey < 395 then
-          if mousex > size_x-45 and  mousex < size_x-20 then
-            a=1
-            gosub about
-            graphsize (size_x,size_y)
-            gosub critterpanel
-          endif
-        endif
-# 'Reset Values' button pressed
-        if mousey > 300 and mousey < 325 then
-          if mousex > size_x-160 and  mousex < size_x-70 then
-            clickclear
-            Critnum=300
-            tail=20
-            radio_active=2
-            critsize=2
-            ptail=40
-            speed=0.0005
-            b_init_reset=2
-            sp_range_shown=8
-            call button (b_locx_reset, b_locy_reset, b_width_reset, b_height_reset, b_text_reset$, b_textsize_reset, b_offsetx_reset, b_offsety_reset, b_init_reset)
-            if tab_active=2 then
-              gosub predatorpanel
-            else
-              gosub critterpanel
-            endif
-            gosub programpanel
-          endif
-        endif
-# Fast/Slow slider selected
-        if mousey > sl_speed_y_top-5 and mousey < sl_speed_y_top+15 then
-          if mousex > sl_speed_x_top and  mousex < sl_speed_x_bot then
-            spriteplace sl_speed_slice,  mousex, sl_speed_y_top+5
-            speed= ((mousex-630)+1 ) /2000
-            color grey
-            rect size_x-137,360,25,12
-            color black
-            font "Tahoma",8,100
-            text size_x-135,360,int(speed*2000)
-            refresh
-          endif
-        endif
-      end while
-    end if
-  end while
-# End of Clickevent handling
-#***************************
-#p
-  color black
-  rect 5,5, size_x-205,size_y-10
-  r=ii
-  s=ii/ratio
-  predator_x_old=predator_x
-  predator_y_old=predator_y
-  predator_x=(sin(r)+1)*280+30
-  predator_y=(cos(s)+1)*180+30  
-  if ii=0 then
-    predator_x_old=((size_x-200)/2)+5
-    predator_y_old=((size_y-10)+5)
-    for p = 0 to ptail - 2 step 2
-      Pred[p]= predator_x_old+170
-      Pred[p+1]= predator_y_old-15
-    next p
-    for p = ptail - 2 to ptailmax-2 step 2
-      Pred[p]= Pred[ptail-4]
-      Pred[p+1]= Pred[ptail-3]
-    next p
-  endif
-  r_orig=250: g_orig=250: b_orig=0
-  r=r_orig: g=g_orig: b=b_orig
-  decr=(r_orig*4)/(2*ptail-4)
-  color rgb(r, g, b)
-  circle predator_x,predator_y,4
-#Predator tail creation
-  reltoy=( (1+((predator_x-predator_x_old)/ (predator_y-predator_y_old))^2) ^0.5)
-  reltox=( (1+((predator_y-predator_y_old)/ (predator_x-predator_x_old))^2) ^0.5)
-  predator_x_tail=10/reltox
-  predator_y_tail=10/reltoy
-  facx=1
-  facy=1
-  if (predator_x-predator_x_old) > 0 then facx=-1
-  if (predator_y-predator_y_old) > 0 then facy=-1
-  predator_y_tail=predator_y + (predator_y_tail*facy)
-  predator_x_tail=predator_x + (predator_x_tail*facx) 
-  for m = ptail-2 to 2 step -2
-    Pred[m]=Pred[m-2]
-    Pred[m+1]=Pred[m-1]
-  next m
-  Pred[0]=predator_x_tail
-  Pred[1]=predator_y_tail
-  line predator_x, predator_y, predator_x_tail, predator_y_tail
-  for l=0 to ptail-3 step 2
-#    r=r-(130/ptail*4)
-    r=r-decr
-    if r<0 then r=0
-    g=r
-    b=0
-    color rgb(r, g, b)
-    line Pred[l],Pred[l+1],Pred[l+2],Pred[l+3]
-  next l
-#Critter creation
-  for p = 0 to Critnum-1
-    ir= 200: ig= 200: ib= 200:you=255
-    r=200: g=200: b=200
-    color rgb(r,g,b)
-    if Critter[p,0]>0 then
-      for z=tail-3 to 5 step -1
-        Critter[p,z+2]= Critter[p,z]
-      next z
-      Critter[p,6]= Critter[p,1]
-      Critter[p,5]= Critter[p,0]
-      mouse_x=mousex
-      mouse_y=mousey
-      attraction=(size_x-200)/sp_range_shown
-      fac=abs(rand-0.5)+0.5
-      stimulus=mouseb
-      if stimulus=0 then fac=0
-      if stimulus=1 then fac=1
-      if stimulus=2 then fac=-1
-      if stimulus=3 then attraction=attraction*1.5
-      dist=((mouse_x-Critter[p,0])^2+(mouse_y-Critter[p,1])^2)^0.5
-      if dist< attraction then
-        orient_x=(mouse_x-Critter[p,0])/10
-        orient_y=(mouse_y-Critter[p,1])/10
-        Critter[p,0]= Critter[p,0]+Critter[p,2]+(orient_x*fac)
-        Critter[p,1]= Critter[p,1]+Critter[p,3]+(orient_y*fac)
-      else
-        Critter[p,0]= Critter[p,0]+Critter[p,2]
-        Critter[p,1]= Critter[p,1]+Critter[p,3]
-      endif
-      dist=((predator_x-Critter[p,0])^2+(predator_y-Critter[p,1])^2)^0.5
-      if dist< attraction then
-        orient_x=(predator_x-Critter[p,0])/5
-        orient_y=(predator_y-Critter[p,1])/5
-        Critter[p,0]= Critter[p,0]+Critter[p,2]-(orient_x)
-        Critter[p,1]= Critter[p,1]+Critter[p,3]-(orient_y)
-      else
-        Critter[p,0]= Critter[p,0]+Critter[p,2]
-        Critter[p,1]= Critter[p,1]+Critter[p,3]
-      endif
-      if Critter[p,0]>(size_x-201-critsize*2) or Critter[p,0]<7+critsize*2 or Critter[p,1]>(size_y-10-critsize*2) or Critter[p,1]<7+critsize*2 then
-        Critter[p,0] = (rand*(size_x-201-critsize*2))+6
-        Critter[p,1]= (rand*(size_y-10-critsize*2))+6
-        dist=((predator_x-Critter[p,0])^2+(predator_y-Critter[p,1])^2)^0.5
-        while dist < (attraction *(1-rand/4))
-          Critter[p,0] = (rand*(size_x-201-critsize*2))
-          Critter[p,1]= (rand*(size_y-10-critsize*2))+5
-          dist=((predator_x-Critter[p,0])^2+(predator_y-Critter[p,1])^2)^0.5
-        endwhile
-        Critter[p,2]= (rand-0.5)*critterspeed*2
-        Critter[p,3]= (rand-0.5)*critterspeed*2
-        for z=4 to tailmax-1
-          Critter[p,z]= 0
-        next z
-      endif
-      if p = 10 then color red
-        circle Critter[p,0],Critter[p,1],critsize-1
-        if Critter[p,5]>0 and Critter[p,6] > 0 then
-          line Critter[p,0],Critter[p,1],Critter[p,5],Critter[p,6]
-        endif
-        for q=5 to tail-4 step 2
-          r=r-ir/(tail/4):g=g-ig/(tail/4):b=b-ib/(tail/4)
-          if r>0 and g>0 and b>0 then  color rgb(r, g, b)
-	if p=10 then
-	  you=you-ir/(tail/4)
-            if you > 0 then
-              color rgb(you,0,0)
-   	  endif
-          endif	
-          if Critter[p,q+2]>0 and Critter[p,q+3] > 0 then
-             line Critter[p,q],Critter[p,q+1],Critter[p,q+2],Critter[p,q+3]
-          endif
-        next q
-        change=rand
-        if change < 0.1 then Critter[p,2] = (rand-0.5)*critterspeed
-        if change > 0.9 then Critter[p,3]= (rand-0.5)*critterspeed
-      endif
-  next p
-  refresh
-  pause speed
-next ii
+	#Predator Lissajou movement
+	maxph1=29
+	maxph2=27
+	a =maxph1
+	b =maxph2
+	ratio = a/b
+	for ii = 0 to 200 step(2*pi)/predatorspeed
+		#check for click event in the widget area
+		while mouseb > 0 and mousex > size_x-200
+			# Start of Click event handlng
+			#******************************
+			# Check for Active Tab
+			if mousey > tab_locy and mousey < tab_locy+tab_height then
+				if mousex > tab_locx and mousex < tab_locx+tab_width then
+					for i=0 to tab_elements
+						if mousex > tab_locx+(i-1)*tab_width_single and mousex < tab_locx+i*tab_width_single then
+							tab_active=i
+							color grey
+							rect tab_locx+2,tab_locy+tab_height,tab_width-2,tab_range
+							call drawtabs(tab_locx, tab_locy, tab_width, tab_height, tab_elements, tab_active, tab_width_single,tab_range)
+						end if
+					next i
+				end if
+			end if
+			#If Active Tab is Predator
+			#**************************
+			if tab_active=2 then
+				gosub predatorpanel
+				while mouseb > 0 and mousex > size_x-200
+					if mousey > sl_lenght_y_top and mousey < sl_lenght_y_bot then
+						if mousex > sl_lenght_x_top-5 and  mousex < sl_lenght_x_top+15 then
+							spriteplace sl_lenght_slice, sl_lenght_x_top+5, mousey
+							ptail= 2+int((mousey-61)/4)*2
+							if ptail < 4 then ptail=4
+							color grey
+							rect size_x-155,255,20,12
+							color black
+							font "Tahoma",8,100
+							text size_x-157,230,"Tail-"
+							text size_x-160,240,"lenght"
+							text size_x-152,253,ptail
+							refresh
+						endif
+					endif
+					if mousey > sl_speed_y_top-5 and mousey < sl_speed_y_top+15 then
+						if mousex > sl_speed_x_top and  mousex < sl_speed_x_bot then
+							spriteplace sl_speed_slice,  mousex, sl_speed_y_top+5
+							speed= ((mousex-630)+1 ) /2000
+							color grey
+							rect size_x-137,360,25,12
+							color black
+							font "Tahoma",8,100
+							text size_x-135,360,int(speed*2000)
+							refresh
+						endif
+					endif
+					# Repulsion distance
+					if mousex>sp_up_topleft_x and mousex < sp_up_topleft_x+sp_heigth then
+						if mousey >sp_up_topleft_y and mousey < sp_up_topleft_y+sp_heigth/2 then
+							clickclear
+							#clicked up-button on Repulsion
+							sp_range_shown=(sp_range_shown -sp_range_inc)
+							if sp_range_shown<sp_range_min then sp_range_shown=sp_range_min
+							sp_range_shown2=13-sp_range_shown
+							call spinner(sp_range_color, sp_range_locx, sp_range_locy, sp_range_width, sp_range_heigth, sp_range_offsetx, sp_range_offsety, sp_range_insetx, sp_range_insety, sp_range_array, sp_range_shown2, sp_range_max, sp_range_min, sp_range_inc)
+							refresh
+							pause 0.1
+						else
+							if mousey >sp_up_botright_y and mousey < sp_up_botright_y+sp_heigth/2 then
+								clickclear
+								#clicked down-button on Repulsion
+								sp_range_shown=sp_range_shown + sp_range_inc
+								if sp_range_shown>sp_range_max then sp_range_shown=sp_range_max
+								sp_range_shown2=13-sp_range_shown
+								call spinner(sp_range_color, sp_range_locx, sp_range_locy, sp_range_width, sp_range_heigth, sp_range_offsetx, sp_range_offsety, sp_range_insetx, sp_range_insety, sp_range_array, sp_range_shown2, sp_range_max, sp_range_min, sp_range_inc)
+								refresh
+								pause 0.1
+							endif
+						endif
+					endif
+					# About screen in program window
+					if mousey > 370 and mousey < 395 then
+						if mousex > size_x-45 and  mousex < size_x-20 then
+							a=1
+							gosub about
+							graphsize (size_x,size_y)
+							gosub critterpanel
+						endif
+					endif
+					# 'Reset Values' button pressed
+					if mousey > 300 and mousey < 325 then
+						if mousex > size_x-160 and  mousex < size_x-70 then
+							clickclear
+							Critnum=300
+							tail=20
+							radio_active=2
+							critsize=2
+							ptail=40
+							speed=0.0005
+							b_init_reset=2
+							sp_range_shown=8
+							call button (b_locx_reset, b_locy_reset, b_width_reset, b_height_reset, b_text_reset$, b_textsize_reset, b_offsetx_reset, b_offsety_reset, b_init_reset)
+							if tab_active=2 then
+								gosub predatorpanel
+							else
+								gosub critterpanel
+							endif
+							gosub programpanel
+						endif
+					endif
+					# Fast/Slow slider selected
+					if mousey > sl_speed_y_top-5 and mousey < sl_speed_y_top+15 then
+						if mousex > sl_speed_x_top and  mousex < sl_speed_x_bot then
+							spriteplace sl_speed_slice,  mousex, sl_speed_y_top+5
+							speed= ((mousex-630)+1 ) /2000
+							color grey
+							rect size_x-137,360,25,12
+							color black
+							font "Tahoma",8,100
+							text size_x-135,360,int(speed*2000)
+							refresh
+						endif
+					endif
+				end while
+			else
+				#If Active Tab is Critters
+				#**************************
+				gosub critterpanel
+				while mouseb > 0 and mousex > size_x-200
+					if mousey > sl_quant_y_top and mousey < sl_quant_y_bot then
+						if mousex > sl_quant_x_top-5 and  mousex < sl_quant_x_top+15 then
+							spriteplace sl_quant_slice, sl_quant_x_top+5, mousey
+							Critnum= 601- (mousey-70)*4
+							if Critnum <0 then Critnum=1
+							color grey
+							rect size_x-175,245,20,15
+							color black
+							font "Tahoma",8,100
+							text size_x-175,243, (Critnum-1)
+							refresh
+						endif
+					endif
+					if mousey > sl_tail_y_top and mousey < sl_tail_y_bot then
+						if mousex > sl_tail_x_top-5 and  mousex < sl_tail_x_top+15 then
+							spriteplace sl_tail_slice, sl_tail_x_top+5, mousey
+							tail= 6+int((mousey-61)/5)
+							if tail < 9 then tail=9
+							color grey
+							rect size_x-117,230,25,12
+							color black
+							font "Tahoma",8,100
+							text size_x-113,227,tail-8
+							refresh
+						endif
+					endif
+					# Critter head size
+					if mousex > radio_locx-5 and mousex < radio_locx+5 then
+						if mousey > radio_locy_top-4 and mousey < radio_locy_bot+5 then
+							for i=0 to radio_elements
+								if mousey > radio_locy_top-5+ (i*(radio_locy_bot-radio_locy_top) / (radio_elements-1)) and mousey < radio_locy_top+5+ (i*(radio_locy_bot-radio_locy_top) / (radio_elements-1)) then
+									radio_active=i+1
+									critsize=radio_active
+									call drawradio(radio_elements, radio_locx, radio_locy_top, radio_locy_bot, radio_active)
+								end if
+							next i
+						end if
+					end if
+					# About screen in program window
+					if mousey > 370 and mousey < 395 then
+						if mousex > size_x-45 and  mousex < size_x-20 then
+							a=1
+							gosub about
+							graphsize (size_x,size_y)
+							gosub critterpanel
+						endif
+					endif
+					# 'Reset Values' button pressed
+					if mousey > 300 and mousey < 325 then
+						if mousex > size_x-160 and  mousex < size_x-70 then
+							clickclear
+							Critnum=300
+							tail=20
+							radio_active=2
+							critsize=2
+							ptail=40
+							speed=0.0005
+							b_init_reset=2
+							sp_range_shown=8
+							call button (b_locx_reset, b_locy_reset, b_width_reset, b_height_reset, b_text_reset$, b_textsize_reset, b_offsetx_reset, b_offsety_reset, b_init_reset)
+							if tab_active=2 then
+								gosub predatorpanel
+							else
+								gosub critterpanel
+							endif
+							gosub programpanel
+						endif
+					endif
+					# Fast/Slow slider selected
+					if mousey > sl_speed_y_top-5 and mousey < sl_speed_y_top+15 then
+						if mousex > sl_speed_x_top and  mousex < sl_speed_x_bot then
+							spriteplace sl_speed_slice,  mousex, sl_speed_y_top+5
+							speed= ((mousex-630)+1 ) /2000
+							color grey
+							rect size_x-137,360,25,12
+							color black
+							font "Tahoma",8,100
+							text size_x-135,360,int(speed*2000)
+							refresh
+						endif
+					endif
+				end while
+			end if
+		end while
+		# End of Clickevent handling
+		#***************************
+		#p
+		color black
+		rect 5,5, size_x-205,size_y-10
+		r=ii
+		s=ii/ratio
+		predator_x_old=predator_x
+		predator_y_old=predator_y
+		predator_x=(sin(r)+1)*280+30
+		predator_y=(cos(s)+1)*180+30
+		if ii=0 then
+			predator_x_old=((size_x-200)/2)+5
+			predator_y_old=((size_y-10)+5)
+			for p = 0 to ptail - 2 step 2
+				Pred[p]= predator_x_old+170
+				Pred[p+1]= predator_y_old-15
+			next p
+			for p = ptail - 2 to ptailmax-2 step 2
+				Pred[p]= Pred[ptail-4]
+				Pred[p+1]= Pred[ptail-3]
+			next p
+		endif
+r_orig=250: g_orig=250: b_orig=0
+r=r_orig: g=g_orig: b=b_orig
+		decr=(r_orig*4)/(2*ptail-4)
+		color rgb(r, g, b)
+		circle predator_x,predator_y,4
+		#Predator tail creation
+		reltoy=( (1+((predator_x-predator_x_old)/ (predator_y-predator_y_old))^2) ^0.5)
+		reltox=( (1+((predator_y-predator_y_old)/ (predator_x-predator_x_old))^2) ^0.5)
+		predator_x_tail=10/reltox
+		predator_y_tail=10/reltoy
+		facx=1
+		facy=1
+		if (predator_x-predator_x_old) > 0 then facx=-1
+		if (predator_y-predator_y_old) > 0 then facy=-1
+		predator_y_tail=predator_y + (predator_y_tail*facy)
+		predator_x_tail=predator_x + (predator_x_tail*facx)
+		for m = ptail-2 to 2 step -2
+			Pred[m]=Pred[m-2]
+			Pred[m+1]=Pred[m-1]
+		next m
+		Pred[0]=predator_x_tail
+		Pred[1]=predator_y_tail
+		line predator_x, predator_y, predator_x_tail, predator_y_tail
+		for l=0 to ptail-3 step 2
+			#    r=r-(130/ptail*4)
+			r=r-decr
+			if r<0 then r=0
+			g=r
+			b=0
+			color rgb(r, g, b)
+			line Pred[l],Pred[l+1],Pred[l+2],Pred[l+3]
+		next l
+		#Critter creation
+		for p = 0 to Critnum-1
+			ir= 200: ig= 200: ib= 200:you=255
+r=200: g=200: b=200
+			color rgb(r,g,b)
+			if Critter[p,0]>0 then
+				for z=tail-3 to 5 step -1
+					Critter[p,z+2]= Critter[p,z]
+				next z
+				Critter[p,6]= Critter[p,1]
+				Critter[p,5]= Critter[p,0]
+				mouse_x=mousex
+				mouse_y=mousey
+				attraction=(size_x-200)/sp_range_shown
+				fac=abs(rand-0.5)+0.5
+				stimulus=mouseb
+				if stimulus=0 then fac=0
+				if stimulus=1 then fac=1
+				if stimulus=2 then fac=-1
+				if stimulus=3 then attraction=attraction*1.5
+				dist=((mouse_x-Critter[p,0])^2+(mouse_y-Critter[p,1])^2)^0.5
+				if dist< attraction then
+					orient_x=(mouse_x-Critter[p,0])/10
+					orient_y=(mouse_y-Critter[p,1])/10
+					Critter[p,0]= Critter[p,0]+Critter[p,2]+(orient_x*fac)
+					Critter[p,1]= Critter[p,1]+Critter[p,3]+(orient_y*fac)
+				else
+					Critter[p,0]= Critter[p,0]+Critter[p,2]
+					Critter[p,1]= Critter[p,1]+Critter[p,3]
+				endif
+				dist=((predator_x-Critter[p,0])^2+(predator_y-Critter[p,1])^2)^0.5
+				if dist< attraction then
+					orient_x=(predator_x-Critter[p,0])/5
+					orient_y=(predator_y-Critter[p,1])/5
+					Critter[p,0]= Critter[p,0]+Critter[p,2]-(orient_x)
+					Critter[p,1]= Critter[p,1]+Critter[p,3]-(orient_y)
+				else
+					Critter[p,0]= Critter[p,0]+Critter[p,2]
+					Critter[p,1]= Critter[p,1]+Critter[p,3]
+				endif
+				if Critter[p,0]>(size_x-201-critsize*2) or Critter[p,0]<7+critsize*2 or Critter[p,1]>(size_y-10-critsize*2) or Critter[p,1]<7+critsize*2 then
+					Critter[p,0] = (rand*(size_x-201-critsize*2))+6
+					Critter[p,1]= (rand*(size_y-10-critsize*2))+6
+					dist=((predator_x-Critter[p,0])^2+(predator_y-Critter[p,1])^2)^0.5
+					while dist < (attraction *(1-rand/4))
+						Critter[p,0] = (rand*(size_x-201-critsize*2))
+						Critter[p,1]= (rand*(size_y-10-critsize*2))+5
+						dist=((predator_x-Critter[p,0])^2+(predator_y-Critter[p,1])^2)^0.5
+					endwhile
+					Critter[p,2]= (rand-0.5)*critterspeed*2
+					Critter[p,3]= (rand-0.5)*critterspeed*2
+					for z=4 to tailmax-1
+						Critter[p,z]= 0
+					next z
+				endif
+				if p = 10 then color red
+				circle Critter[p,0],Critter[p,1],critsize-1
+				if Critter[p,5]>0 and Critter[p,6] > 0 then
+					line Critter[p,0],Critter[p,1],Critter[p,5],Critter[p,6]
+				endif
+				for q=5 to tail-4 step 2
+r=r-ir/(tail/4):g=g-ig/(tail/4):b=b-ib/(tail/4)
+					if r>0 and g>0 and b>0 then  color rgb(r, g, b)
+					if p=10 then
+						you=you-ir/(tail/4)
+						if you > 0 then
+							color rgb(you,0,0)
+						endif
+					endif
+					if Critter[p,q+2]>0 and Critter[p,q+3] > 0 then
+						line Critter[p,q],Critter[p,q+1],Critter[p,q+2],Critter[p,q+3]
+					endif
+				next q
+				change=rand
+				if change < 0.1 then Critter[p,2] = (rand-0.5)*critterspeed
+				if change > 0.9 then Critter[p,3]= (rand-0.5)*critterspeed
+			endif
+		next p
+		framerate 30
+		refresh
+		pause speed
+	next ii
 end while # main loop
 end
 # End of main loop. From here on we have gosubs and subroutines
@@ -459,9 +460,9 @@ sl_quant_x_bot=size_x-170
 sl_quant_y_bot=220
 sl_quant_slice=0
 call drawslider(sl_quant_x_top, sl_quant_y_top, sl_quant_x_bot, sl_quant_y_bot, sl_quant_slice)
-if ini=1 then 
-  startpos1= (881-Critnum)/4
-  spriteplace sl_quant_slice, sl_quant_x_top+5, startpos1
+if ini=1 then
+	startpos1= (881-Critnum)/4
+	spriteplace sl_quant_slice, sl_quant_x_top+5, startpos1
 endif
 color black
 font "Tahoma",8,100
@@ -472,20 +473,20 @@ sl_tail_x_bot=size_x-115
 sl_tail_y_bot=190
 sl_tail_slice=1
 call drawslider(sl_tail_x_top, sl_tail_y_top, sl_tail_x_bot, sl_tail_y_bot, sl_tail_slice)
-if ini=1 then 
-  startpos2= int((tail-6)*5+69)
-  spriteplace sl_tail_slice, sl_tail_x_top+5, startpos2
+if ini=1 then
+	startpos2= int((tail-6)*5+69)
+	spriteplace sl_tail_slice, sl_tail_x_top+5, startpos2
 endif
-   color grey
-   rect size_x-175,245,20,15
-   color black
-   font "Tahoma",8,100
-   text size_x-182,230,"Number"
-   text size_x-175,243, Critnum-1
-   text size_x-118,205,"Tail-"
-   text size_x-123,215,"lenght"
-   text size_x-113,227,tail-8
-   text size_x-70,60,"Headsize"
+color grey
+rect size_x-175,245,20,15
+color black
+font "Tahoma",8,100
+text size_x-182,230,"Number"
+text size_x-175,243, Critnum-1
+text size_x-118,205,"Tail-"
+text size_x-123,215,"lenght"
+text size_x-113,227,tail-8
+text size_x-70,60,"Headsize"
 call drawradio(radio_elements, radio_locx, radio_locy_top, radio_locy_bot, radio_active)
 return
 
@@ -505,19 +506,19 @@ sl_lenght_x_bot=size_x-150
 sl_lenght_y_bot=220
 sl_lenght_slice=3
 call drawslider(sl_lenght_x_top, sl_lenght_y_top, sl_lenght_x_bot, sl_lenght_y_bot, sl_lenght_slice)
-if ini=1 then 
-  startpos1= (int(ptail-2)/2)*4 +61
-  spriteplace sl_lenght_slice, sl_lenght_x_top+5, startpos1
+if ini=1 then
+	startpos1= (int(ptail-2)/2)*4 +61
+	spriteplace sl_lenght_slice, sl_lenght_x_top+5, startpos1
 endif
-   color grey
-   rect size_x-155,255,20,12
-   color black
-   font "Tahoma",8,100
-   text size_x-157,230,"Tail-"
-   text size_x-160,240,"lenght"
-   text size_x-152,253,ptail
-   text size_x-87,70,"Repulsion"
-   text size_x-87,80,"range"
+color grey
+rect size_x-155,255,20,12
+color black
+font "Tahoma",8,100
+text size_x-157,230,"Tail-"
+text size_x-160,240,"lenght"
+text size_x-152,253,ptail
+text size_x-87,70,"Repulsion"
+text size_x-87,80,"range"
 sp_range_color = 1
 sp_range_locx=size_x-80: sp_range_locy=100
 sp_range_width=30: sp_range_heigth=20
@@ -532,7 +533,7 @@ call spinner(sp_range_color, sp_range_locx, sp_range_locy, sp_range_width, sp_ra
 
 return
 
-#Main program panel gosub 
+#Main program panel gosub
 #*************************
 programpanel:
 b_locx_reset=size_x-160:b_locy_reset=300
@@ -540,14 +541,14 @@ b_width_reset=90:b_height_reset=25
 b_text_reset$="Reset values":b_textsize_reset=8
 b_offsetx_reset=10:b_offsety_reset= 6
 b_init_reset=0 #indicates to the subroutine that we just want to draw the button
-#now we call the subroutine and pass it the parameters of button 
+#now we call the subroutine and pass it the parameters of button
 call button (b_locx_reset, b_locy_reset, b_width_reset, b_height_reset, b_text_reset$, b_textsize_reset, b_offsetx_reset, b_offsety_reset, b_init_reset)
 b_locx_about=size_x-45:b_locy_about=370
 b_width_about=25:b_height_about=25
 b_text_about$="?":b_textsize_about=12
 b_offsetx_about=10:b_offsety_about= 3
 b_init_about=0 #indicates to the subroutine that we just want to draw the button
-#now we call the subroutine and pass it the parameters of button 
+#now we call the subroutine and pass it the parameters of button
 call button (b_locx_about, b_locy_about, b_width_about, b_height_about, b_text_about$, b_textsize_about, b_offsetx_about, b_offsety_about, b_init_about)
 sl_speed_x_top= size_x-170
 sl_speed_y_top=380
@@ -555,13 +556,13 @@ sl_speed_x_bot=size_x-90
 sl_speed_y_bot=380
 sl_speed_slice=2
 call drawslider(sl_speed_x_top, sl_speed_y_top, sl_speed_x_bot, sl_speed_y_bot, sl_speed_slice)
-   color grey
-   rect size_x-137,360,25,12
-   color black
-   font "Tahoma",8,100
-   text size_x-180,360,"Fast"
-   text size_x-100,360,"Slow"	
-   text size_x-130,360,int(speed*2000)
+color grey
+rect size_x-137,360,25,12
+color black
+font "Tahoma",8,100
+text size_x-180,360,"Fast"
+text size_x-100,360,"Slow"
+text size_x-130,360,int(speed*2000)
 refresh
 return
 
@@ -596,8 +597,8 @@ poly { 193,75,196,95,187,75}
 #color 16776960
 color white
 for i = 0 to 4
-poly{120+i*6,80-i,126+i*6,80-i,123+i*6,90-i}
-poly{180-i*6,80-i,174-i*6,80-i,177-i*6,90-i}
+	poly{120+i*6,80-i,126+i*6,80-i,123+i*6,90-i}
+	poly{180-i*6,80-i,174-i*6,80-i,177-i*6,90-i}
 next i
 color black
 line 120,80,150,75
@@ -670,8 +671,8 @@ zz=30
 index=0
 #create a 25 element array with sin values
 for y=0 to 4*pi step 0.25
-   sinarr[i]=sin(y)
-   i=i+1
+	sinarr[i]=sin(y)
+	i=i+1
 next y
 index=0
 startindex=0
@@ -681,78 +682,78 @@ spritemove 0,250,429
 spriteshow 0
 a=1
 while a=1
-if rand<0.03 then
-  call blink (l_x_1, l_y_1, r_x_1, r_y_1, l_di_1,r_di_1,l_offx,r_offy)
-  refresh
-endif
-if rand<0.03 then
-  call blink (l_x_2, l_y_2, r_x_2, r_y_2, l_di_2,r_di_2,l_offx,r_offy)
-  refresh
-endif
-if blinkcount=10 then
-   call eyes (l_x_1, l_y_1, r_x_1, r_y_1, l_di_1,r_di_1,l_offx,r_offy)
-   call eyes (l_x_2, l_y_2, r_x_2, r_y_2, l_di_2,r_di_2,l_offx,r_offy)
-   blinkcount=0
-   refresh
-endif
-blinkcount=blinkcount+1
-zz=20
-for y = 0 to 27# for the 25 steps of the tail
-  x = sinarr[index] # give x the sin value on pos i
-  index=index+1 # increment index
-  if index > 24 then index = 0 #if i greater than arrayssize, reset i
-  color black
-  circle 50+ int(zz*x), 163-int(3*y),3 # line form old point to new point
-  circle 450+ int(zz*x), 163-int(3*y),3 # line form old point to new point
-  color white
-  circle 50+ int(zz*x), 163-int(3*y),2 # line form old point to new point
-  circle 450+ int(zz*x), 163-int(3*y),2 # line form old point to new point
-  x_old=50+ int(zz*x) # move new coord in old coord
-  y_old=163-int(3*y) # move new coord in old coord
-  zz=zz-0.6
-next y
-ii=ii+1
-if ii<175 then
-spritemove 0,0,-1
-spriteshow 0
-endif
-if clickb=1 then
-   if mousex > b_locx_a and mousex < b_locx_a+ b_width_a then
-      if mousey > b_locy_a and mousey < b_locy_a+b_height_a then
-         clickclear
-         b_init_a=2
-         call button (b_locx_a, b_locy_a, b_width_a, b_height_a, b_text_a$, b_textsize_a, b_offsetx_a, b_offsety_a, b_init_a)
-#Do the About routine
-         spritehide 0
-         gosub about
-         a=2
-         refresh
-      end if
-   else
-   if mousex > b_locx_b and mousex < b_locx_b+ b_width_b then
-      if mousey > b_locy_b and mousey < b_locy_b+b_height_b then
-         clickclear
-         b_init_b=2
-         call button (b_locx_b, b_locy_b, b_width_b, b_height_b, b_text_b$, b_textsize_b, b_offsetx_b, b_offsety_b, b_init_b)
-#Do the Start routine
-         refresh
-         from_splash=0
-         a=2
-      end if
-   end if
-   end if
-   clickclear
-end if
-startindex=startindex+1
-if startindex > 24 then startindex=0
-index=startindex
-x_old=50+ int(20*sinarr[startindex])
-y_old=163
-refresh
-pause 0.02
-color rgb(200,200,250)
-rect 20,80,60,87
-rect 420,80,60,87
+	if rand<0.03 then
+		call blink (l_x_1, l_y_1, r_x_1, r_y_1, l_di_1,r_di_1,l_offx,r_offy)
+		refresh
+	endif
+	if rand<0.03 then
+		call blink (l_x_2, l_y_2, r_x_2, r_y_2, l_di_2,r_di_2,l_offx,r_offy)
+		refresh
+	endif
+	if blinkcount=10 then
+		call eyes (l_x_1, l_y_1, r_x_1, r_y_1, l_di_1,r_di_1,l_offx,r_offy)
+		call eyes (l_x_2, l_y_2, r_x_2, r_y_2, l_di_2,r_di_2,l_offx,r_offy)
+		blinkcount=0
+		refresh
+	endif
+	blinkcount=blinkcount+1
+	zz=20
+	for y = 0 to 27# for the 25 steps of the tail
+		x = sinarr[index] # give x the sin value on pos i
+		index=index+1 # increment index
+		if index > 24 then index = 0 #if i greater than arrayssize, reset i
+		color black
+		circle 50+ int(zz*x), 163-int(3*y),3 # line form old point to new point
+		circle 450+ int(zz*x), 163-int(3*y),3 # line form old point to new point
+		color white
+		circle 50+ int(zz*x), 163-int(3*y),2 # line form old point to new point
+		circle 450+ int(zz*x), 163-int(3*y),2 # line form old point to new point
+		x_old=50+ int(zz*x) # move new coord in old coord
+		y_old=163-int(3*y) # move new coord in old coord
+		zz=zz-0.6
+	next y
+	ii=ii+1
+	if ii<175 then
+		spritemove 0,0,-1
+		spriteshow 0
+	endif
+	if clickb=1 then
+		if mousex > b_locx_a and mousex < b_locx_a+ b_width_a then
+			if mousey > b_locy_a and mousey < b_locy_a+b_height_a then
+				clickclear
+				b_init_a=2
+				call button (b_locx_a, b_locy_a, b_width_a, b_height_a, b_text_a$, b_textsize_a, b_offsetx_a, b_offsety_a, b_init_a)
+				#Do the About routine
+				spritehide 0
+				gosub about
+				a=2
+				refresh
+			end if
+		else
+			if mousex > b_locx_b and mousex < b_locx_b+ b_width_b then
+				if mousey > b_locy_b and mousey < b_locy_b+b_height_b then
+					clickclear
+					b_init_b=2
+					call button (b_locx_b, b_locy_b, b_width_b, b_height_b, b_text_b$, b_textsize_b, b_offsetx_b, b_offsety_b, b_init_b)
+					#Do the Start routine
+					refresh
+					from_splash=0
+					a=2
+				end if
+			end if
+		end if
+		clickclear
+	end if
+	startindex=startindex+1
+	if startindex > 24 then startindex=0
+	index=startindex
+	x_old=50+ int(20*sinarr[startindex])
+	y_old=163
+	refresh
+	pause 0.02
+	color rgb(200,200,250)
+	rect 20,80,60,87
+	rect 420,80,60,87
 end while
 return
 #End Swishy Tail
@@ -762,17 +763,17 @@ return
 #**************
 about:
 if from_splash=1 then
-  from_splash=0
-  startx=0: starty=0
-  size_x_a=500: size_y_a=300
-  graphsize (size_x_a,size_y_a)
-  fastgraphics
-  clg
-  cls
+	from_splash=0
+startx=0: starty=0
+size_x_a=500: size_y_a=300
+	graphsize (size_x_a,size_y_a)
+	fastgraphics
+	clg
+	cls
 else
-  startx=50
-  starty=50
-  size_x_a=500 : size_y_a= 300
+	startx=50
+	starty=50
+	size_x_a=500 : size_y_a= 300
 endif
 clickclear
 color grey
@@ -802,18 +803,18 @@ b_init_c=0 #indicates to the subroutine that we just want to draw the button
 call button (b_locx_c, b_locy_c, b_width_c, b_height_c, b_text_c$, b_textsize_c, b_offsetx_c, b_offsety_c, b_init_c)
 refresh
 while a=1
- if clickb=1 then
-   if mousex > b_locx_c and mousex < b_locx_c+ b_width_c then
-      if mousey > b_locy_c and mousey < b_locy_c+b_height_c then
-         clickclear
-         b_init_a=2
-         call button (b_locx_c, b_locy_c, b_width_c, b_height_c, b_text_c$, b_textsize_c, b_offsetx_c, b_offsety_c, b_init_c)
-      end if
-   end if
-   clickclear
-   a=3
- end if
-pause 0.1
+	if clickb=1 then
+		if mousex > b_locx_c and mousex < b_locx_c+ b_width_c then
+			if mousey > b_locy_c and mousey < b_locy_c+b_height_c then
+				clickclear
+				b_init_a=2
+				call button (b_locx_c, b_locy_c, b_width_c, b_height_c, b_text_c$, b_textsize_c, b_offsetx_c, b_offsety_c, b_init_c)
+			end if
+		end if
+		clickclear
+		a=3
+	end if
+	pause 0.1
 end while
 return
 
@@ -822,234 +823,234 @@ return
 # sub routine "Draw critter head"
 #*********************************
 subroutine oval(orig_x,orig_y, sindia, cosdia, fillcol, fillrad, startp,endp,flood)
-for up_oval=sindia to sindia-1 step -1
-  for side_oval=cosdia to cosdia-1 step -1
-    for i = startp to endp step pi/180
-      tempx=sin(i)*up_oval
-      tempy=cos(i)*side_oval
-      plot tempx+orig_x,tempy+orig_y
-    next i
-  next side_oval
-next up_oval
-if flood>0 then
-color fillcol
-for up_oval=sindia-2 to fillrad step -1
-  for side_oval=cosdia-2 to 0 step -1
-    for i = 0 to 2*pi step pi/90
-      tempx=sin(i)*up_oval
-      tempy=cos(i)*side_oval
-      plot tempx+orig_x,tempy+orig_y
-    next i
-  next side_oval
-next up_oval
-endif
+	for up_oval=sindia to sindia-1 step -1
+		for side_oval=cosdia to cosdia-1 step -1
+			for i = startp to endp step pi/180
+				tempx=sin(i)*up_oval
+				tempy=cos(i)*side_oval
+				plot tempx+orig_x,tempy+orig_y
+			next i
+		next side_oval
+	next up_oval
+	if flood>0 then
+		color fillcol
+		for up_oval=sindia-2 to fillrad step -1
+			for side_oval=cosdia-2 to 0 step -1
+				for i = 0 to 2*pi step pi/90
+					tempx=sin(i)*up_oval
+					tempy=cos(i)*side_oval
+					plot tempx+orig_x,tempy+orig_y
+				next i
+			next side_oval
+		next up_oval
+	endif
 end subroutine
 
 #*********************************
 # sub routine "Draw critter eyes"
 #*********************************
 subroutine eyes (l_x, l_y, r_x, r_y, l_di,r_di,l_offx,l_offy)
-color black
-circle l_x, l_y, l_di
-circle r_x, r_y, r_di
-color white
-circle l_x, l_y, l_di-2
-circle r_x, r_y, r_di-2
-color black
-circle l_x+l_offx, l_y,2
-circle r_x+l_offy, r_y+1,2
+	color black
+	circle l_x, l_y, l_di
+	circle r_x, r_y, r_di
+	color white
+	circle l_x, l_y, l_di-2
+	circle r_x, r_y, r_di-2
+	color black
+	circle l_x+l_offx, l_y,2
+	circle r_x+l_offy, r_y+1,2
 end subroutine
 
 #*********************************
 # sub routine "blink critter eyes"
 #*********************************
 subroutine blink (l_x, l_y, r_x, r_y, l_di,r_di,l_offx,l_offy)
-color black
-circle l_x, l_y, l_di
-circle r_x, r_y, r_di
-color white
-circle l_x, l_y, l_di-2
-circle r_x, r_y, r_di-2
-color black
-rect l_x-l_di, l_y,l_di*2-2,2
-rect r_x-r_di,r_y, r_di*2-2,2
+	color black
+	circle l_x, l_y, l_di
+	circle r_x, r_y, r_di
+	color white
+	circle l_x, l_y, l_di-2
+	circle r_x, r_y, r_di-2
+	color black
+	rect l_x-l_di, l_y,l_di*2-2,2
+	rect r_x-r_di,r_y, r_di*2-2,2
 end subroutine
 
 #******************************************
 # sub routine "Draw a drawing element grid"
 #******************************************
 subroutine drawing(draw_elements_x, draw_elements_y, draw_locx, draw_locy, draw_width,draw_height, draw_offsetx, draw_offsety, draw_color)
-draw_locx=draw_locx-4
-draw_locy=draw_locy-4
-   for i=1 to draw_elements_x
-      for j =1 to draw_elements_y
-         widthfiller=draw_width+draw_offsetx+8
-         heightfiller= draw_height+draw_offsety+8
-         color darkgrey
-         if draw_width>draw_height then 
-           half=(draw_height+8)/2
-         else
-           half=(draw_width+8)/2
-         endif
-         poly {draw_locx+((i-1)*widthfiller), draw_locy+((j-1)*heightfiller), draw_locx+((i-1)*widthfiller), draw_locy+((j-1)*heightfiller)+draw_height+8, draw_locx+((i-1)*widthfiller)+half, draw_locy+((j-1)*heightfiller)+half}
-         poly {draw_locx+((i-1)*widthfiller), draw_locy+((j-1)*heightfiller), draw_locx+((i-1)*widthfiller)+half, draw_locy+((j-1)*heightfiller)+half, draw_locx+((i-1)*widthfiller)+draw_width+8-half, draw_locy+((j-1)*heightfiller)+half, draw_locx+((i-1)*widthfiller)+draw_width+8,draw_locy+((j-1)*heightfiller)}
-         color rgb(200,200,200)
-         poly {draw_locx+((i-1)*widthfiller), draw_locy+((j-1)*heightfiller)+draw_height+8, draw_locx+((i-1)*widthfiller)+half, draw_locy+((j-1)*heightfiller)+half, draw_locx+((i-1)*widthfiller)+draw_width+8-half, draw_locy+((j-1)*heightfiller)+half, draw_locx+((i-1)*widthfiller)+draw_width+8,draw_locy+((j-1)*heightfiller)+draw_height+8}
-         poly {draw_locx+((i-1)*widthfiller)+draw_width+8-half, draw_locy+((j-1)*heightfiller)+half, draw_locx+((i-1)*widthfiller)+draw_width+8, draw_locy+((j-1)*heightfiller)+draw_height+8, draw_locx+((i-1)*widthfiller)+draw_width+8, draw_locy+((j-1)*heightfiller)}
-refresh
-         if draw_color = 1 then
-            color white
-         else
-            color black
-         endif
-         rect draw_locx+(i-1)*widthfiller + 4, draw_locy+(j-1)*heightfiller + 4, draw_width,draw_height
- rect draw_locx+(i-1)*widthfiller,draw_locy+(j-1)*heightfiller, draw_width-draw_width* 2+2,draw_height-draw_height* 1.5
-      next j
-   next i
-   refresh
+	draw_locx=draw_locx-4
+	draw_locy=draw_locy-4
+	for i=1 to draw_elements_x
+		for j =1 to draw_elements_y
+			widthfiller=draw_width+draw_offsetx+8
+			heightfiller= draw_height+draw_offsety+8
+			color darkgrey
+			if draw_width>draw_height then
+				half=(draw_height+8)/2
+			else
+				half=(draw_width+8)/2
+			endif
+			poly {draw_locx+((i-1)*widthfiller), draw_locy+((j-1)*heightfiller), draw_locx+((i-1)*widthfiller), draw_locy+((j-1)*heightfiller)+draw_height+8, draw_locx+((i-1)*widthfiller)+half, draw_locy+((j-1)*heightfiller)+half}
+			poly {draw_locx+((i-1)*widthfiller), draw_locy+((j-1)*heightfiller), draw_locx+((i-1)*widthfiller)+half, draw_locy+((j-1)*heightfiller)+half, draw_locx+((i-1)*widthfiller)+draw_width+8-half, draw_locy+((j-1)*heightfiller)+half, draw_locx+((i-1)*widthfiller)+draw_width+8,draw_locy+((j-1)*heightfiller)}
+			color rgb(200,200,200)
+			poly {draw_locx+((i-1)*widthfiller), draw_locy+((j-1)*heightfiller)+draw_height+8, draw_locx+((i-1)*widthfiller)+half, draw_locy+((j-1)*heightfiller)+half, draw_locx+((i-1)*widthfiller)+draw_width+8-half, draw_locy+((j-1)*heightfiller)+half, draw_locx+((i-1)*widthfiller)+draw_width+8,draw_locy+((j-1)*heightfiller)+draw_height+8}
+			poly {draw_locx+((i-1)*widthfiller)+draw_width+8-half, draw_locy+((j-1)*heightfiller)+half, draw_locx+((i-1)*widthfiller)+draw_width+8, draw_locy+((j-1)*heightfiller)+draw_height+8, draw_locx+((i-1)*widthfiller)+draw_width+8, draw_locy+((j-1)*heightfiller)}
+			refresh
+			if draw_color = 1 then
+				color white
+			else
+				color black
+			endif
+			rect draw_locx+(i-1)*widthfiller + 4, draw_locy+(j-1)*heightfiller + 4, draw_width,draw_height
+			rect draw_locx+(i-1)*widthfiller,draw_locy+(j-1)*heightfiller, draw_width-draw_width* 2+2,draw_height-draw_height* 1.5
+		next j
+	next i
+	refresh
 end subroutine
 
 #*********************************
 # sub routine "Draw a tab-bar"
 #*********************************
 subroutine drawtabs(tab_locx, tab_locy, tab_width, tab_height, tab_elements, tab_active, tab_width_single,tab_range)
-   color black
-   font "Tahoma",10,50
-#   tab_width_single= tab_width/tab_elements
-   #erase tab-bar area
-   color grey
-   rect tab_locx-2,tab_locy-3,tab_width+4,tab_height
-   color rgb(140,140,140)
-   rect tab_locx+1,tab_locy,tab_width,tab_height
-   #tab separator horizontal
-   color darkgrey
-   line tab_locx,tab_locy+tab_height,tab_locx+tab_width, tab_locy+ tab_height
-   line tab_locx,tab_locy,tab_locx+tab_width, tab_locy
-   color rgb(200,200,200)
-   line tab_locx,tab_locy+tab_height+1,tab_locx+tab_width, tab_locy+ tab_height+1
-   line tab_locx,tab_locy+1,tab_locx+tab_width, tab_locy+1
-   #tab seperators vertical
-   for i = 1 to tab_elements
-      color darkgrey
-      line tab_locx+1+i*tab_width_single,tab_locy+1,tab_locx+1+i*tab_width_single, tab_locy+tab_height
-      color rgb(200,200,200)
-      line tab_locx+i*tab_width_single,tab_locy+1,tab_locx+i*tab_width_single, tab_locy+tab_height
-   next i
-   #tab area seperator vertical & horizontal
-      color darkgrey
-      line tab_locx+1,tab_locy+1,tab_locx+1, tab_locy+tab_height+tab_range+1
-      line tab_locx+1, tab_locy+tab_height+tab_range+1 ,tab_locx+tab_width+1, tab_locy+tab_height+tab_range+1
-      line tab_locx+tab_width+1, tab_locy+tab_height+tab_range+1, tab_locx+tab_width+1, tab_locy+tab_height
-      color rgb(200,200,200)
-      line tab_locx+2,tab_locy+1,tab_locx+2, tab_locy+tab_height+tab_range
-      line tab_locx+2, tab_locy+tab_height+tab_range, tab_locx+tab_width ,tab_locy+tab_height+tab_range
-      line tab_locx+tab_width ,tab_locy+tab_height+tab_range, tab_locx+tab_width,tab_locy+tab_height
-   #tab text - all inactive
-   for i = 0 to tab_elements-1
-      text tab_locx+(i*tab_width_single)+7,tab_locy+tab_height/5, tabs$[i]
-   next i
-   # paint active tab
-   color grey
-   if tab_active=1 then
-      rect tab_locx+(tab_active-1)*tab_width_single-1, tab_locy-2, tab_width_single+1, tab_height+4
-   else
-      rect tab_locx+(tab_active-1)*tab_width_single+1, tab_locy-2, tab_width_single-1, tab_height+4
-   endif
-   color darkgrey
-   line tab_locx+(tab_active-1)*tab_width_single+1, tab_locy-3,tab_locx+(tab_active-1)*tab_width_single+1, tab_locy+tab_height
-   line tab_locx+(tab_active-1)*tab_width_single+2, tab_locy-3,tab_locx+(tab_active)*tab_width_single+1,tab_locy-3
-   line tab_locx+(tab_active)*tab_width_single+1, tab_locy-3,tab_locx+(tab_active)*tab_width_single+1, tab_locy+tab_height
-   color rgb(200,200,200)
-   line tab_locx+(tab_active-1)*tab_width_single+2, tab_locy-2,tab_locx+(tab_active-1)*tab_width_single+2, tab_locy+tab_height+1
-   line tab_locx+(tab_active)*tab_width_single, tab_locy-2,tab_locx+(tab_active)*tab_width_single, tab_locy+tab_height
-   line tab_locx+(tab_active-1)*tab_width_single+2, tab_locy-2,tab_locx+(tab_active)*tab_width_single,tab_locy-2
-   color black
-   font "Tahoma",10,100
-   text tab_locx+((tab_active-1)*tab_width_single)+7,tab_locy +tab_height/5+2, tabs$[tab_active-1]
-   refresh
+	color black
+	font "Tahoma",10,50
+	#   tab_width_single= tab_width/tab_elements
+	#erase tab-bar area
+	color grey
+	rect tab_locx-2,tab_locy-3,tab_width+4,tab_height
+	color rgb(140,140,140)
+	rect tab_locx+1,tab_locy,tab_width,tab_height
+	#tab separator horizontal
+	color darkgrey
+	line tab_locx,tab_locy+tab_height,tab_locx+tab_width, tab_locy+ tab_height
+	line tab_locx,tab_locy,tab_locx+tab_width, tab_locy
+	color rgb(200,200,200)
+	line tab_locx,tab_locy+tab_height+1,tab_locx+tab_width, tab_locy+ tab_height+1
+	line tab_locx,tab_locy+1,tab_locx+tab_width, tab_locy+1
+	#tab seperators vertical
+	for i = 1 to tab_elements
+		color darkgrey
+		line tab_locx+1+i*tab_width_single,tab_locy+1,tab_locx+1+i*tab_width_single, tab_locy+tab_height
+		color rgb(200,200,200)
+		line tab_locx+i*tab_width_single,tab_locy+1,tab_locx+i*tab_width_single, tab_locy+tab_height
+	next i
+	#tab area seperator vertical & horizontal
+	color darkgrey
+	line tab_locx+1,tab_locy+1,tab_locx+1, tab_locy+tab_height+tab_range+1
+	line tab_locx+1, tab_locy+tab_height+tab_range+1 ,tab_locx+tab_width+1, tab_locy+tab_height+tab_range+1
+	line tab_locx+tab_width+1, tab_locy+tab_height+tab_range+1, tab_locx+tab_width+1, tab_locy+tab_height
+	color rgb(200,200,200)
+	line tab_locx+2,tab_locy+1,tab_locx+2, tab_locy+tab_height+tab_range
+	line tab_locx+2, tab_locy+tab_height+tab_range, tab_locx+tab_width ,tab_locy+tab_height+tab_range
+	line tab_locx+tab_width ,tab_locy+tab_height+tab_range, tab_locx+tab_width,tab_locy+tab_height
+	#tab text - all inactive
+	for i = 0 to tab_elements-1
+		text tab_locx+(i*tab_width_single)+7,tab_locy+tab_height/5, tabs$[i]
+	next i
+	# paint active tab
+	color grey
+	if tab_active=1 then
+		rect tab_locx+(tab_active-1)*tab_width_single-1, tab_locy-2, tab_width_single+1, tab_height+4
+	else
+		rect tab_locx+(tab_active-1)*tab_width_single+1, tab_locy-2, tab_width_single-1, tab_height+4
+	endif
+	color darkgrey
+	line tab_locx+(tab_active-1)*tab_width_single+1, tab_locy-3,tab_locx+(tab_active-1)*tab_width_single+1, tab_locy+tab_height
+	line tab_locx+(tab_active-1)*tab_width_single+2, tab_locy-3,tab_locx+(tab_active)*tab_width_single+1,tab_locy-3
+	line tab_locx+(tab_active)*tab_width_single+1, tab_locy-3,tab_locx+(tab_active)*tab_width_single+1, tab_locy+tab_height
+	color rgb(200,200,200)
+	line tab_locx+(tab_active-1)*tab_width_single+2, tab_locy-2,tab_locx+(tab_active-1)*tab_width_single+2, tab_locy+tab_height+1
+	line tab_locx+(tab_active)*tab_width_single, tab_locy-2,tab_locx+(tab_active)*tab_width_single, tab_locy+tab_height
+	line tab_locx+(tab_active-1)*tab_width_single+2, tab_locy-2,tab_locx+(tab_active)*tab_width_single,tab_locy-2
+	color black
+	font "Tahoma",10,100
+	text tab_locx+((tab_active-1)*tab_width_single)+7,tab_locy +tab_height/5+2, tabs$[tab_active-1]
+	refresh
 end subroutine
 
 #***************************************
 # sub routine "Draw a slider"
 #***************************************
 subroutine drawslider(sl_locx_top, sl_locy_top, sl_locx_bot, sl_locy_bot, sl_slice)
-if sl_locx_bot = sl_locx_top then
-  sl_orient=0
-else 
-  if sl_locy_bot=sl_locy_top then
-    sl_orient=1
-  else
-    print "Only horizontal or vetical sliders!!"
-    end
-  endif
-endif
-if sl_orient=1 then
-  sl_lenght = (sl_locx_bot-sl_locx_top)
-  color darkgrey
-  line sl_locx_top,sl_locy_top, sl_locx_bot,sl_locy_bot
-  line sl_locx_top,sl_locy_top+1, sl_locx_bot,sl_locy_bot+1
-  line sl_locx_top,sl_locy_top+2, sl_locx_bot,sl_locy_bot+2
-  poly {sl_locx_top-1, sl_locy_top,sl_locx_top-1, sl_locy_top+3,sl_locx_top-6, sl_locy_top+3}
-  poly {sl_locx_bot+1, sl_locy_bot,sl_locx_bot+1, sl_locy_bot+3,sl_locx_bot+6, sl_locy_bot+3}
-#  poly
-  color black
-  line sl_locx_top,sl_locy_top+3, sl_locx_bot,sl_locy_bot+3
-  line sl_locx_top,sl_locy_top+4, sl_locx_bot,sl_locy_bot+4
-  color rgb(200,200,200)
-  line sl_locx_top,sl_locy_top+5, sl_locx_bot,sl_locy_bot+5
-  line sl_locx_top,sl_locy_top+6, sl_locx_bot,sl_locy_bot+6
-  line sl_locx_top,sl_locy_top+7, sl_locx_bot,sl_locy_bot+7
-  poly {sl_locx_top-1, sl_locy_top+4,sl_locx_top-1, sl_locy_top+7,sl_locx_top-6, sl_locy_top+4}
-  poly {sl_locx_bot+1, sl_locy_bot+4,sl_locx_bot+1, sl_locy_bot+7,sl_locx_bot+6, sl_locy_bot+4}
-  sl_posx = sl_locx_top
-  sl_posy = sl_locy_top+5
-else
-  sl_lenght = (sl_locy_bot-sl_locx_top)
-  color darkgrey
-  line sl_locx_top,sl_locy_top, sl_locx_bot,sl_locy_bot
-  line sl_locx_top+1,sl_locy_top, sl_locx_bot+1,sl_locy_bot
-  line sl_locx_top+2,sl_locy_top, sl_locx_bot+2,sl_locy_bot
-  poly {sl_locx_top, sl_locy_top-1, sl_locx_top+3,sl_locy_top-1,sl_locx_top+3,sl_locy_top-6}
-  poly {sl_locx_bot, sl_locy_bot+1, sl_locx_bot+3,sl_locy_bot+1,sl_locx_bot+3,sl_locy_bot+6}
-  color black
-  line sl_locx_top+3,sl_locy_top, sl_locx_bot+3,sl_locy_bot
-  line sl_locx_top+4,sl_locy_top, sl_locx_bot+4,sl_locy_bot
-  color rgb(200,200,200)
-  line sl_locx_top+5,sl_locy_top, sl_locx_bot+5,sl_locy_bot
-  line sl_locx_top+6,sl_locy_top, sl_locx_bot+6,sl_locy_bot
-  line sl_locx_top+7,sl_locy_top, sl_locx_bot+7,sl_locy_bot
-  poly {sl_locx_top+4, sl_locy_top-1, sl_locx_top+7,sl_locy_top-1,sl_locx_top+4,sl_locy_top-6}
-  poly {sl_locx_bot+4, sl_locy_bot+1, sl_locx_bot+7,sl_locy_bot+1,sl_locx_bot+4,sl_locy_bot+6}
-  sl_posx = sl_locx_top+5 
-  sl_posy = sl_locy_top
-end if
-spriteplace sl_slice,sl_posx,sl_posy
-spriteshow sl_slice
-refresh
+	if sl_locx_bot = sl_locx_top then
+		sl_orient=0
+	else
+		if sl_locy_bot=sl_locy_top then
+			sl_orient=1
+		else
+			print "Only horizontal or vetical sliders!!"
+			end
+		endif
+	endif
+	if sl_orient=1 then
+		sl_lenght = (sl_locx_bot-sl_locx_top)
+		color darkgrey
+		line sl_locx_top,sl_locy_top, sl_locx_bot,sl_locy_bot
+		line sl_locx_top,sl_locy_top+1, sl_locx_bot,sl_locy_bot+1
+		line sl_locx_top,sl_locy_top+2, sl_locx_bot,sl_locy_bot+2
+		poly {sl_locx_top-1, sl_locy_top,sl_locx_top-1, sl_locy_top+3,sl_locx_top-6, sl_locy_top+3}
+		poly {sl_locx_bot+1, sl_locy_bot,sl_locx_bot+1, sl_locy_bot+3,sl_locx_bot+6, sl_locy_bot+3}
+		#  poly
+		color black
+		line sl_locx_top,sl_locy_top+3, sl_locx_bot,sl_locy_bot+3
+		line sl_locx_top,sl_locy_top+4, sl_locx_bot,sl_locy_bot+4
+		color rgb(200,200,200)
+		line sl_locx_top,sl_locy_top+5, sl_locx_bot,sl_locy_bot+5
+		line sl_locx_top,sl_locy_top+6, sl_locx_bot,sl_locy_bot+6
+		line sl_locx_top,sl_locy_top+7, sl_locx_bot,sl_locy_bot+7
+		poly {sl_locx_top-1, sl_locy_top+4,sl_locx_top-1, sl_locy_top+7,sl_locx_top-6, sl_locy_top+4}
+		poly {sl_locx_bot+1, sl_locy_bot+4,sl_locx_bot+1, sl_locy_bot+7,sl_locx_bot+6, sl_locy_bot+4}
+		sl_posx = sl_locx_top
+		sl_posy = sl_locy_top+5
+	else
+		sl_lenght = (sl_locy_bot-sl_locx_top)
+		color darkgrey
+		line sl_locx_top,sl_locy_top, sl_locx_bot,sl_locy_bot
+		line sl_locx_top+1,sl_locy_top, sl_locx_bot+1,sl_locy_bot
+		line sl_locx_top+2,sl_locy_top, sl_locx_bot+2,sl_locy_bot
+		poly {sl_locx_top, sl_locy_top-1, sl_locx_top+3,sl_locy_top-1,sl_locx_top+3,sl_locy_top-6}
+		poly {sl_locx_bot, sl_locy_bot+1, sl_locx_bot+3,sl_locy_bot+1,sl_locx_bot+3,sl_locy_bot+6}
+		color black
+		line sl_locx_top+3,sl_locy_top, sl_locx_bot+3,sl_locy_bot
+		line sl_locx_top+4,sl_locy_top, sl_locx_bot+4,sl_locy_bot
+		color rgb(200,200,200)
+		line sl_locx_top+5,sl_locy_top, sl_locx_bot+5,sl_locy_bot
+		line sl_locx_top+6,sl_locy_top, sl_locx_bot+6,sl_locy_bot
+		line sl_locx_top+7,sl_locy_top, sl_locx_bot+7,sl_locy_bot
+		poly {sl_locx_top+4, sl_locy_top-1, sl_locx_top+7,sl_locy_top-1,sl_locx_top+4,sl_locy_top-6}
+		poly {sl_locx_bot+4, sl_locy_bot+1, sl_locx_bot+7,sl_locy_bot+1,sl_locx_bot+4,sl_locy_bot+6}
+		sl_posx = sl_locx_top+5
+		sl_posy = sl_locy_top
+	end if
+	spriteplace sl_slice,sl_posx,sl_posy
+	spriteshow sl_slice
+	refresh
 end subroutine
 
 #***************************************
 # sub routine "Draw a radio button list"
 #***************************************
 subroutine drawradio(elements, locx, locy_top, locy_bot, active)
-# Do not forget to declare and initialize a global array 'radio$' before calling the subroutine
-   color black
-   font "Tahoma",8,100
-   radio_spacing = (locy_bot-locy_top)/(elements-1)
-   for i = 0 to (elements -1)
-      color black
-      circle locx, locy_top+(radio_spacing*i), 5
-      color white
-      circle locx+1, locy_top+(radio_spacing*i)+1,4
-   next i
-   #radio text captions
-   color black
-   for i = 0 to elements-1
-      text locx + 15,locy_top + (radio_spacing*i)-8, radio$[i]
-   next i
-   # paint active radio button
-   if active > 0 then circle locx+1, locy_top+(radio_spacing*(active-1))+1,2
-   refresh
+	# Do not forget to declare and initialize a global array 'radio$' before calling the subroutine
+	color black
+	font "Tahoma",8,100
+	radio_spacing = (locy_bot-locy_top)/(elements-1)
+	for i = 0 to (elements -1)
+		color black
+		circle locx, locy_top+(radio_spacing*i), 5
+		color white
+		circle locx+1, locy_top+(radio_spacing*i)+1,4
+	next i
+	#radio text captions
+	color black
+	for i = 0 to elements-1
+		text locx + 15,locy_top + (radio_spacing*i)-8, radio$[i]
+	next i
+	# paint active radio button
+	if active > 0 then circle locx+1, locy_top+(radio_spacing*(active-1))+1,2
+	refresh
 end subroutine
 
 #*********************************
@@ -1064,172 +1065,172 @@ end subroutine
 #   init: 0 (draw unclicked), 1 (draw clicked) or 2 (on/off click)
 # Copy and Paste the subroutine in your program and pass it the correct parameters
 subroutine button(b_locx, b_locy, b_width, b_height, b_text$, b_textsize, b_offsetx, b_offsety, b_init)
-if b_init=2 then #draw pressed, wait, draw unpressed
-         color darkgrey
-         if b_width>b_height then 
-           half=(b_height)/2
-         else
-           half=(b_width)/2
-         endif
-         poly {b_locx, b_locy, b_locx, b_locy+b_height, b_locx +half, b_locy +half}
-         poly {b_locx , b_locy , b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy }
-         color rgb(200,200,200)
-         poly {b_locx , b_locy +b_height, b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy +b_height}
-         poly {b_locx +b_width-half, b_locy +half, b_locx +b_width, b_locy +b_height, b_locx +b_width, b_locy }
-         color rgb(150,150,150)
-         if b_height < 17 or b_width < 17 then
-           rect b_locx  + 1, b_locy  + 1, b_width-2, b_height-2
-         else
-           if b_height < 25 or b_width < 25 then
-             rect b_locx  + 2, b_locy  + 2, b_width-4, b_height-4
-           else
-             rect b_locx  + 4, b_locy  + 4, b_width-8, b_height-8
-           endif
-         endif
-         color black
-         font "Tahoma",b_textsize,100
-         text b_locx+b_offsetx+2,b_locy+b_offsety+2,b_text$
-         refresh
-         pause 0.25
-         color rgb(200,200,200)
-         poly {b_locx, b_locy, b_locx, b_locy+b_height, b_locx +half, b_locy +half}
-         poly {b_locx , b_locy , b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy }
-         color darkgrey
-         poly {b_locx , b_locy +b_height, b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy +b_height}
-         poly {b_locx +b_width-half, b_locy +half, b_locx +b_width, b_locy +b_height, b_locx +b_width, b_locy }
-         color grey
-         if b_height < 17 or b_width < 17 then
-           rect b_locx  + 1, b_locy  + 1, b_width-2, b_height-2
-         else
-           if b_height < 25 or b_width < 25 then
-             rect b_locx  + 2, b_locy  + 2, b_width-4, b_height-4
-           else
-             rect b_locx  + 4, b_locy  + 4, b_width-8, b_height-8
-           endif
-         endif
-         color black
-         font "Tahoma",b_textsize,100
-         text b_locx+b_offsetx,b_locy+b_offsety,b_text$
-refresh
-else 
-   if b_init=1 then #draw pressed 
-         color darkgrey
-         if b_width>b_height then 
-           half=(b_height)/2
-         else
-           half=(b_width)/2
-         endif
-         poly {b_locx, b_locy, b_locx, b_locy+b_height, b_locx +half, b_locy +half}
-         poly {b_locx , b_locy , b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy }
-         color rgb(200,200,200)
-         poly {b_locx , b_locy +b_height, b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy +b_height}
-         poly {b_locx +b_width-half, b_locy +half, b_locx +b_width, b_locy +b_height, b_locx +b_width, b_locy }
-         color rgb(150,150,150)
-         if b_height < 17 or b_width < 17 then
-           rect b_locx  + 1, b_locy  + 1, b_width-2, b_height-2
-         else
-           if b_height < 25 or b_width < 25 then
-             rect b_locx  + 2, b_locy  + 2, b_width-4, b_height-4
-           else
-             rect b_locx  + 4, b_locy  + 4, b_width-8, b_height-8
-           endif
-         endif
-         color black
-         font "Tahoma",b_textsize,100
-         text b_locx+b_offsetx+2,b_locy+b_offsety+2,b_text$
-         refresh
-         pause 0.25
-   else #draw unpressed
-         color rgb(200,200,200)
-         if b_width>b_height then 
-           half=(b_height)/2
-         else
-           half=(b_width)/2
-         endif
-         poly {b_locx, b_locy, b_locx, b_locy+b_height, b_locx +half, b_locy +half}
-         poly {b_locx , b_locy , b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy }
-         color darkgrey
-         poly {b_locx , b_locy +b_height, b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy +b_height}
-         poly {b_locx +b_width-half, b_locy +half, b_locx +b_width, b_locy +b_height, b_locx +b_width, b_locy }
-         color grey
-         if b_height < 17 or b_width < 17 then
-           rect b_locx  + 1, b_locy  + 1, b_width-2, b_height-2
-         else
-           if b_height < 25 or b_width < 25 then
-             rect b_locx  + 2, b_locy  + 2, b_width-4, b_height-4
-           else
-             rect b_locx  + 4, b_locy  + 4, b_width-8, b_height-8
-           endif
-         endif
-         color black
-         font "Tahoma",b_textsize,100
-         text b_locx+b_offsetx,b_locy+b_offsety,b_text$ 
-         #refresh
-         pause 0.2
-   endif
-end if
+	if b_init=2 then #draw pressed, wait, draw unpressed
+		color darkgrey
+		if b_width>b_height then
+			half=(b_height)/2
+		else
+			half=(b_width)/2
+		endif
+		poly {b_locx, b_locy, b_locx, b_locy+b_height, b_locx +half, b_locy +half}
+		poly {b_locx , b_locy , b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy }
+		color rgb(200,200,200)
+		poly {b_locx , b_locy +b_height, b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy +b_height}
+		poly {b_locx +b_width-half, b_locy +half, b_locx +b_width, b_locy +b_height, b_locx +b_width, b_locy }
+		color rgb(150,150,150)
+		if b_height < 17 or b_width < 17 then
+			rect b_locx  + 1, b_locy  + 1, b_width-2, b_height-2
+		else
+			if b_height < 25 or b_width < 25 then
+				rect b_locx  + 2, b_locy  + 2, b_width-4, b_height-4
+			else
+				rect b_locx  + 4, b_locy  + 4, b_width-8, b_height-8
+			endif
+		endif
+		color black
+		font "Tahoma",b_textsize,100
+		text b_locx+b_offsetx+2,b_locy+b_offsety+2,b_text$
+		refresh
+		pause 0.25
+		color rgb(200,200,200)
+		poly {b_locx, b_locy, b_locx, b_locy+b_height, b_locx +half, b_locy +half}
+		poly {b_locx , b_locy , b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy }
+		color darkgrey
+		poly {b_locx , b_locy +b_height, b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy +b_height}
+		poly {b_locx +b_width-half, b_locy +half, b_locx +b_width, b_locy +b_height, b_locx +b_width, b_locy }
+		color grey
+		if b_height < 17 or b_width < 17 then
+			rect b_locx  + 1, b_locy  + 1, b_width-2, b_height-2
+		else
+			if b_height < 25 or b_width < 25 then
+				rect b_locx  + 2, b_locy  + 2, b_width-4, b_height-4
+			else
+				rect b_locx  + 4, b_locy  + 4, b_width-8, b_height-8
+			endif
+		endif
+		color black
+		font "Tahoma",b_textsize,100
+		text b_locx+b_offsetx,b_locy+b_offsety,b_text$
+		refresh
+	else
+		if b_init=1 then #draw pressed
+			color darkgrey
+			if b_width>b_height then
+				half=(b_height)/2
+			else
+				half=(b_width)/2
+			endif
+			poly {b_locx, b_locy, b_locx, b_locy+b_height, b_locx +half, b_locy +half}
+			poly {b_locx , b_locy , b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy }
+			color rgb(200,200,200)
+			poly {b_locx , b_locy +b_height, b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy +b_height}
+			poly {b_locx +b_width-half, b_locy +half, b_locx +b_width, b_locy +b_height, b_locx +b_width, b_locy }
+			color rgb(150,150,150)
+			if b_height < 17 or b_width < 17 then
+				rect b_locx  + 1, b_locy  + 1, b_width-2, b_height-2
+			else
+				if b_height < 25 or b_width < 25 then
+					rect b_locx  + 2, b_locy  + 2, b_width-4, b_height-4
+				else
+					rect b_locx  + 4, b_locy  + 4, b_width-8, b_height-8
+				endif
+			endif
+			color black
+			font "Tahoma",b_textsize,100
+			text b_locx+b_offsetx+2,b_locy+b_offsety+2,b_text$
+			refresh
+			pause 0.25
+		else #draw unpressed
+			color rgb(200,200,200)
+			if b_width>b_height then
+				half=(b_height)/2
+			else
+				half=(b_width)/2
+			endif
+			poly {b_locx, b_locy, b_locx, b_locy+b_height, b_locx +half, b_locy +half}
+			poly {b_locx , b_locy , b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy }
+			color darkgrey
+			poly {b_locx , b_locy +b_height, b_locx +half, b_locy +half, b_locx +b_width-half, b_locy +half, b_locx +b_width,b_locy +b_height}
+			poly {b_locx +b_width-half, b_locy +half, b_locx +b_width, b_locy +b_height, b_locx +b_width, b_locy }
+			color grey
+			if b_height < 17 or b_width < 17 then
+				rect b_locx  + 1, b_locy  + 1, b_width-2, b_height-2
+			else
+				if b_height < 25 or b_width < 25 then
+					rect b_locx  + 2, b_locy  + 2, b_width-4, b_height-4
+				else
+					rect b_locx  + 4, b_locy  + 4, b_width-8, b_height-8
+				endif
+			endif
+			color black
+			font "Tahoma",b_textsize,100
+			text b_locx+b_offsetx,b_locy+b_offsety,b_text$
+			#refresh
+			pause 0.2
+		endif
+	end if
 end subroutine
 #******************************************
 # sub routine "Draw a spin entry button"
 #******************************************
 subroutine spinner(sp_color, sp_locx, sp_locy, sp_width, sp_heigth, sp_offsetx, sp_offsety, sp_insetx, sp_insety, sp_array, sp_shown, sp_max, sp_min, sp_inc)
-widthfiller=sp_offsetx
-heigthfiller= sp_offsety
-color darkgrey
-poly {sp_locx, sp_locy, sp_locx, sp_locy+sp_heigth, sp_locx+sp_heigth/2, sp_locy+sp_heigth/2}
-poly {sp_locx, sp_locy, sp_locx+sp_heigth/2, sp_locy+sp_heigth/2, sp_locx+sp_width-sp_heigth/2, sp_locy+sp_heigth/2, sp_locx+sp_width, sp_locy}
-      
-color rgb(200,200,200)
-poly {sp_locx, sp_locy+sp_heigth, sp_locx+sp_heigth/2, sp_locy+sp_heigth/2, sp_locx+sp_width-sp_heigth/2, sp_locy+sp_heigth/2, sp_locx+sp_width, sp_locy+sp_heigth}
-poly {sp_locx+sp_width-sp_heigth/2, sp_locy+sp_heigth/2, sp_locx+sp_width, sp_locy+sp_heigth, sp_locx+sp_width, sp_locy}
-if sp_color = 1 then
-   color white
-else
-   color grey
-endif
-rect sp_locx+(sp_width*sp_insetx), sp_locy+(sp_heigth*sp_insety), sp_width-sp_width*2*sp_insetx+2, sp_heigth-sp_heigth* 1.5*sp_insety
-      
-color rgb(200,200,200)
-#Spin-up mini button
-sp_up_topleft_x = sp_locx+widthfiller+sp_width+sp_width/15
-sp_up_topleft_y = sp_locy+heigthfiller-2
-rect sp_up_topleft_x, sp_up_topleft_y ,sp_heigth ,sp_heigth/2
-#Spin-down mini button
-sp_up_botright_x = sp_locx+widthfiller+sp_width+sp_width/15
-sp_up_botright_y = sp_locy+heigthfiller+sp_heigth/2
-rect sp_up_botright_x, sp_up_botright_y, sp_heigth ,sp_heigth/2
-color darkgrey
-# upper mini button lower shadow line
-line sp_locx+widthfiller+sp_width+sp_width/15, sp_locy+heigthfiller-2+sp_heigth/2, sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth, sp_locy+heigthfiller-2+sp_heigth/2
-line sp_locx+widthfiller+sp_width+sp_width/15, sp_locy+heigthfiller-3+sp_heigth/2, sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth, sp_locy+heigthfiller-3+sp_heigth/2
-      
-# lower mini button lower lower shadow line
-line sp_locx+widthfiller+sp_width+sp_width/15,sp_locy+heigthfiller+sp_heigth/2+2+sp_heigth/2,sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth,sp_locy+heigthfiller+sp_heigth/2+2+sp_heigth/2
-line sp_locx+widthfiller+sp_width+sp_width/15,sp_locy+heigthfiller+sp_heigth/2+1+sp_heigth/2,sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth,sp_locy+heigthfiller+sp_heigth/2+1+sp_heigth/2
-      
-# upper mini button right shadow line
-line sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15, sp_locy+heigthfiller-2, sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15, sp_locy+heigthfiller-2+sp_heigth/2
-line sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15+1, sp_locy+heigthfiller-1, sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15+1, sp_locy+heigthfiller-2+sp_heigth/2
-      
-#lower mini button right shadow line
-line sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15, sp_locy+heigthfiller+sp_heigth/2+2, sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15, sp_locy+heigthfiller+sp_heigth
-line sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15+1, sp_locy+heigthfiller+sp_heigth/2+3, sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15+1, sp_locy+heigthfiller+sp_heigth-1
-      
-#Up arrow
-color rgb(100,100,100)
-poly { sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4, sp_locy+heigthfiller+(sp_heigth/8*3)-2, sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4*3, sp_locy+heigthfiller+(sp_heigth/8*3)-2, sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4*2, sp_locy+heigthfiller+(sp_heigth/8)-2}
-#down Arrow
-poly { sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4, sp_locy+heigthfiller+sp_heigth/2+(sp_heigth/8), sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4*3, sp_locy+heigthfiller+sp_heigth/2+(sp_heigth/8), sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4*2, sp_locy+heigthfiller+sp_heigth/2+(sp_heigth/8*3)}
-      
-#initialize
-if sp_array=0 then
-  color black
-  font "Tahoma",sp_heigth/2,10
-  text sp_locx+sp_width/5,sp_locy+3,sp_shown
-else
-  color black
-  font "Tahoma",sp_heigth/2,10
-  text sp_locx+10,sp_locy+3,sp_array_list$[sp_shown]
-endif
-refresh
+	widthfiller=sp_offsetx
+	heigthfiller= sp_offsety
+	color darkgrey
+	poly {sp_locx, sp_locy, sp_locx, sp_locy+sp_heigth, sp_locx+sp_heigth/2, sp_locy+sp_heigth/2}
+	poly {sp_locx, sp_locy, sp_locx+sp_heigth/2, sp_locy+sp_heigth/2, sp_locx+sp_width-sp_heigth/2, sp_locy+sp_heigth/2, sp_locx+sp_width, sp_locy}
+
+	color rgb(200,200,200)
+	poly {sp_locx, sp_locy+sp_heigth, sp_locx+sp_heigth/2, sp_locy+sp_heigth/2, sp_locx+sp_width-sp_heigth/2, sp_locy+sp_heigth/2, sp_locx+sp_width, sp_locy+sp_heigth}
+	poly {sp_locx+sp_width-sp_heigth/2, sp_locy+sp_heigth/2, sp_locx+sp_width, sp_locy+sp_heigth, sp_locx+sp_width, sp_locy}
+	if sp_color = 1 then
+		color white
+	else
+		color grey
+	endif
+	rect sp_locx+(sp_width*sp_insetx), sp_locy+(sp_heigth*sp_insety), sp_width-sp_width*2*sp_insetx+2, sp_heigth-sp_heigth* 1.5*sp_insety
+
+	color rgb(200,200,200)
+	#Spin-up mini button
+	sp_up_topleft_x = sp_locx+widthfiller+sp_width+sp_width/15
+	sp_up_topleft_y = sp_locy+heigthfiller-2
+	rect sp_up_topleft_x, sp_up_topleft_y ,sp_heigth ,sp_heigth/2
+	#Spin-down mini button
+	sp_up_botright_x = sp_locx+widthfiller+sp_width+sp_width/15
+	sp_up_botright_y = sp_locy+heigthfiller+sp_heigth/2
+	rect sp_up_botright_x, sp_up_botright_y, sp_heigth ,sp_heigth/2
+	color darkgrey
+	# upper mini button lower shadow line
+	line sp_locx+widthfiller+sp_width+sp_width/15, sp_locy+heigthfiller-2+sp_heigth/2, sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth, sp_locy+heigthfiller-2+sp_heigth/2
+	line sp_locx+widthfiller+sp_width+sp_width/15, sp_locy+heigthfiller-3+sp_heigth/2, sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth, sp_locy+heigthfiller-3+sp_heigth/2
+
+	# lower mini button lower lower shadow line
+	line sp_locx+widthfiller+sp_width+sp_width/15,sp_locy+heigthfiller+sp_heigth/2+2+sp_heigth/2,sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth,sp_locy+heigthfiller+sp_heigth/2+2+sp_heigth/2
+	line sp_locx+widthfiller+sp_width+sp_width/15,sp_locy+heigthfiller+sp_heigth/2+1+sp_heigth/2,sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth,sp_locy+heigthfiller+sp_heigth/2+1+sp_heigth/2
+
+	# upper mini button right shadow line
+	line sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15, sp_locy+heigthfiller-2, sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15, sp_locy+heigthfiller-2+sp_heigth/2
+	line sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15+1, sp_locy+heigthfiller-1, sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15+1, sp_locy+heigthfiller-2+sp_heigth/2
+
+	#lower mini button right shadow line
+	line sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15, sp_locy+heigthfiller+sp_heigth/2+2, sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15, sp_locy+heigthfiller+sp_heigth
+	line sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15+1, sp_locy+heigthfiller+sp_heigth/2+3, sp_locx+widthfiller+sp_width+sp_heigth+sp_width/15+1, sp_locy+heigthfiller+sp_heigth-1
+
+	#Up arrow
+	color rgb(100,100,100)
+	poly { sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4, sp_locy+heigthfiller+(sp_heigth/8*3)-2, sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4*3, sp_locy+heigthfiller+(sp_heigth/8*3)-2, sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4*2, sp_locy+heigthfiller+(sp_heigth/8)-2}
+	#down Arrow
+	poly { sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4, sp_locy+heigthfiller+sp_heigth/2+(sp_heigth/8), sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4*3, sp_locy+heigthfiller+sp_heigth/2+(sp_heigth/8), sp_locx+widthfiller+sp_width+sp_width/15+sp_heigth/4*2, sp_locy+heigthfiller+sp_heigth/2+(sp_heigth/8*3)}
+
+	#initialize
+	if sp_array=0 then
+		color black
+		font "Tahoma",sp_heigth/2,10
+		text sp_locx+sp_width/5,sp_locy+3,sp_shown
+	else
+		color black
+		font "Tahoma",sp_heigth/2,10
+		text sp_locx+10,sp_locy+3,sp_array_list$[sp_shown]
+	endif
+	refresh
 end subroutine

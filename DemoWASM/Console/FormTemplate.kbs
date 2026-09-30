@@ -16,7 +16,8 @@
 # **********************************************************************
 # Configuration
 editvisible 0
-graphvisible 0
+graphvisible 1
+cls:clg
 textfont "Courier New", 12
 textscreen 82, 30
 textbackground rgb(20, 28, 38)

@@ -1,0 +1,282 @@
+#************************************************************************************************
+#*                 Part 3:Verlet integration for particles & sticks                             *
+#************************************************************************************************
+# A verlet integration with particle triplets connected by sticks, gravity, bounce and some friction
+# Particles or sticks do not collide and are all of even mass (hence no mass defined)
+# Sticks are of a fixed length (ie the initial distance between each set of particles)
+# One of the triplets of particles is pinned, so does not move unless dragged by mouse
+# Verlet integration has no explicit velocity defined. Velocity is derived from previous position
+#************************************************************************************************
+# Definitions
+#************************************************************************************************
+include "math.kbs"
+#Globals to be used in the subroutines
+#************************************************************************************************
+global height, width, pos_x, pos_y, old_pos_x, old_pos_y, pinned, particle1, particle2
+global radius, bounce, gravity, friction
+global r, g, b, Particles, Part, Sticks, Stick, long, grab, Chains, StickA, StickB, StickLength
+# Initialisations
+#************************************************************************************************
+call ScreenSetup()
+call WorldParameters()
+call CreateParticles()
+call CreateSticks()
+
+# Drawing loop
+#************************************************************************************************
+while true
+	call mousedrag(mousex, mousey, mouseb)
+	call UpdateParticles()
+	call UpdateSticks()
+	call BoundaryCollisions()
+	call DrawParticles()
+	call DrawSticks()	
+	font "arial", 18,100
+	text1 = textwidth ("Vertlet Pinned triplet Demo")
+	offset1 = (width - text1)/2
+	text2 = textwidth ("Move the red dot with the mouse")
+	offset2 = (width - text2)/2
+	text offset1,20,"Vertlet Pinned triplet Demo"	
+	text offset2,50,"Move the red dot with the mouse"	
+	refresh
+	pause 0.01
+end while
+
+#here begin the subroutines
+#************************************************************************************************
+subroutine ScreenSetup()
+	fastgraphics
+	editvisible 0
+	outputvisible 0
+	Graphvisible 1
+	width = 800: height = 800
+	graphsize width, height
+	cls: clg white
+	refresh
+end subroutine
+
+subroutine WorldParameters()
+	# Physics
+	bounce = 0.6
+	gravity = 0.08
+	friction = 0.99
+	grab = -1
+	# Number of mini-chains
+	Chains = 3
+end subroutine
+
+subroutine CreateParticles()
+	Particles = Chains * 3
+	dim Part(Particles,5)
+	radius = 5
+	pos_x = 0: pos_y = 1: old_pos_x = 2: old_pos_y = 3: pinned = 4
+	chain_spacing = 220
+	stick_length = 70
+	for c = 0 to Chains-1
+		# First particle in this chain
+		i = c * 3
+		# Put the pinned particles along the top
+		x = 150 + c * chain_spacing
+		y = 200
+		# Particle 1 - pinned
+		Part[i,pos_x] = x
+		Part[i,pos_y] = y
+		Part[i,old_pos_x] = x
+		Part[i,old_pos_y] = y
+		Part[i,pinned] = 1
+		# Particle 2 - free
+		Part[i+1,pos_x] = x + stick_length
+		Part[i+1,pos_y] = y
+		Part[i+1,old_pos_x] = x + stick_length
+		Part[i+1,old_pos_y] = y
+		Part[i+1,pinned] = 0
+		# Particle 3 - free
+		Part[i+2,pos_x] = x + 2 * stick_length
+		Part[i+2,pos_y] = y
+		Part[i+2,old_pos_x] = x + 2 * stick_length
+		Part[i+2,old_pos_y] = y
+		Part[i+2,pinned] = 0
+	next c
+end subroutine
+
+subroutine CreateSticks()
+
+	particle1 = 0
+	particle2 = 1
+	long = 2
+
+	Sticks = Chains * 2
+
+	dim StickA(Sticks) fill 0
+	dim StickB(Sticks) fill 0
+	dim StickLength(Sticks) fill 0
+	for c = 0 to Chains-1
+		first = c * 3
+		stick = c * 2
+		# pinned particle -> first free particle
+		StickA[stick] = first
+		StickB[stick] = first + 1
+		a = StickA[stick]
+		b = StickB[stick]
+		dx = Part[b,pos_x] - Part[a,pos_x]
+		dy = Part[b,pos_y] - Part[a,pos_y]
+		StickLength[stick] = sqr(dx * dx + dy * dy)
+
+		# first free particle -> second free particle
+		StickA[stick+1] = first + 1
+		StickB[stick+1] = first + 2
+		a = StickA[stick+1]
+		b = StickB[stick+1]
+		dx = Part[b,pos_x] - Part[a,pos_x]
+		dy = Part[b,pos_y] - Part[a,pos_y]
+		StickLength[stick+1] = sqr(dx * dx + dy * dy)
+	next c
+end subroutine
+
+subroutine UpdateParticles()
+	for i = 0 to Particles-1
+		if Part[i,pinned] = 0 then
+			# Velocity is the difference between current and old position
+			vx = (Part[i,pos_x] - Part[i,old_pos_x]) * friction
+			vy = (Part[i,pos_y] - Part[i,old_pos_y]) * friction
+			# Store current position
+			Part[i,old_pos_x] = Part[i,pos_x]
+			Part[i,old_pos_y] = Part[i,pos_y]
+			# Verlet integration
+			Part[i,pos_x] = Part[i,pos_x] + vx
+			Part[i,pos_y] = Part[i,pos_y] + vy + gravity
+		endif
+	next i
+end subroutine
+
+subroutine UpdateSticks()
+	# A few constraint iterations make the two-stick chains rigid.
+	for iteration = 0 to 4
+		for i = 0 to Sticks-1
+			a = StickA[i]
+			b = StickB[i]			
+			dx = Part[b,pos_x] - Part[a,pos_x]
+			dy = Part[b,pos_y] - Part[a,pos_y]
+			distance = sqr(dx * dx + dy * dy)
+			if distance > 0 then
+				target = StickLength[i]
+				# Amount by which the current distance differs
+				# from the required stick length.
+				difference = (distance - target) / distance
+				# If both particles are free, move each particle half the correction.
+				if Part[a,pinned] = 0 and Part[b,pinned] = 0 then
+					Part[a,pos_x] = Part[a,pos_x] + dx * difference * 0.5
+					Part[a,pos_y] = Part[a,pos_y] + dy * difference * 0.5
+					Part[b,pos_x] = Part[b,pos_x] - dx * difference * 0.5
+					Part[b,pos_y] = Part[b,pos_y] - dy * difference * 0.5
+				else
+					# If particle is pinned then move only the free particle.
+					if Part[a,pinned] = 0 then
+						Part[a,pos_x] = Part[a,pos_x] + dx * difference
+						Part[a,pos_y] = Part[a,pos_y] + dy * difference
+					endif
+					if Part[b,pinned] = 0 then
+						Part[b,pos_x] = Part[b,pos_x] - dx * difference
+						Part[b,pos_y] = Part[b,pos_y] - dy * difference
+					endif
+				endif
+			endif
+		next i
+	next iteration
+end subroutine
+
+subroutine BoundaryCollisions()
+	#íhere, only the first particle pair collides with the left wall
+	for i = 0 to Particles-1
+		# Left / right walls
+		if Part[i,pos_x] > width-radius then
+			vx = Part[i,pos_x] - Part[i,old_pos_x]
+			Part[i,pos_x] = width-radius
+			Part[i,old_pos_x] = Part[i,pos_x] + vx*bounce
+		else
+			if Part[i,pos_x] < radius then
+				vx = Part[i,pos_x] - Part[i,old_pos_x]
+				Part[i,pos_x] = radius
+				Part[i,old_pos_x] = Part[i,pos_x] + vx*bounce
+			endif
+		endif
+		# Top / bottom walls
+		if Part[i,pos_y] > height-radius then
+			vy = Part[i,pos_y] - Part[i,old_pos_y]
+			Part[i,pos_y] = height-radius
+			Part[i,old_pos_y] = Part[i,pos_y] + vy*bounce
+		else
+			if Part[i,pos_y] < radius then
+				vy = Part[i,pos_y] - Part[i,old_pos_y]
+				Part[i,pos_y] = radius
+				Part[i,old_pos_y] = Part[i,pos_y] + vy*bounce
+			endif
+		endif
+	next i
+end subroutine
+ 
+subroutine DrawParticles()
+	color white
+	rect 0, 0, width, height
+	for i = 0 to Particles-1
+		if Part[i,pinned] = 1 then
+			# Pinned particles are red
+			color red
+			circle (Part[i,pos_x], Part[i,pos_y], radius)
+		else
+			# Free particles are black
+			color black
+			circle (Part[i,pos_x], Part[i,pos_y], radius)
+		endif
+	next i
+end subroutine
+
+subroutine DrawSticks()
+	penwidth 2
+	color black
+	for i = 0 to Sticks-1
+		a = StickA[i]
+		b = StickB[i]			
+		line (Part[a,pos_x], Part[a,pos_y], Part[b,pos_x], Part[b,pos_y])
+	next i
+end subroutine
+
+subroutine mousedrag(mx, my, mb)
+	if mx < 0 then return
+	if mb & 1 then
+		# Find a pinned particle when the mouse button is first pressed
+		if grab = -1 then
+			best = -1
+			bestd = 1000000000
+			for i = 0 to Particles-1
+				if Part[i,pinned] = 1 then
+					dx = Part[i,pos_x] - mx
+					dy = Part[i,pos_y] - my
+					dd = dx*dx + dy*dy
+					if dd < radius*radius then
+						if dd < bestd then
+							bestd = dd
+							best = i
+						endif
+					endif
+				endif
+			next i
+			if best >= 0 then
+				grab = best
+				Part[grab,pos_x] = mx
+				Part[grab,pos_y] = my
+				Part[grab,old_pos_x] = mx
+				Part[grab,old_pos_y] = my
+			endif
+		else
+			# Continue dragging the pinned particl
+			Part[grab,old_pos_x] = Part[grab,pos_x]
+			Part[grab,old_pos_y] = Part[grab,pos_y]
+			Part[grab,pos_x] = mx
+			Part[grab,pos_y] = my
+		endif
+	else
+		# Mouse released
+		grab = -1
+	endif
+end subroutine

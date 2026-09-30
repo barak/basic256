@@ -74,15 +74,18 @@
         <file>Original_Examples/trig.kbs</file>
         <file>Original_Examples/uniformRV.kbs</file>
         <file>Physics/VectorProducts.kbs</file>
-        <file>Physics/Verlet1a_Particles.kbs</file>
-        <file>Physics/Verlet1b_SimilarBalls.kbs</file>
-        <file>Physics/Verlet1c_DifferentBalls.kbs</file>
-        <file>Physics/Verlet1d_MouseMove.kbs</file>
-        <file>Physics/Verlet1e_Optim.kbs</file>
-        <file>Physics/verlet2b_chain.kbs</file>
+        <file>Physics/verlet balls part 1_particles.kbs</file>
+        <file>Physics/verlet balls part 2_SimilarBalls.kbs</file>
+        <file>Physics/verlet balls part 3_DifferentBalls.kbs</file>
+        <file>Physics/verlet balls part 4_MouseMove.kbs</file>
+        <file>Physics/verlet balls part 5_Optim.kbs</file>
+        <file>Physics/verlet rope part 1_sticks.kbs</file>
+        <file>Physics/verlet rope part 2_pinnedsticks.kbs</file>
+        <file>Physics/verlet rope part 3_chained.kbs</file>
+        <file>Physics/verlet rope part 4_rope.kbs</file>
+        <file>Physics/verlet rope part 5_collision.kbs</file>
         <file>Simulations/AnimatedBall.kbs</file>
         <file>Simulations/BouncingBall.kbs</file>
-        <file>Simulations/Colliding2Balls.kbs</file>
         <file>Simulations/Colliding3Balls.kbs</file>
         <file>Simulations/CollidingMultipleBalls.kbs</file>
         <file>Simulations/DoublePendulum.kbs</file>
