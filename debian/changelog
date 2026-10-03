@@ -1,3 +1,12 @@
+basic256 (2.3.0-1) unstable; urgency=medium
+
+  * new upstream release
+  * update debian/copyright due to upstream reorganisation
+  * Remove redundant Priority: optional from source stanza.
+  * Set upstream metadata fields: Bug-Database, Repository, Repository-Browse.
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Sat, 03 Oct 2026 17:46:46 +0100
+
 basic256 (2.2.0-1) unstable; urgency=medium
 
   * new upstream release
