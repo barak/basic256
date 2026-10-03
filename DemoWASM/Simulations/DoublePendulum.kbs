@@ -44,7 +44,7 @@ call drawfixedgraphics()
 # loop
 k=1: t=0: tnext=0
 while not keypressed()
-framerate 30
+
 # calc new values of derivatives
 # 2 very simple ODEs, derivatives of the angles
 da1_dt=w1
@@ -93,6 +93,7 @@ end while
 # calc coordinates, move pendulum sprites 
 # and plot end position
 subroutine plots(a1,a2)
+framerate 50
 r1x=R1*sin(a1): r1y=R1*cos(a1)
 r2x=R2*sin(a2): r2y=R2*cos(a2)
 x1=x0+r1x

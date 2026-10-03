@@ -1,5 +1,5 @@
 #************************************************************************************************
-#*              Verlet integration for colliding balls of equal size and mass                   *
+#*       Part2: Verlet integration for colliding balls of equal size and mass                   *
 #************************************************************************************************
 # Simple particle system with just particle balls, gravity, bounce and a bit of friction
 # Balls now collide and bounce off each other.

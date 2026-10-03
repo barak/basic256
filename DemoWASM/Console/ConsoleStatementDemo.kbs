@@ -1,0 +1,110 @@
+# ConsoleStatementDemo.kbs
+#
+# A tour of the statements that turn the Text Output window into a console
+# of the sort BASIC was written on:
+#
+#   TEXTBACKGROUND   colour the whole window
+#   TEXTCOLOR        colour the text, and optionally the strip behind it
+#   TEXTFONT         family, size, weight and italic
+#   LOCATE           put the cursor at a column and row, both from zero
+#   TEXTCOL/TEXTROW  read the cursor position back
+#
+# Nothing here needs a file, an image or a sound, so it runs in the browser
+# exactly as it does on the desktop.
+
+# A fixed-width font is what makes the box and the columns below line up:
+# in a proportional font a column is not a fixed distance across the window.
+textfont "Courier New", 14
+
+textbackground rgb(0,50,0)
+textcolor rgb(255,255,255)
+cls
+
+textcolor rgb(255,220,0)
+locate 0, 0
+print "  BASIC-256 CONSOLE DEMO              64K RAM SYSTEM  ";
+
+textcolor rgb(160,255,160)
+locate 0, 2
+print "TEXTBACKGROUND colours the whole window, not just the";
+locate 0, 3
+print "strip behind the characters, so empty rows are green too.";
+
+# A box drawn by moving the cursor, rather than by padding out strings.
+textcolor rgb(0,255,128)
+for r = 6 to 12
+   locate 4, r
+   print "|                              |";
+next r
+locate 4, 6
+print "+------------------------------+";
+locate 4, 12
+print "+------------------------------+";
+
+# Printing at a LOCATE replaces what is already there instead of pushing
+# it along, so the right hand edge of the box survives.
+textcolor rgb(255,255,255), rgb(128,0,0)
+locate 6, 8
+print " overwrite, never insert ";
+
+# Rewriting one spot over and over is what LOCATE is for - no need to
+# clear the window and draw everything again.
+textcolor rgb(0,220,255)
+for n = 1 to 40
+   locate 10, 10
+   print "tick "; n; "   ";
+   pause .04
+next n
+
+# TEXTFONT changes family, size and weight for whatever is printed next.
+textcolor rgb(255,180,255)
+textfont "Segoe UI", 13, 700
+locate 0, 14
+print "TEXTFONT sets the family, size and weight,";
+textfont "Courier New", 14
+textcolor rgb(160,255,160)
+locate 0, 15
+print "and TEXTFONT with an empty name goes back to the pane font.";
+
+# INPUT lands wherever LOCATE left the cursor, and what is typed is
+# echoed in the colour the program is printing in.
+textcolor rgb(255,255,0)
+locate 0, 17
+print "enter your first name: ";
+input name$
+
+textcolor rgb(0,0,0), rgb(255,180,0)
+locate 0, 19
+print " Name: " + name$ + " ";
+
+# TEXTCOL and TEXTROW report where the NEXT print will start. Reading them
+# once a line has printed, and saying so on the row below, keeps the
+# sentence from having to describe its own length.
+textcolor rgb(160,255,160)
+locate 0, 21
+print "this line is measured after it has printed";
+endcol = textcol
+endrow = textrow
+locate 0, 23
+print "the line above ended at column " + string(endcol) + ", on row " + string(endrow);
+
+# Hand the window back to the theme so the next program starts clean.
+# (BASIC-256 does this itself at the start of every run - this is only
+# here to show that a program can do it whenever it likes.)
+locate 0, 25
+print "press a key to give the window back to the theme...";
+# Reading KEY clears it, so drop the Enter that finished the INPUT above -
+# without this the wait below would be satisfied before you touched anything.
+dummy = key
+while key = 0
+   pause .05
+end while
+textbackground
+# The colour goes back as well as the background: the green belonged to the
+# green screen, and leaving it set would print the last line in it. TEXTCOLOR
+# on its own hands it to the theme -- black on a light one, white on a dark
+# one -- rather than naming a colour that only suits one of them.
+textcolor
+textfont ""
+cls
+print "back to the normal Text Output window."

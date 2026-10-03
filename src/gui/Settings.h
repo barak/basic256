@@ -33,6 +33,8 @@
 	#define SETTINGSALLOWNO 0
 	#define SETTINGSALLOWASK 1
 	#define SETTINGSALLOWYES 2
+	// an answer only, never stored: allow for the remainder of this run
+	#define SETTINGSALLOWRUN 3
 	
 	// main window
     #define SETTINGSMAINGEOMETRY "Main/Geometry/"
@@ -98,6 +100,12 @@
     #define SETTINGSALLOWSYSTEMDEFAULT SETTINGSALLOWNO
 	#define SETTINGSALLOWPORT "Allow/Port"
     #define SETTINGSALLOWPORTDEFAULT SETTINGSALLOWNO
+    // permissions (files and folders outside the program's own directory)
+	#define SETTINGSALLOWFILE "Allow/File"
+    #define SETTINGSALLOWFILEDEFAULT SETTINGSALLOWASK
+    // netlisten binds every interface rather than loopback only
+	#define SETTINGSNETLISTENANY "Allow/NetListenAny"
+    #define SETTINGSNETLISTENANYDEFAULT false
     //permissions (setsetting/getsetting)
     #define SETTINGSSETTINGSACCESS "Settings/AccesLevel"
     #define SETTINGSSETTINGSACCESSDEFAULT 0

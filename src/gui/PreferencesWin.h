@@ -96,6 +96,9 @@ private:
 
 	QLabel *allowsystemlabel;
 	QComboBox *allowsystemcombo;
+	QLabel *allowfilelabel;
+	QComboBox *allowfilecombo;
+	QCheckBox *netlistenanycheckbox;
 	QLabel *allowportlabel;
 	QComboBox *allowportcombo;
 	QLabel *settingsaccesslabel;

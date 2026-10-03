@@ -1,5 +1,5 @@
 #************************************************************************************************
-#            Verlet integration for colliding balls of different mass Balls                
+#         Part 5: Verlet integration for colliding balls of different mass Balls                *
 #************************************************************************************************
 # Particle system with gravity, bounce, a bit of friction and Balls of different mass/size
 # Balls collide and bounce of each other according to their mass
@@ -41,7 +41,7 @@ end while
 #************************************************************************************************
 subroutine ScreenSetup()
     fastgraphics
-    width = 800: height = 800
+    width = 1000: height = 1000
     graphsize width, height
     color black
     rect 0,0,width,height
@@ -59,7 +59,7 @@ end subroutine
 
 subroutine CreateBalls()
     # Feel free to test with 300+ balls now! It will run smoothly.
-    Balls = 300
+    Balls = 400
     dim Ball(Balls,9)
     StartRad =4
     Max_inc = 20

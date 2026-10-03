@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(basic256 VERSION 2.2.0 LANGUAGES C CXX)
+project(basic256 VERSION 2.3.0 LANGUAGES C CXX)
 
 # Force C++17 standard 
 set(CMAKE_CXX_STANDARD 17)
@@ -60,13 +60,25 @@ set(SOURCES_CORE
     src/core/Convert.cpp
     src/core/DataElement.cpp
     src/core/Error.cpp
+    src/core/FileSecurity.cpp
     src/core/GraphicsBuffer.cpp
     src/core/Interpreter.cpp
+    src/core/Interpreter_arrays.cpp
+    src/core/Interpreter_database.cpp
+    src/core/Interpreter_files.cpp
+    src/core/Interpreter_graphics.cpp
+    src/core/Interpreter_network.cpp
+    src/core/Interpreter_sound.cpp
+    src/core/Interpreter_sprites.cpp
+    src/core/Interpreter_system.cpp
+    src/core/Interpreter_textoutput.cpp
     src/core/md5.cpp
     src/core/opensimplex.cpp
+    src/core/MediaLoader.cpp
     src/core/MediaPath.cpp
     src/core/Sleeper.cpp
     src/core/Sound.cpp
+    src/core/SpriteLayer.cpp
     src/core/Stack.cpp
     src/core/Variables.cpp
     src/core/WasmAudioSink.cpp
@@ -86,13 +98,17 @@ set(HEADERS_CORE
     src/core/DataElement.h
     src/core/Error.h
     src/core/ErrorCodes.h
+    src/core/FileSecurity.h
     src/core/GraphicsBuffer.h
     src/core/Interpreter.h
+    src/core/InterpreterPrivate.h
     src/core/md5.h
     src/core/opensimplex.h
+    src/core/MediaLoader.h
     src/core/MediaPath.h
     src/core/Sleeper.h
     src/core/Sound.h
+    src/core/SpriteLayer.h
     src/core/Stack.h
     src/core/Variables.h
     src/core/Version.h
@@ -110,6 +126,8 @@ set(SOURCES_GUI
     src/gui/BasicGraph.cpp
     src/gui/BasicIcons.cpp
     src/gui/BasicOutput.cpp
+    src/gui/BasicOutputPane.cpp
+    src/gui/BasicOutputGrid.cpp
     src/gui/BasicWidget.cpp
     src/gui/EditSyntaxHighlighter.cpp
     src/gui/EditorTheme.cpp
@@ -128,6 +146,8 @@ set(HEADERS_GUI
     src/gui/BasicGraph.h
     src/gui/BasicIcons.h
     src/gui/BasicOutput.h
+    src/gui/BasicOutputPane.h
+    src/gui/BasicOutputGrid.h
     src/gui/BasicWidget.h
     src/gui/EditSyntaxHighlighter.h
     src/gui/EditorTheme.h
@@ -423,14 +443,14 @@ endif()
 # the "2.1.Alpha04Qt6" version string. Anything that doesn't look like a
 # version branch (main, a detached-HEAD SHA, git not found, ...) shows the
 # name below: main is the branch the public builds come from, and it now
-# carries released 2.2.0, so it reads as the release and no longer as a
+# carries released 2.3.0, so it reads as the release and no longer as a
 # beta. Spelled out rather than written as "${PROJECT_VERSION}", which
-# happens to hold the same 2.2.0: build_installer_Windows.ps1 recovers this
+# happens to hold the same 2.3.0: build_installer_Windows.ps1 recovers this
 # value by regex over the file, so it has to be a literal string here or the
 # installer would be labelled with the unexpanded variable name.
 # That script parses this exact set() line so the installer label cannot
 # drift from the About box; keep the two in lockstep.
-set(BASIC256_MAIN_DISPLAY_VERSION "2.2.0")
+set(BASIC256_MAIN_DISPLAY_VERSION "2.3.0")
 if(BASIC256_BUILD_BRANCH MATCHES "^[vV][0-9]")
     string(REGEX REPLACE "^[vV]" "" BASIC256_BUILD_VERSION "${BASIC256_BUILD_BRANCH}")
 else()

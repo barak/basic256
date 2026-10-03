@@ -1,13 +1,18 @@
 <RCC>
     <qresource prefix="/examples">
+        <file>Console/ConsoleStatementDemo.kbs</file>
+        <file>Console/GreenVsBlue.kbs</file>
+        <file>Console/FormTemplate.kbs</file>
+        <file>Demo/BasicPaint.kbs</file>
         <file>Demo/BTK2_Toolkit_demo.kbs</file>
         <file>Demo/BubbleUniverse_variations.kbs</file>
+        <file>Demo/Critters.kbs</file>
         <file>Demo/FieldLines.kbs</file>
-        <file>Demo/GoldenWaves.kbs</file>
         <file>Demo/Life_GUI.kbs</file>
         <file>Demo/Quiverbloom.kbs</file>
         <file>Demo/SlimeMoldSimulation_GUI.kbs</file>
         <file>FractalsChaosAttractors/BarnsleyFern.kbs</file>
+        <file>FractalsChaosAttractors/CloudySky.kbs</file>
         <file>FractalsChaosAttractors/JuliaMoerman.kbs</file>
         <file>FractalsChaosAttractors/Mandelbrot-256.kbs</file>
         <file>FractalsChaosAttractors/MultiJuliaIFS.kbs</file>
@@ -18,8 +23,9 @@
         <file>Fun/PongWars2.kbs</file>
         <file>Fun/SpecialEffect.kbs</file>
         <file>Fun/Warpfactor_Starfield.kbs</file>
-        <file>Games/Claude-AI-neon_snake.kbs</file>
+        <file>Games/ClaudeAI-neonsnake.kbs</file>
         <file>Games/FlappyBall.kbs</file>
+        <file>Games/FlappyBall2.kbs</file>
         <file>Games/Flood-It.kbs</file>
         <file>Games/MarbleGame.kbs</file>
         <file>Games/PacMan.kbs</file>
@@ -68,18 +74,24 @@
         <file>Original_Examples/trig.kbs</file>
         <file>Original_Examples/uniformRV.kbs</file>
         <file>Physics/VectorProducts.kbs</file>
-        <file>Physics/Verlet1a_Particles.kbs</file>
-        <file>Physics/Verlet1b_SimilarBalls.kbs</file>
-        <file>Physics/Verlet1c_DifferentBalls.kbs</file>
-        <file>Physics/Verlet1d_MouseMove.kbs</file>
-        <file>Physics/Verlet1e_Optim.kbs</file>
+        <file>Physics/verlet balls part 1_particles.kbs</file>
+        <file>Physics/verlet balls part 2_SimilarBalls.kbs</file>
+        <file>Physics/verlet balls part 3_DifferentBalls.kbs</file>
+        <file>Physics/verlet balls part 4_MouseMove.kbs</file>
+        <file>Physics/verlet balls part 5_Optim.kbs</file>
+        <file>Physics/verlet rope part 1_sticks.kbs</file>
+        <file>Physics/verlet rope part 2_pinnedsticks.kbs</file>
+        <file>Physics/verlet rope part 3_chained.kbs</file>
+        <file>Physics/verlet rope part 4_rope.kbs</file>
+        <file>Physics/verlet rope part 5_collision.kbs</file>
         <file>Simulations/AnimatedBall.kbs</file>
         <file>Simulations/BouncingBall.kbs</file>
-        <file>Simulations/Colliding2Balls.kbs</file>
         <file>Simulations/Colliding3Balls.kbs</file>
         <file>Simulations/CollidingMultipleBalls.kbs</file>
         <file>Simulations/DoublePendulum.kbs</file>
         <file>Simulations/MatrixParticles.kbs</file>
+        <file>Simulations/particle_life_final.kbs</file>
+        <file>Simulations/Smokesimulator.kbs</file>
         <file>Sound_Speech/AIChatbot.kbs</file>
         <file>Sound_Speech/SoundStatementDemo.kbs</file>
         <file>Sound_Speech/TwinkleTwinkle.kbs</file>

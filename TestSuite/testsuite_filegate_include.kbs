@@ -1,0 +1,166 @@
+# testsuite_filegate_include section for BASIC256
+
+# Modification History
+# date		programmer	description
+# 20260922	m.vilain	original coding
+
+currentsuite = "filegate"
+
+# Every path a program names goes through the file gate. Anything at or below
+# the folder the program was loaded from is the program's own business and
+# passes silently; anything outside is a decision for the person at the
+# keyboard, and is refused with ERROR_PERMISSION when they say no.
+#
+# Under --silent there is nobody to ask, so the gate fails closed and every
+# refusal below is exact. Run interactively, each one raises the Allow dialog
+# instead and the tester has to answer "Don't allow" -- answering "Allow for
+# this run" once opens everything that follows and the rest of this section
+# will fail, which is why testsuite.kbs asks before including it.
+#
+# The anchor is the folder captured when the run started, not the working
+# directory: a gate anchored to the working directory would walk itself open
+# in a single CHANGEDIR.
+
+# Allow/File is 0 never, 1 ask, 2 always; unset reads as "" and means ask.
+# With the setting on "always" there is nothing left to refuse, so the
+# refusals are skipped rather than reported as failures.
+filegatesetting$ = getsetting("SYSTEM", "Allow/File")
+filegateon = filegatesetting$ <> "2"
+
+###################################################
+# inside the folder: no gate at all
+###################################################
+
+try
+   kill("filegatetemp.txt")
+catch
+end try
+
+open "filegatetemp.txt"
+writeline "inside the program's own folder"
+close
+call n("a file in the program's folder can be made", exists("filegatetemp.txt"), true)
+
+open "filegatetemp.txt"
+filegateline$ = readline
+close
+# readline hands back the line ending it found as well
+filegateline$ = replace(filegateline$, chr(13), "")
+filegateline$ = replace(filegateline$, chr(10), "")
+call s("and read back", filegateline$, "inside the program's own folder")
+
+kill("filegatetemp.txt")
+call n("and deleted", exists("filegatetemp.txt"), false)
+
+###################################################
+# MKDIR
+###################################################
+
+# There is no RMDIR any more and KILL only removes files, so this folder stays
+# behind; it is named in .gitignore for that reason. MKDIR is quiet about a
+# folder that is already there, which is what makes running this twice safe.
+mkdir "filegatesub"
+call n("MKDIR makes a folder in the program's folder", exists("filegatesub"), true)
+mkdir "filegatesub"
+call n("MKDIR on a folder that already exists is quiet", exists("filegatesub"), true)
+
+open "filegatesub/filegatetemp.txt"
+writeline "in a subfolder"
+close
+call n("a file in a subfolder is the program's own business", exists("filegatesub/filegatetemp.txt"), true)
+kill("filegatesub/filegatetemp.txt")
+
+# a path that leaves the folder and comes back is inside, and is allowed: the
+# gate resolves what a path means rather than reading what it looks like
+open "filegatesub/../filegatetemp.txt"
+writeline "out and back again"
+close
+call n("a path that leaves the folder and comes back is allowed", exists("filegatetemp.txt"), true)
+kill("filegatetemp.txt")
+
+###################################################
+# outside the folder: refused
+###################################################
+
+if filegateon then
+
+   # If the gate were broken, the attempts below would leave files in the
+   # folder above this one. Clear any away first -- the clearing is itself
+   # refused while the gate works, hence the try.
+   try
+      if exists("../filegate_escape.txt") then kill("../filegate_escape.txt")
+   catch
+   end try
+   try
+      if exists("../filegate_absolute.txt") then kill("../filegate_absolute.txt")
+   catch
+   end try
+
+   try
+      open "../filegate_escape.txt"
+      close
+      call boolean("opening a file above the program's folder should have been refused", false)
+   catch
+      call n("OPEN above the program's folder", lasterror, ERROR_PERMISSION)
+   end try
+   call n("and nothing was created there", exists("../filegate_escape.txt"), false)
+
+   # the same place named absolutely rather than with ..
+   filegatehome$ = currentdir
+   try
+      open filegatehome$ + "/../filegate_absolute.txt"
+      close
+      call boolean("opening an absolute path outside should have been refused", false)
+   catch
+      call n("OPEN an absolute path outside the folder", lasterror, ERROR_PERMISSION)
+   end try
+   call n("and nothing was created there either", exists("../filegate_absolute.txt"), false)
+
+   # KILL names a file that is not there, so a gate that let this through would
+   # report a different error rather than delete anything
+   try
+      kill("../filegate_missing.txt")
+      call boolean("deleting a file above the program's folder should have been refused", false)
+   catch
+      call n("KILL above the program's folder", lasterror, ERROR_PERMISSION)
+   end try
+
+   try
+      mkdir "../filegate_folder"
+      call boolean("MKDIR above the program's folder should have been refused", false)
+   catch
+      call n("MKDIR above the program's folder", lasterror, ERROR_PERMISSION)
+   end try
+   call n("and no folder was made there", exists("../filegate_folder"), false)
+
+   try
+      dbopen "../filegate.db"
+      dbclose
+      call boolean("DBOPEN above the program's folder should have been refused", false)
+   catch
+      call n("DBOPEN above the program's folder", lasterror, ERROR_PERMISSION)
+   end try
+   call n("and no database was made there", exists("../filegate.db"), false)
+
+   ###################################################
+   # the anchor does not move with the working directory
+   ###################################################
+
+   # CHANGEDIR moves the working directory, and after it a plain file name
+   # means a file outside the folder the program was loaded from. That is
+   # still outside, and still refused.
+   changedir("..")
+   try
+      open "filegate_afterchangedir.txt"
+      close
+      call boolean("a file reached by CHANGEDIR should have been refused", false)
+   catch
+      call n("OPEN outside the folder after CHANGEDIR", lasterror, ERROR_PERMISSION)
+   end try
+   filegateescaped = exists("filegate_afterchangedir.txt")
+   changedir(filegatehome$)
+
+   call n("and nothing was created there", filegateescaped, false)
+   call s("the working directory is back where it started", currentdir, filegatehome$)
+
+endif

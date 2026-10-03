@@ -1,0 +1,102 @@
+# testsuite_hsv_include section for BASIC256
+
+# Modification History
+# date		programmer	description
+# 20260924	m.vilain	original coding
+
+currentsuite = "hsv"
+
+# HSV is RGB's sibling: it builds the same kind of colour number, from a hue in
+# degrees (0-360) and saturation, value and alpha in percent (0-100). Every
+# colour checked here converts to whole RGB values exactly, so the comparisons
+# hold on every platform.
+
+###################################################
+# the colour wheel
+###################################################
+
+call n("hue 0 is red", hsv(0,100,100), rgb(255,0,0))
+call n("hue 60 is yellow", hsv(60,100,100), rgb(255,255,0))
+call n("hue 120 is green", hsv(120,100,100), rgb(0,255,0))
+call n("hue 180 is cyan", hsv(180,100,100), rgb(0,255,255))
+call n("hue 240 is blue", hsv(240,100,100), rgb(0,0,255))
+call n("hue 300 is magenta", hsv(300,100,100), rgb(255,0,255))
+call n("hue 360 is red again", hsv(360,100,100), hsv(0,100,100))
+
+###################################################
+# saturation and value
+###################################################
+
+call n("no saturation is white at full value", hsv(0,0,100), rgb(255,255,255))
+call n("no value is black whatever the hue", hsv(200,100,0), rgb(0,0,0))
+call n("the hue does not matter for a grey", hsv(90,0,40), hsv(270,0,40))
+call n("a colour between the primaries", hsv(200,40,80), rgb(122,177,204))
+
+###################################################
+# alpha, in percent like the others
+###################################################
+
+call n("no alpha argument is fully opaque", hsv(120,100,100), hsv(120,100,100,100))
+call n("alpha 100 is rgb alpha 255", hsv(240,100,100,100), rgb(0,0,255,255))
+call n("alpha 0 is rgb alpha 0", hsv(240,100,100,0), rgb(0,0,255,0))
+call n("alpha 50 is rgb alpha 128", hsv(240,100,100,50), rgb(0,0,255,128))
+
+###################################################
+# fractions are allowed
+###################################################
+
+call boolean("a fractional hue is accepted", hsv(30.5,100,100) <> 0)
+call boolean("and is not the same as its neighbour", hsv(30.5,100,100) <> hsv(30,100,100))
+
+###################################################
+# it is a colour like any other
+###################################################
+
+h$ = imagenew(10, 10, hsv(240,100,100))
+setgraph h$
+call n("an image can be made in an hsv colour", pixel(5,5), blue)
+color hsv(0,100,100)
+rect 0,0,5,5
+call n("color takes an hsv colour", pixel(2,2), red)
+call n("and leaves the rest alone", pixel(7,7), blue)
+setgraph
+unload h$
+
+###################################################
+# out of range
+###################################################
+
+try
+   x = hsv(360.5,100,100)
+   call boolean("a hue over 360 should have raised an error", false)
+catch
+   call n("a hue over 360", lasterror, 141)
+end try
+
+try
+   x = hsv(-1,100,100)
+   call boolean("a negative hue should have raised an error", false)
+catch
+   call n("a negative hue", lasterror, 141)
+end try
+
+try
+   x = hsv(0,101,100)
+   call boolean("a saturation over 100 should have raised an error", false)
+catch
+   call n("a saturation over 100", lasterror, 141)
+end try
+
+try
+   x = hsv(0,100,-0.5)
+   call boolean("a negative value should have raised an error", false)
+catch
+   call n("a negative value", lasterror, 141)
+end try
+
+try
+   x = hsv(0,100,100,255)
+   call boolean("an rgb-style alpha should have raised an error", false)
+catch
+   call n("an alpha over 100, as rgb would take it", lasterror, 141)
+end try

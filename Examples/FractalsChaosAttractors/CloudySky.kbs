@@ -1,0 +1,59 @@
+# Cloudy sky   OpenSimplex noise and an HSV gradient
+# Several octaves of NOISE added together (fractal noise), coloured with hsv():
+# blue sky that gets paler towards the horizon, fading into white and grey
+# clouds wherever the noise is high.
+
+w = 900: h = 900
+OCTAVES = 6
+SCALE = 1 / 260          # size of the biggest clouds, in noise units per pixel
+COVER = 0.46             # noise level where the clouds start; lower = more cloud
+SOFT = 0.30              # how far above COVER a cloud becomes solid
+
+graphsize w, h
+clg black
+fastgraphics
+
+started = msec
+for y = 0 to h - 1
+   t = y / (h - 1)                  # 0 at the top, 1 at the horizon
+   skyhue = 214 - 14 * t
+   skysat = 78 - 45 * t
+   skyval = 70 + 27 * t
+   for x = 0 to w - 1
+      # fractal noise; x is squeezed a little so the clouds come out wider than tall
+      n = 0: amp = 1: freq = SCALE: total = 0
+      for o = 1 to OCTAVES
+         n = n + amp * noise(x * freq * 0.6 + o * 17.3, y * freq + o * 31.7)
+         total = total + amp
+         amp = amp * 0.5
+         freq = freq * 2
+      next o
+      n = (n / total + 1) / 2       # roughly 0 to 1
+
+      # how much cloud: 0 is clear sky, 1 is solid cloud
+      c = smoothstep(COVER, COVER + SOFT, n)
+      # thick parts of a cloud are bright white, thin parts a bluish grey
+      cloudval = 80 + 20 * smoothstep(COVER, COVER + 0.4, n)
+
+      sat = skysat * (1 - c) + 6 * c
+      val = skyval * (1 - c) + cloudval * c
+      color hsv(skyhue, clamp(sat, 0, 100), clamp(val, 0, 100))
+      plot x, y
+   next x
+   if y % 10 = 9 then refresh
+next y
+refresh
+print "Cloudy sky drawn in " + ((msec - started) / 1000) + " seconds"
+end
+
+# 0 below edge0, 1 above edge1, a smooth S-curve in between
+function smoothstep(edge0, edge1, v)
+   t = clamp((v - edge0) / (edge1 - edge0), 0, 1)
+   return t * t * (3 - 2 * t)
+end function
+
+function clamp(v, lo, hi)
+   if v < lo then return lo
+   if v > hi then return hi
+   return v
+end function

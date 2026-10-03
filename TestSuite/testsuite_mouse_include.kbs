@@ -6,6 +6,7 @@
 # 20140530	j.m.reneau	added mouseb statement test
 # 20160908	j.m.reneau	added doubleclick
 # 20200331  J.M.RENEAU  added escape for non 3 bottom mouses
+# 20260927	m.vilain	MOUSEBUTTON_NONE
 
 currentsuite = "mouse"
 
@@ -89,3 +90,6 @@ if not escaped then
 	end while
 	print (msec - a) + " you presss the button for ms"
 end if
+
+# nothing is being pressed now the tests above are done
+call n("with no button held mouseb is mousebutton_none", mouseb, mousebutton_none)

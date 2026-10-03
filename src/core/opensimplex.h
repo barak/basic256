@@ -26,6 +26,14 @@ namespace OpenSimplex2 {
 	// grid at a repeating angle and the regularity shows.
 	double noise1(int64_t seed, double x);
 
+	// Three dimensional noise.  The reference's noise3_ImproveXY orientation:
+	// the lattice is turned so that any XY plane cuts it cleanly, which is what
+	// a program wants when it draws X and Y and moves through Z as time or
+	// depth.  Also bounded by -1..1.  A slice at a fixed Z is not the two
+	// dimensional field - noise3(seed, x, y, 0) and noise2(seed, x, y) are
+	// different values.
+	double noise3(int64_t seed, double x, double y, double z);
+
 }
 
 #endif

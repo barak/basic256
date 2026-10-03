@@ -3,6 +3,7 @@
 # Modification History
 # date		programmer	description
 # 20140103	j.m.reneau	split from main testsuite
+# 20260927	m.vilain	LASTERRORMESSAGE and LASTERROREXTRA on a bad query
 
 currentsuite = "database"
 
@@ -59,3 +60,17 @@ dbclose t
 kill "testsuite2.db"
 dbclose
 kill "testsuite.db"
+
+# LASTERRORMESSAGE says what went wrong, and LASTERROREXTRA adds what the
+# statement knows - for a query, the database's own complaint
+dbopen "testsuite_extra.db"
+try
+   dbexecute "this is not sql;"
+   call boolean("a bad query raises an error", false)
+catch
+   call n("a bad query raises ERROR_DBQUERY", lasterror, error_dbquery)
+   call different("lasterrormessage describes the error", lasterrormessage, "")
+   call different("lasterrorextra carries the database's own message", lasterrorextra(), "")
+end try
+dbclose
+kill "testsuite_extra.db"

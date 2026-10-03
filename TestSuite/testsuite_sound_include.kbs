@@ -7,6 +7,7 @@
 # 20161031  j.m.reneau  added polysoud 2 3 and 4 voices
 # 20161101  j.m.reneau  added [] to all array passing to functions
 # 20170515  j.m.reneau  added back polyohonic sounds and added duration testing
+# 20260927	m.vilain	sound resources, players, SOUNDSYSTEM and tone shaping
 
 currentsuite = "sound"
 
@@ -72,3 +73,211 @@ l = msec - l
 call npercent("note play for 2000 MS", 2000, l, 1)
 call q("did c then e then g then c play for 2 seconds")
 
+###################################################
+# sound resources - SOUNDLOAD, SOUNDLOADRAW, SOUNDSAMPLERATE
+###################################################
+
+file$ = "jim_saying_numbers.mp3"
+
+# SOUNDLOAD reads a file once and hands back a resource to play later
+r$ = soundload(file$)
+call same("soundload of a file gives a sound: resource", left(r$, 6), "sound:")
+
+# a file that is not there is ERROR_SOUNDFILE
+try
+   bad$ = soundload("no_such_sound_file.mp3")
+   call boolean("soundload of a missing file raises an error", false)
+catch
+   call n("soundload of a missing file raises ERROR_SOUNDFILE", lasterror, error_soundfile)
+end try
+
+# a URL that cannot be fetched raises ERROR_DOWNLOAD, and nothing is registered
+# in its name (SOUNDLOAD used to hand back a resource of no sound at all)
+soundloaderr = 0
+goto soundloadtest
+soundloaderror:
+   soundloaderr = lasterror
+   return
+soundloadtest:
+onerror soundloaderror
+failed$ = "unset"
+failed$ = soundload("http://127.0.0.1:1/no_such_sound.mp3")
+offerror
+call n("soundload of an unreachable URL raises ERROR_DOWNLOAD", soundloaderr, error_download)
+call same("soundload of an unreachable URL gives no resource", failed$, "")
+
+# a note and a list of notes load as resources too
+t$ = soundload(440, 300)
+call different("soundload of a note gives a resource", t$, "")
+m$ = soundload({440, 150, 660, 150})
+call different("soundload of a list of notes gives a resource", m$, "")
+
+# SOUNDLOADRAW takes raw samples, played at SOUNDSAMPLERATE samples a second
+sr = soundsamplerate
+call boolean("soundsamplerate is a real sample rate", sr >= 8000 and sr <= 192000)
+dim raw(sr \ 4)
+for i = 0 to sr \ 4 - 1
+   raw[i] = sin(2 * pi * 440 * i / sr) * .5
+next i
+w$ = soundloadraw(raw[])
+call different("soundloadraw gives a resource", w$, "")
+l = msec
+sound w$
+l = msec - l
+call npercent("a quarter second of raw samples plays for 250 MS", 250, l, .5)
+call q("did a quarter second of a 440 Hz tone play")
+
+l = msec
+sound t$
+l = msec - l
+call npercent("a loaded note plays for its 300 MS", 300, l, .5)
+
+# a file name given straight to SOUNDPLAY, several times in a row
+for i = 1 to 3
+   soundplay file$
+   pause .4
+   soundsystem 0
+next i
+call q("did the start of 'one' play three times")
+
+###################################################
+# players - SOUNDPLAYER and the statements that address one
+###################################################
+
+p = soundplayer(r$)
+call boolean("soundplayer gives a player number", p > 0)
+call n("a new player is stopped", soundstate(p), 0)
+len = soundlength(p)
+call boolean("soundlength of the file is its duration", len > 4 and len < 8)
+
+soundplay p
+pause 1
+call n("a playing player reports 1", soundstate(p), 1)
+call boolean("soundposition moves while playing", soundposition(p) > .5)
+
+soundpause p
+pos = soundposition(p)
+call n("a paused player reports 2", soundstate(p), 2)
+pause .5
+call boolean("a paused player does not move", abs(soundposition(p) - pos) < .05)
+
+soundseek p, 3
+call npercent("soundseek moves to 3 seconds", soundposition(p), 3, .1)
+
+soundvolume p, 3
+soundplay p
+pause 1
+soundfade p, 0, 1
+pause 1.5
+call q("did a number play quietly and fade away")
+
+soundstop p
+call n("a stopped player reports 0", soundstate(p), 0)
+call boolean("soundstop goes back to the start", soundposition(p) < .1)
+
+soundloop p, 2
+soundvolume p, 8
+soundplay p
+soundwait p
+call q("did 'one' to 'five' play twice")
+soundplayeroff p
+
+###################################################
+# the most recent sound - SOUNDID, SOUNDLENGTH, SOUNDLOOP, SOUNDWAIT
+###################################################
+
+soundplay t$
+id = soundid
+call boolean("soundid names the sound just started", id > 0)
+call npercent("soundlength with no argument is the last sound's length", soundlength, .3, .2)
+l = msec
+soundwait
+l = msec - l
+call boolean("soundwait waits for the last sound to finish", l < 1000)
+
+soundloop t$, 3
+l = msec
+sound t$
+l = msec - l
+call npercent("soundloop on a resource plays it three times", 900, l, .5)
+soundloop t$, 1
+
+# SOUNDPLAY on its own starts the most recent sound again. Written at the start
+# of a line, before a colon, it is still SOUNDPLAY and not a label
+soundplay r$
+a = soundid
+soundpause a
+soundplay: soundbarestate = soundstate(a)
+call n("soundplay on its own restarts the most recent sound", soundbarestate, 1)
+soundstop a
+
+###################################################
+# every sound at once - SOUNDSYSTEM
+###################################################
+
+soundplay r$
+a = soundid
+pause .5
+soundsystem 2
+call n("soundsystem 2 pauses every sound", soundstate(a), 2)
+soundsystem 1
+call n("soundsystem 1 resumes what code 2 paused", soundstate(a), 1)
+soundsystem 2
+soundsystem 4
+call n("soundsystem 4 resumes every paused sound", soundstate(a), 1)
+soundsystem 0
+call n("soundsystem 0 stops every sound", soundstate(a), 0)
+soundsystem 3
+call q("did 'one' start, pause, and carry on until stopped")
+
+###################################################
+# how tones sound - VOLUME, SOUNDWAVEFORM, SOUNDHARMONICS, SOUNDENVELOPE
+###################################################
+
+volume 2
+sound 440, 400
+volume(9)
+sound 440, 400
+volume 5
+call q("was the second note louder than the first")
+
+for wave = 0 to 4
+   soundwaveform wave
+   sound 330, 400
+next wave
+soundwaveform 0
+call q("did five notes play, each with a different tone (sine, square, triangle, sawtooth, pulse)")
+
+soundwaveform {0, 1, 1, 1, 0, 1, -1, 1}, true
+sound 330, 400
+soundwaveform 0
+call q("did a note play with a custom waveform")
+
+soundharmonics 2, .5
+sound 330, 400
+soundharmonics {3, .4, 5, .2}
+sound 330, 400
+soundharmonics
+sound 330, 400
+call q("did three notes play, the first two richer than the plain third")
+
+soundenvelope 300, 100, .5, 300
+sound 330, 1000
+soundenvelope {0, 200, 1, 200, .3, 300}
+sound 330, 1000
+soundenvelope
+sound 330, 1000
+call q("did the first two notes swell and fade, and the third play at a flat level")
+
+# the array form is level, duration, level ... level, release - an even count
+try
+   soundenvelope {0, 200, 1, 200, .3}
+   call boolean("soundenvelope refuses an odd-length array", false)
+catch
+   call n("soundenvelope refuses an odd-length array", lasterror, error_envelopeodd)
+end try
+
+unload r$
+unload t$
+unload m$
+unload w$

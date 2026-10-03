@@ -567,3 +567,16 @@ jump2:
 catch
 	print " - fail": end
 end try
+
+#STAGE:43
+# NEXT on its own at the start of a line, straight before a colon, is still
+# NEXT and not a label called next
+stage++ : print "Test FOR/NEXT #";stage;
+test = 0
+for f = 1 to 3
+next: test = f
+if test<>4 then
+	print " - fail": end
+else
+	print " - pass"
+end if

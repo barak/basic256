@@ -120,8 +120,120 @@
 	unsigned int argstype[100];
 	int numargs = 0;
 
+	// SORT: the array being sorted and the options seen so far.  The option
+	// words are collected here and pushed as one number when the statement
+	// ends, so they can be written in any order and a clash is a compile
+	// error.  Bits 1-4 are what OP_SORT reads; SORTFLAG_ASCENDING only
+	// records that the word was written.
+	#define SORTFLAG_DESCENDING 1
+	#define SORTFLAG_IGNORECASE 2
+	#define SORTFLAG_COLUMN 4
+	#define SORTFLAG_ASCENDING 8
+	int sortvar;
+	int sortflags;
+
 	#define ARGSTYPEVALUE 0
         #define ARGSTYPEVARARRAY 1
+	#define ARGSTYPEREF 2
+
+	// ref() parameters.  A parameter declared ref(x) has to receive the
+	// caller's variable itself, which is what OP_VAR_REF pushes - but the call
+	// may be compiled before the FUNCTION or SUBROUTINE it calls, so the
+	// argument is compiled as an ordinary value and fixed afterwards:
+	// - every argument of a call records where its code starts
+	//   (callargstart), and an argument that turns out to be nothing but a
+	//   variable, a single OP_VAR_GET, is remembered as a callrefcandidate
+	//   together with the routine called and its position in the call;
+	// - every parameter declared ref() is remembered as a refparam;
+	// - once the whole program is parsed, resolveRefArguments() turns the
+	//   OP_VAR_GET of each candidate that lands on a ref() parameter into
+	//   OP_VAR_REF, exactly the code ref(variable) at the call gives.
+	// Anything else passed to a ref() parameter, such as a[3] or a + 1, still
+	// goes by value, there being no variable to refer to.
+	struct refrecord { int symbol; int position; int offset; };
+	int *callargstart = NULL;			// start of each argument being compiled
+	int ncallargstart = 0, maxcallargstart = 0;
+	int *callargpending = NULL;		// per finished argument: its OP_VAR_GET, or -1
+	int ncallargpending = 0, maxcallargpending = 0;
+	struct refrecord *callrefcandidates = NULL;
+	int ncallrefcandidates = 0, maxcallrefcandidates = 0;
+	struct refrecord *refparams = NULL;	// offset unused
+	int nrefparams = 0, maxrefparams = 0;
+
+	void *growArray(void *p, int *max, int need, size_t size) {
+		if (need > *max) {
+			*max = need + 256;
+			p = realloc(p, *max * size);
+		}
+		return p;
+	}
+
+	void callArgumentStart() {
+		callargstart = growArray(callargstart, &maxcallargstart, ncallargstart + 1, sizeof(int));
+		callargstart[ncallargstart++] = wordOffset;
+	}
+
+	void callArgumentPending(int offset) {
+		callargpending = growArray(callargpending, &maxcallargpending, ncallargpending + 1, sizeof(int));
+		callargpending[ncallargpending++] = offset;
+	}
+
+	void callArgumentEnd() {
+		int start = callargstart[--ncallargstart];
+		callArgumentPending((wordOffset == start + 2 && wordCode[start] == OP_VAR_GET) ? start : -1);
+	}
+
+	// a call to symbol with count arguments has been compiled - its arguments
+	// are the last count pending ones (those of any call nested inside it
+	// were taken off when that call was compiled)
+	void callArguments(int symbol, int count) {
+		int k;
+		if (count > ncallargpending) count = ncallargpending;
+		for (k = 0; k < count; k++) {
+			int offset = callargpending[ncallargpending - count + k];
+			if (offset >= 0) {
+				callrefcandidates = growArray(callrefcandidates, &maxcallrefcandidates, ncallrefcandidates + 1, sizeof(struct refrecord));
+				callrefcandidates[ncallrefcandidates].symbol = symbol;
+				callrefcandidates[ncallrefcandidates].position = k;
+				callrefcandidates[ncallrefcandidates].offset = offset;
+				ncallrefcandidates++;
+			}
+		}
+		ncallargpending -= count;
+	}
+
+	// remember the ref() parameters of the FUNCTION or SUBROUTINE just defined
+	void recordRefParameters(int symbol) {
+		int t;
+		for (t = 0; t < numargs; t++) {
+			if (argstype[t] == ARGSTYPEREF) {
+				refparams = growArray(refparams, &maxrefparams, nrefparams + 1, sizeof(struct refrecord));
+				refparams[nrefparams].symbol = symbol;
+				refparams[nrefparams].position = t;
+				refparams[nrefparams].offset = -1;
+				nrefparams++;
+			}
+		}
+	}
+
+	void resolveRefArguments() {
+		int c, p;
+		for (c = 0; c < ncallrefcandidates; c++) {
+			for (p = 0; p < nrefparams; p++) {
+				if (refparams[p].symbol == callrefcandidates[c].symbol && refparams[p].position == callrefcandidates[c].position) {
+					wordCode[callrefcandidates[c].offset] = OP_VAR_REF;
+					break;
+				}
+			}
+		}
+	}
+
+	void clearRefArguments() {
+		ncallargstart = 0;
+		ncallargpending = 0;
+		ncallrefcandidates = 0;
+		nrefparams = 0;
+	}
 
 	// compiler workings - store in array so that interperter can display all of them
 	int parsewarningtable[PARSEWARNINGTABLESIZE];
@@ -367,6 +479,11 @@
 		free(symtableaddressargs);
 		symtableaddressargs=NULL;
 		maxsymtable = 0;
+		free(callargstart); callargstart = NULL; maxcallargstart = 0;
+		free(callargpending); callargpending = NULL; maxcallargpending = 0;
+		free(callrefcandidates); callrefcandidates = NULL; maxcallrefcandidates = 0;
+		free(refparams); refparams = NULL; maxrefparams = 0;
+		clearRefArguments();
 		maxwordoffset = 0;
 
 		while(include_filenames_counter>0){
@@ -429,6 +546,7 @@
 %token B256ARC
 %token B256ARRAYBASE
 %token B256ASC
+%token B256ASCENDING
 %token B256ASIN
 %token B256ASSIGNED
 %token B256ATAN
@@ -489,6 +607,7 @@
 %token B256DBSTRING
 %token B256DEBUGINFO
 %token B256DEGREES
+%token B256DESCENDING
 %token B256DIM
 %token B256DIR
 %token B256DIVEQUAL
@@ -659,6 +778,7 @@
 %token B256GREY
 %token B256GTE
 %token B256HOUR
+%token B256HSV
 %token B256IF
 %token B256IN
 %token B256IMAGEAUTOCROP
@@ -680,6 +800,7 @@
 %token B256IMAGETYPE_JPG
 %token B256IMAGETYPE_PNG
 %token B256IMAGEWIDTH
+%token B256IGNORECASE
 %token B256IMGLOAD
 %token B256IMGSAVE
 %token B256IMPLODE
@@ -703,6 +824,7 @@
 %token B256LET
 %token B256LINE
 %token B256LJUST
+%token B256LOCATE
 %token B256LOG
 %token B256LOGTEN
 %token B256LOWER
@@ -720,6 +842,7 @@
 %token B256MID
 %token B256MIDX
 %token B256MINUTE
+%token B256MKDIR
 %token B256MOD
 %token B256MONTH
 %token B256MOUSEB
@@ -815,6 +938,7 @@
 %token B256SLICE_ALL
 %token B256SLICE_PAINT
 %token B256SLICE_SPRITE
+%token B256SORT
 %token B256SOUND
 %token B256SOUNDENVELOPE
 %token B256SOUNDFADE
@@ -850,6 +974,7 @@
 %token B256SPRITES
 %token B256SPRITESHOW
 %token B256SPRITESLICE
+%token B256SPRITETEXT
 %token B256SPRITEV
 %token B256SPRITEW
 %token B256SPRITEX
@@ -863,6 +988,13 @@
 %token B256SYSTEM
 %token B256TAN
 %token B256TEXT
+%token B256TEXTBACKGROUND
+%token B256TEXTCOLOR
+%token B256TEXTCOL
+%token B256TEXTFONT
+%token B256TEXTROW
+%token B256TEXTSCREEN
+%token B256TEXTCHAR
 %token B256TEXTHEIGHT
 %token B256TEXTWIDTH
 %token B256THEN
@@ -1094,12 +1226,11 @@ functionvariable:
 			//printf("functionvariable %i %i %i\n", args[numargs-1], argstype[numargs-1],numargs);
 		}
 		| B256REF '(' variable_a ')' {
-			// ref(variable) parameter - the caller passes a T_REF (see callexpr's
-			// OP_VAR_REF) so the ordinary OP_VAR_SET / setData stores the reference
-			// and the parameter aliases the caller's variable. The keyword here is
-			// accepted for documentation/symmetry and generates the same code as a
-			// plain value parameter.
-			args[numargs] = varnumber[--nvarnumber]; argstype[numargs] = ARGSTYPEVALUE; numargs++;
+			// ref(variable) parameter - it receives a T_REF, which the ordinary
+			// OP_VAR_SET / setData stores so the parameter aliases the caller's
+			// variable.  The caller pushes one when it writes ref(a), and when it
+			// passes a bare variable resolveRefArguments() makes it push one.
+			args[numargs] = varnumber[--nvarnumber]; argstype[numargs] = ARGSTYPEREF; numargs++;
 		}
 		;
 
@@ -1190,8 +1321,12 @@ callexprlist:
 
 /* USED ONLY IN CALLING Functions and subroutines */
 callexpr:
-	expr
-	| B256REF '(' variable ')' { addIntOp(OP_VAR_REF, varnumber[--nvarnumber]); }
+	callexprstart expr { callArgumentEnd(); }
+	| B256REF '(' variable ')' { addIntOp(OP_VAR_REF, varnumber[--nvarnumber]); callArgumentPending(-1); }
+	;
+
+callexprstart:
+	/* empty */ { callArgumentStart(); }
 	;
 	
 
@@ -1320,6 +1455,7 @@ expr_function:
 		// function call with arguments
 		addIntOp(OP_PUSHINT, listlen); //push number of arguments passed to compare with FUNCTION definition
 		addIntOp(OP_CALLFUNCTION, varnumber[--nvarnumber]);
+		callArguments(varnumber[nvarnumber], listlen);
 		addIntOp(OP_CURRLINE, filenumber * 0x1000000 + linenumber);
 	}
 	| variable '(' ')' {
@@ -1965,6 +2101,7 @@ expr_numeric:
 	| B256RAND args_none { addOp(OP_RAND); }
 	| B256NOISE '(' expr ')' { addIntOp(OP_PUSHINT, 1); addOp(OP_NOISE); }
 	| B256NOISE '(' args_ee ')' { addIntOp(OP_PUSHINT, 2); addOp(OP_NOISE); }
+	| B256NOISE '(' args_eee ')' { addIntOp(OP_PUSHINT, 3); addOp(OP_NOISE); }
 				| B256PI args_none { addFloatOp(OP_PUSHFLOAT, 3.14159265358979323846); }
 	| B256BOOLEOF args_none {
 		addIntOp(OP_PUSHINT, 0);
@@ -1980,6 +2117,8 @@ expr_numeric:
 	| B256SECOND args_none { addOp(OP_SECOND); }
 	| B256GRAPHWIDTH args_none { addOp(OP_GRAPHWIDTH); }
 	| B256GRAPHHEIGHT args_none { addOp(OP_GRAPHHEIGHT); }
+	| B256TEXTCOL args_none { addOp(OP_TEXTCOL); }
+	| B256TEXTROW args_none { addOp(OP_TEXTROW); }
 	| B256SIZE args_none {
 		addIntOp(OP_PUSHINT, 0);
 		addOp(OP_SIZE);
@@ -2010,6 +2149,13 @@ expr_numeric:
 	}
 	| B256RGB '(' expr ',' expr ',' expr ',' expr ')' {
 		addOp(OP_RGB);
+	}
+	| B256HSV '(' expr ',' expr ',' expr ')' {
+		addIntOp(OP_PUSHINT,100);	// a, in percent
+		addOp(OP_HSV);
+	}
+	| B256HSV '(' expr ',' expr ',' expr ',' expr ')' {
+		addOp(OP_HSV);
 	}
 	| B256GETCOLOR args_none { addOp(OP_GETCOLOR); }
 	| B256GETBRUSHCOLOR args_none { addOp(OP_GETBRUSHCOLOR); }
@@ -2263,6 +2409,7 @@ expr_string:
 	| B256MIDX '(' expr ',' expr ')' { addIntOp(OP_PUSHINT, 1); addOp(OP_MIDX); }
 	| B256MIDX '(' expr ',' expr ',' expr ')' { addOp(OP_MIDX); }
 	| B256LEFT '(' expr ',' expr ')' { addOp(OP_LEFT); }
+	| B256TEXTCHAR '(' expr ',' expr ')' { addOp(OP_TEXTCHAR); }
 	| B256RIGHT '(' expr ',' expr ')' { addOp(OP_RIGHT); }
 	| B256READ args_none { addIntOp(OP_PUSHINT, 0); addOp(OP_READ); }
 	| B256READ '(' expr ')' { addOp(OP_READ); }
@@ -2532,10 +2679,12 @@ statement:
 	| killstmt
 	| letstmt
 	| linestmt
+	| locatestmt
 	| maintoolbarvisiblestmt
 	| mapstmt
 	| maximizestmt
 	| matstmt
+	| mkdirstmt
 	| netclosestmt
 	| netconnectstmt
 	| netlistenstmt
@@ -2570,6 +2719,7 @@ statement:
 	| setclipboardimagestmt
 	| setclipboardstringstmt
 	| setsettingstmt
+	| sortstmt
 	| soundstmt
 	| soundpausestmt
 	| soundplayeroffstmt
@@ -2592,10 +2742,15 @@ statement:
 	| spritepolystmt
 	| spriteshowstmt
 	| spriteslicestmt
+	| spritetextstmt
 	| stampstmt
 	| subroutinestmt
 	| systemstmt
 	| textstmt
+	| textcolorstmt
+	| textbackgroundstmt
+	| textscreenstmt
+	| textfontstmt
 	| throwerrorstmt
 	| trystmt
 	| unassignstmt
@@ -3406,6 +3561,7 @@ callstmt:	B256CALL variable '(' ')' {
 			| B256CALL variable '(' callexprlist ')' {
 					addIntOp(OP_PUSHINT, listlen); //push number of arguments passed to compare with SUBROUTINE definition
 					addIntOp(OP_CALLSUBROUTINE, varnumber[--nvarnumber]);
+					callArguments(varnumber[nvarnumber], listlen);
 					addIntOp(OP_CURRLINE, filenumber * 0x1000000 + linenumber);
 			}
 			;
@@ -3719,6 +3875,88 @@ fontstmt:
 		addIntOp(OP_PUSHINT, -1); // default weight
 		addIntOp(OP_PUSHINT, 0); // font is not italic
 		addOp(OP_FONT);
+	}
+	;
+
+/* LOCATE, TEXTCOLOR and TEXTFONT drive the text output pane. They deliberately
+   mirror the graphics FONT and COLOR statements so the argument lists are
+   learned once, but they are separate keywords because the panes keep separate
+   state. */
+
+locatestmt:
+	B256LOCATE args_ee {
+		addOp(OP_LOCATE);
+	}
+	;
+
+textcolorstmt:
+	B256TEXTCOLOR args_ee {
+		addOp(OP_TEXTCOLOR);
+	}
+	| B256TEXTCOLOR expr {
+		addIntOp(OP_PUSHINT, 0);	// no background - transparent
+		addOp(OP_TEXTCOLOR);
+	}
+	| B256TEXTCOLOR args_none {
+		// TEXTCOLOR on its own hands the text back to the theme, the way
+		// TEXTBACKGROUND on its own hands back the background. A fully
+		// transparent foreground is what says so.
+		addIntOp(OP_PUSHINT, 0);	// no foreground - back to the theme
+		addIntOp(OP_PUSHINT, 0);	// and no background of its own
+		addOp(OP_TEXTCOLOR);
+	}
+	;
+
+/* TEXTSCREEN cols, rows turns the pane into a fixed character grid. The
+   argument order is the same as LOCATE and the graphics pane: column first.
+   A third argument asks for square cells -- as tall as they are wide, the
+   shape the eighties machines drew -- rather than cells the shape of the
+   font's own line box. With no arguments it hands the dock back to the
+   flowing pane. */
+textscreenstmt:
+	B256TEXTSCREEN args_eee {
+		addOp(OP_TEXTSCREEN);
+	}
+	| B256TEXTSCREEN args_ee {
+		addIntOp(OP_PUSHINT, 0);	// cells the shape of the font
+		addOp(OP_TEXTSCREEN);
+	}
+	| B256TEXTSCREEN args_none {
+		addIntOp(OP_PUSHINT, 0);	// leave grid mode
+		addIntOp(OP_PUSHINT, 0);
+		addIntOp(OP_PUSHINT, 0);
+		addOp(OP_TEXTSCREEN);
+	}
+	;
+
+textbackgroundstmt:
+	B256TEXTBACKGROUND expr {
+		addOp(OP_TEXTBACKGROUND);
+	}
+	| B256TEXTBACKGROUND args_none {
+		addIntOp(OP_PUSHINT, 0);	// transparent - back to the theme colour
+		addOp(OP_TEXTBACKGROUND);
+	}
+	;
+
+textfontstmt:
+	B256TEXTFONT args_eeee {
+		addOp(OP_TEXTFONT);
+	}
+	| B256TEXTFONT args_eee {
+		addIntOp(OP_PUSHINT, 0);	// font is not italic
+		addOp(OP_TEXTFONT);
+	}
+	| B256TEXTFONT args_ee {
+		addIntOp(OP_PUSHINT, -1);	// default weight
+		addIntOp(OP_PUSHINT, 0);	// font is not italic
+		addOp(OP_TEXTFONT);
+	}
+	| B256TEXTFONT expr {
+		addIntOp(OP_PUSHINT, -1);	// default size
+		addIntOp(OP_PUSHINT, -1);	// default weight
+		addIntOp(OP_PUSHINT, 0);	// font is not italic
+		addOp(OP_TEXTFONT);
 	}
 	;
 
@@ -4102,6 +4340,16 @@ spritepolystmt:
 			}
 			;
 
+spritetextstmt:
+			B256SPRITETEXT args_ee {
+				addIntOp(OP_PUSHINT,0);	// no background - transparent
+				addOp(OP_SPRITETEXT);
+			}
+			| B256SPRITETEXT args_eee {
+				addOp(OP_SPRITETEXT);
+			}
+			;
+
 spriteplacestmt:
 			B256SPRITEPLACE args_eee
 			{
@@ -4282,6 +4530,11 @@ killstmt: 	B256KILL expr {
 			}
 			;
 
+mkdirstmt: 	B256MKDIR expr {
+				addOp(OP_MKDIR);
+			}
+			;
+
 setclipboardimagestmt:
 			B256SETCLIPBOARDIMAGE expr {
 				addOp(OP_SETCLIPBOARDIMAGE);
@@ -4355,6 +4608,66 @@ outputtoolbarvisiblestmt:
 maximizestmt:
 			B256MAXIMIZE expr {
 				addOp(OP_MAXIMIZE);
+			}
+			;
+
+// SORT array [, column] [, ascending | descending] [, ignorecase]
+// The column (a 2D array's sort key) is pushed first, or a 0 when there is
+// none, and then the option flags - see SORTFLAG_* above.
+sortstmt:
+			sortstart {
+				addIntOp(OP_PUSHINT, 0);
+				addIntOp(OP_PUSHINT, sortflags);
+				addIntOp(OP_SORT, sortvar);
+			}
+			| sortstart ',' expr {
+				addIntOp(OP_PUSHINT, sortflags | SORTFLAG_COLUMN);
+				addIntOp(OP_SORT, sortvar);
+			}
+			| sortstart ',' sortoptions {
+				addIntOp(OP_PUSHINT, 0);
+				addIntOp(OP_PUSHINT, sortflags);
+				addIntOp(OP_SORT, sortvar);
+			}
+			| sortstart ',' expr ',' sortoptions {
+				addIntOp(OP_PUSHINT, sortflags | SORTFLAG_COLUMN);
+				addIntOp(OP_SORT, sortvar);
+			}
+			;
+
+sortstart:
+			B256SORT variable_a {
+				sortvar = varnumber[--nvarnumber];
+				sortflags = 0;
+			}
+			;
+
+sortoptions:
+			sortoption
+			| sortoptions ',' sortoption
+			;
+
+sortoption:
+			B256ASCENDING {
+				if (sortflags & (SORTFLAG_ASCENDING | SORTFLAG_DESCENDING)) {
+					errorcode = COMPERR_SORTOPTION;
+					return -1;
+				}
+				sortflags |= SORTFLAG_ASCENDING;
+			}
+			| B256DESCENDING {
+				if (sortflags & (SORTFLAG_ASCENDING | SORTFLAG_DESCENDING)) {
+					errorcode = COMPERR_SORTOPTION;
+					return -1;
+				}
+				sortflags |= SORTFLAG_DESCENDING;
+			}
+			| B256IGNORECASE {
+				if (sortflags & SORTFLAG_IGNORECASE) {
+					errorcode = COMPERR_SORTOPTION;
+					return -1;
+				}
+				sortflags |= SORTFLAG_IGNORECASE;
 			}
 			;
 			
@@ -4532,6 +4845,7 @@ functionstmt:
 				// store the number of the arguments required by FUNCTION
 				// to check if number of arguments passed match definition when is called
 				symtableaddressargs[functionDefSymbol] = numargs;
+				recordRefParameters(functionDefSymbol);
 				//
 				// add the assigns of the function arguments
 				addOp(OP_INCREASERECURSE);
@@ -4576,6 +4890,7 @@ subroutinestmt:
 				// store the number of the arguments required by SUBROUTINE
 				// to check if number of arguments passed match definition when is called
 				symtableaddressargs[subroutineDefSymbol] = numargs;
+				recordRefParameters(subroutineDefSymbol);
 				//
 				// add the assigns of the function arguments
 				addOp(OP_INCREASERECURSE);

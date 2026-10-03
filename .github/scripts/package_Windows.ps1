@@ -8,6 +8,10 @@ Copy-Item README.md                  Basic256\
 Copy-Item Basic256-IDE.png,Basic256-CLI.png,Basic256-Web.png,Basic256-Web_GraphicsOnly.png Basic256\
 
 Copy-Item -Path "Examples" -Destination "Basic256\Examples" -Recurse -Force
+# the TestSuite has just run here and its MKDIR test leaves an empty
+# filegatesub behind, which it has no way to remove; removing it from the
+# checkout keeps it out of the installer as well, which copies TestSuite later
+Remove-Item -Path "TestSuite\filegatesub" -Recurse -Force -ErrorAction SilentlyContinue
 Copy-Item -Path "TestSuite" -Destination "Basic256\TestSuite" -Recurse -Force
 # Bundled module library, beside the exe so include "math.kbs" resolves
 Copy-Item -Path "Modules" -Destination "Basic256\Modules" -Recurse -Force

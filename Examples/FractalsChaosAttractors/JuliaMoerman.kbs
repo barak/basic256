@@ -3,8 +3,8 @@
 global N,r,g,b
 w=800: h=800: N=120: hw=w/2: hh=h/2
 dim r(N): dim g(N): dim b(N)
-editvisible 1
-outputvisible 1
+editvisible 0
+outputvisible 0
 call calccolors()
 graphsize w,h:clg black:fastgraphics
 old_mousex=0

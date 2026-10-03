@@ -25,6 +25,7 @@
 #include <QDir>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
+#include <QtWidgets/QPushButton>
 #include <QtWidgets/QInputDialog>
 #include <QtWidgets/QApplication>
 #include <QFileDialog>
@@ -74,7 +75,7 @@ extern QWaitCondition* waitDebugCond;
 extern MainWindow * mainwin;
 extern int guiState;
 extern BasicEdit * editwin;
-extern BasicOutput * outwin;
+extern BasicOutputPane * outwin;
 extern BasicGraph * graphwin;
 extern VariableWin * varwin;
 extern BasicKeyboard * basicKeyboard;
@@ -246,6 +247,7 @@ RunController::RunController() {
 	QObject::connect(i, SIGNAL(dialogPrompt(QString, QString)), this, SLOT(dialogPrompt(QString, QString)));
 	QObject::connect(i, SIGNAL(dialogAllowPortInOut(QString)), this, SLOT(dialogAllowPortInOut(QString)));
 	QObject::connect(i, SIGNAL(dialogAllowSystem(QString)), this, SLOT(dialogAllowSystem(QString)));
+	QObject::connect(i, SIGNAL(dialogAllowFile(QString,QString)), this, SLOT(dialogAllowFile(QString,QString)));
 	QObject::connect(i, SIGNAL(dialogOpenFileDialog(QString,QString,QString)), this, SLOT(dialogOpenFileDialog(QString,QString,QString)));
 	QObject::connect(i, SIGNAL(dialogSaveFileDialog(QString,QString,QString)), this, SLOT(dialogSaveFileDialog(QString,QString,QString)));
 
@@ -258,7 +260,14 @@ RunController::RunController() {
 	//QObject::connect(i, SIGNAL(stopRun()), this, SLOT(stopRun()));
 	QObject::connect(i, SIGNAL(stopRunFinalized(bool)), this, SLOT(stopRunFinalized(bool)));
 	QObject::connect(i, SIGNAL(speakWords(QString)), this, SLOT(speakWords(QString)));
-	QObject::connect(i, SIGNAL(outputTextAt(int, int, QString)), this, SLOT(outputTextAt(int, int, QString)));
+	QObject::connect(i, SIGNAL(outputLocate(int, int)), this, SLOT(outputLocate(int, int)));
+	QObject::connect(i, SIGNAL(outputColor(int, int)), this, SLOT(outputColor(int, int)));
+	QObject::connect(i, SIGNAL(outputFont(QString, int, int, bool)), this, SLOT(outputFont(QString, int, int, bool)));
+	QObject::connect(i, SIGNAL(getTextCol()), this, SLOT(getTextCol()));
+	QObject::connect(i, SIGNAL(getTextRow()), this, SLOT(getTextRow()));
+	QObject::connect(i, SIGNAL(outputBackground(int)), this, SLOT(outputBackground(int)));
+	QObject::connect(i, SIGNAL(outputScreen(int, int, bool)), this, SLOT(outputScreen(int, int, bool)));
+	QObject::connect(i, SIGNAL(getTextChar(int, int)), this, SLOT(getTextChar(int, int)));
 
 	QObject::connect(i, SIGNAL(playSound(QString, bool)), this, SLOT(playSound(QString, bool)));
 	QObject::connect(i, SIGNAL(playSound(std::vector<std::vector<double>>, bool)), this, SLOT(playSound(std::vector<std::vector<double>>, bool)));
@@ -433,6 +442,7 @@ RunController::startDebug() {
 		QObject::connect(i, SIGNAL(seekLine(int)), currentEditor, SLOT(seekLine(int)), Qt::BlockingQueuedConnection);
 
 		i->debugMode = 1;
+		outwin->resetOutputFormat();
 		outputClear();
 		QDir::setCurrent(currentEditor->path);
 		int result = i->compileProgram((currentEditor->toPlainText() + "\n").toUtf8().data());
@@ -486,6 +496,7 @@ RunController::startRun() {
 		QObject::connect(i, SIGNAL(seekLine(int)), currentEditor, SLOT(seekLine(int)), Qt::BlockingQueuedConnection);
 
 		i->debugMode = 0;
+		outwin->resetOutputFormat();
 		outputClear();
 		if (!currentEditor->path.isEmpty())
     		QDir::setCurrent(currentEditor->path);
@@ -535,8 +546,7 @@ RunController::inputEntered(QString text) {
 void
 RunController::outputClear() {
 	mymutex->lock();
-	outwin->setTextColor(Qt::black);
-	outwin->clear();
+	outwin->clearOutput();
 	waitCond->wakeAll();
 	mymutex->unlock();
 }
@@ -1096,6 +1106,34 @@ void RunController::dialogAllowPortInOut(QString msg) {
 	mymutex->unlock();
 }
 
+void RunController::dialogAllowFile(QString what, QString path) {
+	mymutex->lock();
+	QMessageBox message(mainwin);
+	message.setWindowTitle(tr("Confirmation"));
+	message.setText(tr("This program wants to %1 a location outside its own folder.").arg(what));
+	message.setInformativeText(path);
+	message.setIcon(QMessageBox::Warning);
+	// Deliberately no "do not ask me again": that writes a permanent global
+	// yes, and one careless click would open every future program's access to
+	// the whole disk.  A lasting answer belongs in Preferences, which can be
+	// password protected.  The widest answer offered here ends with the run.
+	QPushButton *no = message.addButton(tr("Don't allow"), QMessageBox::RejectRole);
+	QPushButton *once = message.addButton(tr("Allow once"), QMessageBox::AcceptRole);
+	QPushButton *run = message.addButton(tr("Allow for this run"), QMessageBox::AcceptRole);
+	message.setDefaultButton(no);
+	message.setEscapeButton(no);
+	message.exec();
+	if (message.clickedButton() == once) {
+		i->returnInt = SETTINGSALLOWYES;
+	} else if (message.clickedButton() == run) {
+		i->returnInt = SETTINGSALLOWRUN;
+	} else {
+		i->returnInt = SETTINGSALLOWNO;
+	}
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
 void RunController::dialogAllowSystem(QString msg) {
 	mymutex->lock();
 	QMessageBox message(mainwin);
@@ -1164,9 +1202,88 @@ void RunController::setClipboardString(QString s){
 	mymutex->unlock();
 }
 
-void RunController::outputTextAt(int c, int r, QString s){
+// LOCATE, TEXTCOLOR and TEXTFONT only make sense when there is a pane to draw
+// on. Under --silent the output is a plain stdout stream, so they are accepted
+// and ignored rather than made an error.
+void RunController::outputLocate(int c, int r){
 	mymutex->lock();
-	outwin->outputTextAt(c, r, s);
+	if (guiState != GUISTATESILENT) {
+		outwin->locateCursor(c, r);
+	}
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+void RunController::outputColor(int fg, int bg){
+	mymutex->lock();
+	if (guiState != GUISTATESILENT) {
+		outwin->setOutputColor(QColor::fromRgba((QRgb) fg), QColor::fromRgba((QRgb) bg));
+	}
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+void RunController::outputFont(QString family, int size, int weight, bool italic){
+	mymutex->lock();
+	if (guiState != GUISTATESILENT) {
+		outwin->setOutputFont(family, size, weight, italic);
+	}
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+// With no pane - under --silent - the cursor is always at the origin.
+void RunController::getTextCol(){
+	mymutex->lock();
+	int col = 0, row = 0;
+	if (guiState != GUISTATESILENT) {
+		outwin->cursorColRow(&col, &row);
+	}
+	i->returnInt = col;
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+void RunController::getTextRow(){
+	mymutex->lock();
+	int col = 0, row = 0;
+	if (guiState != GUISTATESILENT) {
+		outwin->cursorColRow(&col, &row);
+	}
+	i->returnInt = row;
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+void RunController::outputBackground(int bg){
+	mymutex->lock();
+	if (guiState != GUISTATESILENT) {
+		outwin->setOutputBackground(QColor::fromRgba((QRgb) bg));
+	}
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+// TEXTSCREEN. Under --silent there is no pane to turn into a screen, so it is
+// accepted and ignored like the rest of the text output statements.
+void RunController::outputScreen(int cols, int rows, bool square){
+	mymutex->lock();
+	if (guiState != GUISTATESILENT) {
+		outwin->setScreenSize(cols, rows, square);
+	}
+	waitCond->wakeAll();
+	mymutex->unlock();
+}
+
+// TEXTCHAR. Empty off the screen, and empty whenever there is no screen to
+// read - under --silent, or in the flowing pane, which has no cells.
+void RunController::getTextChar(int col, int row){
+	mymutex->lock();
+	QString ch;
+	if (guiState != GUISTATESILENT) {
+		ch = outwin->charAt(col, row);
+	}
+	i->returnString = ch;
 	waitCond->wakeAll();
 	mymutex->unlock();
 }

@@ -77,6 +77,7 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "arc"								//arc
 			<< "array[ \t]*base"
 			<< "asc"								//asc
+			<< "ascending"
 			<< "assigned"
 			<< "asin"								//asin
 			<< "atan"								//atan
@@ -120,6 +121,7 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "dbstring"							//dbstring
 			<< "debuginfo"							//debuginfo
 			<< "degrees"							//degrees
+			<< "descending"
 			<< "dim"								//dim
 			<< "dir"								//dir
 			<< "dot"								//dot
@@ -176,7 +178,9 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "graphvisible"						//graphvisible
 			<< "graphwidth"							//graphwidth
 			<< "hour"								//hour
+			<< "hsv"								//hsv
 			<< "if"									//if
+			<< "ignorecase"
 			<< "in"
 			<< "imageautocrop"						//imageautocrop
 			<< "imagecentered"						//imagecentered
@@ -218,11 +222,12 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "let"								//let
 			<< "line"								//line
 			<< "ljust"
+			<< "locate"							//locate
 			<< "log"								//log
 			<< "log10"								//log10
 			<< "lower"								//lower
 			<< "ltrim"								//ltrim
-			<< "ltrim"								//ltrim
+			<< "rtrim"								//rtrim
 			<< "maintoolbarvisible"
 			<< "map"
 			<< "maximize"
@@ -255,7 +260,6 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "not"								//not
 			<< "offerror"							//offerror
 			<< "onerror"							//onerror
-			<< "onstop"
 			<< "open"								//open
 			<< "openb"								//openb
 			<< "openfiledialog"
@@ -273,7 +277,6 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "portin"								//portin
 			<< "portout"							//portout
 			<< "print"								//print
-			<< "printat"							//printat
 			<< "printer[ \t]*cancel"				//printercancel or printer cancel
 			<< "printer[ \t]*off"					//printeroff or printer off
 			<< "printer[ \t]*on"					//printeron or printer on
@@ -297,7 +300,6 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "rgb"								//rgb
 			<< "right"								//right
 			<< "rjust"
-			<< "rmdir"
 			<< "round"
 			<< "savefiledialog"
 			<< "say"								//say
@@ -311,6 +313,7 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "setsetting"							//setsetting
 			<< "sin"								//sin
 			<< "size"								//size
+			<< "sort"
 			<< "sound"								//sound
 			<< "soundenvelope"                      //soundenvelope
 			<< "soundfade"                      	//soundfade
@@ -333,7 +336,7 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "soundvolume"						//soundvolume
 			<< "soundwait"                  		//soundwait
 			<< "soundwaveform"                  	//soundwaveform
-			<< "spritedcollide"						//spritedcollide
+			<< "spritecollide"						//spritecollide
 			<< "spritedim"							//spritedim
 			<< "spriteh"							//spriteh
 			<< "spritehide"							//spritehide
@@ -360,7 +363,15 @@ void EditSyntaxHighlighter::initKeywords() {
 			<< "system"								//system
 			<< "tan"								//tan
 			<< "text"								//text
+			<< "textbackground"				//textbackground
+			<< "textchar"							//textchar
+			<< "textcolor"						//textcolor
+			<< "textcolour"						//textcolour
+			<< "textcol"							//textcol
+			<< "textfont"						//textfont
 			<< "textheight"							//textheight
+			<< "textrow"							//textrow
+			<< "textscreen"						//textscreen
 			<< "textwidth"							//textwidth
 			<< "then"								//then
 			<< "throwerror"							//throwerror
@@ -557,8 +568,9 @@ void EditSyntaxHighlighter::initConstants() {
 
             << "TYPE_ARRAY"
 			<< "TYPE_FLOAT"
-			<< "TYPE_INT"
+			<< "TYPE_INT(EGER)?"
 			<< "TYPE_MAP"
+			<< "TYPE_REF"
 			<< "TYPE_STRING"
 			<< "TYPE_UNASSIGNED"
 			<< "MOUSEBUTTON_CENTER"

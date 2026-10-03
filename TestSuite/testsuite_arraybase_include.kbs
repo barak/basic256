@@ -3,6 +3,7 @@
 # Modification History
 # date		programmer	description
 # 20200421	j.m.reneau	original coding
+# 20260927	m.vilain	GETARRAYBASE
 
 # test changing arrays from 0 based to 1 based
 
@@ -67,3 +68,11 @@ for x = 0 to b[?,]-1
 	print
 next x
 call n("read 2d array - arraybase 1",total,550)
+
+# GETARRAYBASE reads back what ARRAYBASE set
+wasbase = getarraybase
+arraybase 1
+call n("getarraybase after arraybase 1", getarraybase, 1)
+arraybase 0
+call n("getarraybase after arraybase 0", getarraybase(), 0)
+arraybase wasbase

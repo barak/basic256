@@ -33,7 +33,7 @@ class QTextToSpeech;
 class QTimer;   // guiHeartbeat below is only ever a pointer
 
 #include "BasicEdit.h"
-#include "BasicOutput.h"
+#include "BasicOutputPane.h"
 #include "BasicGraph.h"
 #include "Interpreter.h"
 #include "ReplaceWin.h"
@@ -56,7 +56,14 @@ class RunController : public QObject
   void outputReady(QString text);
   void outputError(QString text);
   void outputClear();
-  void outputTextAt(int, int, QString);
+  void outputLocate(int, int);
+  void outputColor(int, int);
+  void outputFont(QString, int, int, bool);
+  void getTextCol();
+  void getTextRow();
+  void outputBackground(int);
+  void outputScreen(int, int, bool);
+  void getTextChar(int, int);
   void goutputReady();
   void resizeGraphWindow(int, int, qreal);
   void startDebug();
@@ -78,6 +85,7 @@ class RunController : public QObject
   void dialogPrompt(QString, QString);
   void dialogAllowPortInOut(QString);
   void dialogAllowSystem(QString);
+  void dialogAllowFile(QString, QString);
   void dialogOpenFileDialog(QString, QString, QString);
   void dialogSaveFileDialog(QString, QString, QString);
   void playSound(QString, bool);

@@ -1,5 +1,5 @@
 #************************************************************************************************
-#*            Verlet integration for colliding balls of different mass Balls                    *
+#*      Part 3: Verlet integration for colliding balls of different mass Balls                  *
 #************************************************************************************************
 # Particle system with gravity, bounce, a bit of friction and Balls of different mass/size
 # Balls collide and bounce of each other according to their mass
@@ -10,7 +10,7 @@
 #Globals to be used in the subroutines
 global height, width, pos_x, pos_y, old_pos_x, old_pos_y
 global rad, inv_mass, bounce, gravity, friction
-global r, g, b, Balls, Ball
+global r, g, b, Balls, Ball,sw_fall
 # Initialisations
 #************************************************************************************************
 call ScreenSetup()		#dimension & color
@@ -41,13 +41,14 @@ subroutine WorldParameters()
 	bounce = 0.5
 	gravity = 0.5
 	friction = 0.9999
+	sw_fall = 0
 end subroutine
 
 subroutine CreateBalls()
 	Balls = 150
 	dim Ball(Balls,9)
-    StartRad =10
-    Max_inc = 15
+	StartRad =10
+	Max_inc = 15
 	# Indices
 	pos_x = 0 : pos_y = 1: old_pos_x = 2 : old_pos_y = 3: r = 4 : g = 5 : b = 6: rad = 7 : inv_mass = 8
 	for i = 0 to Balls-1
@@ -62,9 +63,20 @@ subroutine CreateBalls()
 		# Store inverse mass (1/mass) where mass = rad^2
 		Ball[i,inv_mass] = 1 / (Ball[i,rad] * Ball[i,rad])
 	next i
+	call DrawBalls()
+	call DrawScene()
+	call WaitEnter()
 end subroutine
 
 subroutine UpdateBalls()
+	k = key
+	if k = asc("Q") or k = asc("q") or k = 16777216 then end
+	if k = 13 or k = 16777220 or k = 16777221 or clickb = 1 then 
+		clickclear
+		pause 0.2
+		call CreateBalls()
+	endif	
+	sw_fall = 1
 	# Here is the actual Verlet integration. With collisions in the mix, the max number of balls for a real-time animation decreases dramatically
 	for i = 0 to Balls-1
 		vx = (Ball[i,pos_x] - Ball[i,old_pos_x]) * friction
@@ -74,6 +86,9 @@ subroutine UpdateBalls()
 		Ball[i,pos_x] = Ball[i,pos_x] + vx
 		Ball[i,pos_y] = Ball[i,pos_y] + vy + gravity
 	next i
+	color white
+	font "Arial", 20, 50
+	text 12, 22, "[Enter] or touch re-drop     [Q] quit"
 	#---------------------------------------------------------------------------------------------
 	# Multiple collision passes are needed as one collision can create another one with a neighbouring ball.
 	#---------------------------------------------------------------------------------------------
@@ -106,7 +121,7 @@ subroutine UpdateBalls()
 				end if
 			next j
 		next i
-		
+
 		# Boundary Constraints
 		for i = 0 to Balls-1
 			# Recalculate current velocity after positional adjustments
@@ -143,5 +158,33 @@ subroutine DrawBalls()
 		color rgb(Ball[i,r], Ball[i,g], Ball[i,b])
 		circle (Ball[i,pos_x], Ball[i,pos_y], Ball[i,rad])
 	next i
+	color white
+	font "Arial", 20, 50
+	if sw_fall = 1 then text 12, 22, "[Enter] or touch re-drop     [Q] quit"
 	refresh
+end subroutine
+
+subroutine DrawScene()
+	if sw_fall = 0 then
+		color white
+		font "Arial", 40, 75
+		tx = (width - textwidth("VERLET BALLS")) / 2    # true centre for this font
+		ty = height / 2 +50
+		color rgb(30, 30, 255)
+		text tx, ty, "VERLET BALLS"
+		color white
+		font "Arial", 20, 50
+		tx = (width - textwidth("Press [Enter] to start or touch screen, [Q] to quit")) / 2    # true centre for this font
+		ty = height / 2
+		color white
+		text tx, ty+125, "Press [Enter] to start or touch screen, [Q] to quit"
+		refresh
+	endif
+end subroutine
+
+subroutine WaitEnter()
+	do
+		k = key
+		pause 0.01
+	until k = 13 or k = 16777220 or k = 16777221 or mouseb = 1
 end subroutine

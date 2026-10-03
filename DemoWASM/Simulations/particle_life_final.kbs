@@ -1,0 +1,284 @@
+# Particle Life BASIC256
+#*****************************************************
+# Complex behaviour from simple rules have always interested me. See my Game of Life program from years ago.
+# Lately, I found some great Youtube vids that inspired me to write this program, but they went far beyond what basic is capable of course. Here are some very interesting Youtube videos:
+# https://www.youtube.com/watch?v=Z_zmZ23grXE&list=PLnjhm93fx3WQ2REVrBYJsr32FkJh6X4-x
+# https://www.youtube.com/watch?v=scvuli-zcRc&list=PLnjhm93fx3WQ2REVrBYJsr32FkJh6X4-x&index=4&t=12s
+#
+# 
+# Setup
+fastgraphics
+width = 900
+height = 900
+graphsize width, height
+graphvisible(1)
+editvisible(0)
+outputvisible(0)
+clg
+color black
+rect 0,0,width,height
+refresh
+
+# intro screen switches
+sw_intro = 1
+sw_pause = 0
+
+# keypress values
+ar_down=16777237
+ar_up=16777235
+
+# Three species each with 300 particles
+particles = 1200
+species = 4
+
+# They are influenced by other particles within a 60 pixel influence radius but repulsed if too close
+radius = 60
+tooclose = 0.4
+
+# They have a max speed witch we dampen every loop
+maxspeed = 6
+damping = 0.98
+
+# To not have to look up 900 particles for every particle, we overlay the canvas with a grid of elements.
+#  We give these grid elements a size of 'radius' and at every loop keep track of which particles are in each element. 
+# That way, for every particle we look at we can look up just the particles in the grid elements bordering the one the particle we are looking at is in (so 9 grid elements totalling 180x180 instead of the full 800x800)
+cell_size = radius
+grid_w = int(width / cell_size) + 1
+grid_h = int(height / cell_size) + 1
+dim grid_count(grid_w,grid_h) fill 0
+# As all particles will never be in the same cell, we can limit the numbers of particles in a cell to save space
+max_cell = 90
+dim grid(grid_w * grid_h * max_cell) fill 0
+
+#positional info
+dim pos_x(particles) fill 0
+dim pos_y(particles) fill 0
+#velocity info
+dim vel_x(particles) fill 0
+dim vel_y(particles) fill 0
+#species info
+dim type(particles) fill 0
+
+# every species has an attraction or repulsion toward itself and every other species, forming an interaction matix
+dim attract(species,species)
+
+# We can either create a specific interaction matrix
+attract[0,0] = 0.8
+attract[0,1] = 0
+attract[0,2] = 0
+attract[1,0] = 0.5
+attract[1,1] = -0.9
+attract[1,2] = 0
+attract[2,0] = 0.5
+attract[2,1] = -0.9
+attract[2,2] = 0
+# ..or we can fill the interaction matrix with random numbers 
+for i = 0 to species-1
+	for j = 0 to species-1
+		attract[i,j] = round(rand*2 - 1,2)*2
+#		print "species";i;" interaction with species";j;" is ";attract[i,j]
+	next j
+next i
+
+# initialize particles 
+for i = 0 to particles-1
+	pos_x[i] = rand*width
+	pos_y[i] = rand*height
+	vel_x[i] = rand*2 - 1
+	vel_y[i] = rand*2 - 1
+	type[i] = int(rand*species)
+next i
+
+# MAIN LOOP
+while true
+	# clear grid every loop
+    dim grid_count(grid_w,grid_h) fill 0
+	# insert particles in their respective cell
+	for i = 0 to particles-1
+	    #calculate row and column of the grid the particle is in and check boundaries
+		gx = int(pos_x[i]/cell_size)
+		gy = int(pos_y[i]/cell_size)
+		if gx < 0 then gx = 0
+		if gy < 0 then gy = 0
+		if gx > grid_w-1 then gx = grid_w-1
+		if gy > grid_h-1 then gy = grid_h-1
+		# there are already 'c' particles in that particular cell
+		c = grid_count[gx,gy]
+		# as long as there is place in the cell, we add it to the grid count of that cell
+		# and store the place of the particle in the particle array (i) in the grid
+		if c < max_cell then
+			index = (gy * grid_w + gx) * max_cell + c
+			grid[index] = i
+			grid_count[gx,gy] = c + 1
+		endif
+	next i
+
+	# interactions 
+	for i = 0 to particles-1
+		# look in which cell the particle is based on its position
+		ax = pos_x[i]
+		ay = pos_y[i]
+		gx = int(ax/cell_size)
+		gy = int(ay/cell_size)
+		# totalForces are the sum of all interaction forces a particle has with other particles
+		totalForce_x = 0
+		totalForce_y = 0
+		# now we look in the 3x3 grids
+		for oy = -1 to 1
+			for ox = -1 to 1
+				nx = gx + ox
+				ny = gy + oy
+				if nx>=0 and nx<grid_w and ny>=0 and ny<grid_h then
+					# we look how many particles are in the cell
+					counter = grid_count[nx,ny]
+					# for each particle in that particular cell
+					for k = 0 to counter-1
+						# we look where in the particle array the cell is
+						rowbase = ny * grid_w
+						cellbase = rowbase + nx
+						base = cellbase * max_cell
+						index = base + k
+						j = grid[index]
+						#if this is the same particle (which of course is also somewhere in that 3x3 grid)
+						if j = i then goto skip
+						# we calculate the distance between the 2 particles
+						dx = pos_x[j] - ax
+						dy = pos_y[j] - ay
+
+						# if the vector distance (hypothenusa = sqr(x*x+y*y)) is less than the influence radius
+						d2 = dx*dx + dy*dy
+						if d2 < radius*radius then
+							d = sqr(d2)
+							# we  normalize the vector
+							nxv = dx / d
+							nyv = dy / d
+							# we normalize the distance relatie to the influence radius
+							# q is between 0 (on top) and 1 (furthest away)
+							q = d/radius
+							#if particles are too close, they repulse, else they attract according to their species
+							if q < tooclose then
+								force = q/tooclose - 1
+							else
+								force = attract[type[i],type[j]]*(1-q)/(1-tooclose)
+							endif
+							totalForce_x = totalForce_x + force*nxv
+							totalForce_y = totalForce_y + force*nyv
+						endif
+					next k
+skip:
+				endif
+		    next ox
+	    next oy
+	# we now add those forces to the velocities with a damping factor so velocity does not get too large    
+	vel_x[i] = (vel_x[i] + totalForce_x) * damping
+	vel_y[i] = (vel_y[i] + totalForce_y) * damping
+	s = sqr(vel_x[i]*vel_x[i] + vel_y[i]*vel_y[i])
+	# we cap the velocity vector to the maximum speed
+	if s > maxspeed then
+		vel_x[i] = vel_x[i]/s * maxspeed
+		vel_y[i] = vel_y[i]/s * maxspeed
+	endif
+    next i
+    # Update the positions of all particles
+    for i = 0 to particles-1
+	    pos_x[i] = pos_x[i] + vel_x[i]
+		pos_y[i] = pos_y[i] + vel_y[i]
+    	# wrap the particles around the screen (topological dougnut)
+		if pos_x[i] < 0 then pos_x[i] = pos_x[i] + width
+		if pos_x[i] > width then pos_x[i] = pos_x[i] - width
+		if pos_y[i] < 0 then pos_y[i] = pos_y[i] + height
+		if pos_y[i] > height then pos_y[i] = pos_y[i] - height
+	next i
+	# Draw all partticles in the color of their type/species
+	color rgb(0,0,0)
+	rect 0,0,width,height
+	for i = 0 to particles-1
+		if type[i]=0 then color rgb(255,80,80)
+		if type[i]=1 then color rgb(80,255,80)
+		if type[i]=2 then color rgb(80,80,255)
+		if type[i]=3 then color rgb(255,255,80)
+		circle pos_x[i],pos_y[i],1
+	next i
+	if sw_intro = 1 then gosub title_screen
+	#show/hide info screen
+	if key = 73 then
+	  if sw_intro=0 then 
+	    sw_intro = 1
+	  else
+	    sw_intro = 0
+	  endif
+	endif 
+	# randomize interaction forces and print them     
+	if keypressed(82) then	
+	  cls
+	  for i = 0 to species-1
+	    for j = 0 to species-1
+		  attract[i,j] = round(rand*2 - 1,2)*2
+#		  print "species";i;" interaction with species";j;" is ";attract[i,j]
+	    next j
+      next i	    
+      sw_intro = 0
+    endif  
+    # pause/unpause 
+	if keypressed(80) or  keypressed(112) then	
+	  if sw_pause = 0 then
+	     while sw_pause = 0
+	       if key= 80 then sw_pause = 1
+	     end while
+	  else
+	    sw_pause = 0
+	  endif     
+      sw_intro = 0
+    endif 
+    # increase speed 
+	if keypressed(ar_up) then	
+	  maxspeed = maxspeed + 1
+	  if maxspeed > 10 then maxspeed = 10
+      sw_intro = 0
+    endif 
+    # decrease speed 
+	if keypressed(ar_down) then	
+	  maxspeed = maxspeed - 1
+	  if maxspeed <1 then maxspeed = 1
+      sw_intro = 0
+    endif     
+	refresh
+	# my machine gets about 4 fps. Uncomment the following 2 lines of code to capture individual frames
+	# These go in same directory as the kbs These can then be merged in a gif or mp4 at greater framerates
+	#a$ = "ParticleLife"+msec
+	#imgsave a$	
+end while
+
+title_screen:
+ #*****************************
+  # show info screen 
+  #*****************************
+  color rgb(0,0,0)
+  color black
+  rect width/6+20,height/5*2,width-2*width/6,2*height/5
+  title$="Particle life"
+  font "Tahoma",40,60
+  #have the text appear more or less in the middle
+  titlewidth=textWidth("Particle life")
+  titleHeight=textHeight()
+  titlelocx=width/2-titlewidth/2
+  titlelocy=height/2-titleHeight/2
+  color white
+  text titlelocx,titlelocy,title$
+  #put instructions on screen
+  b$ = "press R button to randomize the interactions"
+  font "Tahoma",15,40
+  textsize=textWidth("press R button to randomize the interactions")
+  textlocx=width/2-textsize/2
+  color white
+  text textlocx,height/2+75,b$
+  c$ = "press up arrow to increase max speed up to 10"
+  text textlocx,height/2+100,c$
+  d$ = "press down arrow to decrease max speed down to 1"
+  text textlocx,height/2+125,d$
+  e$ = "press P button to pause/unpause"
+  text textlocx,height/2+150,e$
+  f$ = "press I to show/remove this screen"
+  text textlocx,height/2+175,f$
+  refresh
+return  

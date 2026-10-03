@@ -392,7 +392,7 @@ QString Error::getErrorMessage(char **symtable) {
 			errormessage = tr("Too many sound instances");
 			break;
 		case ERROR_ENVELOPEODD:
-			errormessage = tr("Envelope data must contain at least 4 elements and an odd number of elements");
+			errormessage = tr("Envelope data must contain at least 4 elements and an even number of elements");
 			break;
 		case ERROR_ENVELOPEMAX:
 			errormessage = tr("It was exceeded the maximum length of an envelope, which is 20 seconds");
@@ -469,9 +469,6 @@ QString Error::getErrorMessage(char **symtable) {
 		case ERROR_MAPKEY:
 			errormessage = tr("Map key does not exist");
 			break;
-		case ERROR_RMDIR:
-			errormessage = tr("Unable to remove folder (it must be empty)");
-			break;
 		case ERROR_MKDIR:
 			errormessage = tr("Unable to create new folder");
 			break;
@@ -510,6 +507,9 @@ QString Error::getErrorMessage(char **symtable) {
 			break;
 		case ERROR_VECZERO:
 			errormessage = tr("UNIT can not make a unit vector from a vector of length zero");
+			break;
+		case ERROR_HSV:
+			errormessage = tr("HSV needs a hue from 0 to 360, and saturation, value and alpha from 0 to 100");
 			break;
 
 

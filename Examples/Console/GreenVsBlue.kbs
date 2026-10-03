@@ -1,0 +1,45 @@
+# "Green vs Blue": a Bobby Breitling C64 one-liner ported to the BASIC256 2.3.0 text screen
+# C64: P=RND(1)*40:X=P<2:A=(A OR X)-(A AND X):PRINT CHR$(154+A);:POKE P+1024-960*A,81:SYS 59761-A*4:GOTO 1
+
+textscreen 40, 25, true           # 40x25 character grid, like the C64 screen, true for square glyphs
+textbackground rgb(53,40,120)
+cols = 40: rows = 25
+ball$ = chr(11044)                # utf chr(11044) is the largest black circle so more or less C64 screen code 81
+dim g(cols, rows)                 # cell colour: 0 empty, 1 blue, 2 green
+a = 0                             # 0 = down/blue, 1 = up/green
+graphvisible 0
+editvisible 0
+while true
+   p = int(rand * cols)           # RND(1)*40  -> column 0..39
+   if p < 3 then a = 1 - a        # X=P<3 toggles A (the OR/AND = XOR trick)
+
+   if a = 0 then                  # ball in at the top, scroll DOWN
+      g[p, 0] = 1
+      for r = rows - 1 to 1 step -1
+         for c = 0 to cols - 1 : g[c, r] = g[c, r - 1] : next c
+      next r
+      for c = 0 to cols - 1 : g[c, 0] = 0 : next c
+   else                           # ball in at the bottom, scroll UP
+      g[p, rows - 1] = 2
+      for r = 0 to rows - 2
+         for c = 0 to cols - 1 : g[c, r] = g[c, r + 1] : next c
+      next r
+      for c = 0 to cols - 1 : g[c, rows - 1] = 0 : next c
+   end if
+
+   cls
+   for r = 0 to rows - 1
+      for c = 0 to cols - 1
+         if g[c, r] then
+            if g[c, r] = 1 then 
+            	textcolor rgb(108, 94, 181)  # CHR$(154) light blue  (A=0, going down)
+            else 
+            	textcolor rgb(154, 210, 132) # CHR$(153) light green (A=-1, going up)
+            endif
+            locate c, r
+            print ball$;
+         end if
+      next c
+   next r
+   pause 0.15	# using pause as there is no FRAMERATE for the Text Output
+end while

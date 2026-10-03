@@ -77,6 +77,8 @@ extern int parsewarningtablecolumn[];
 extern char *parsewarningcolumnlexingfilename[];
 extern int numparsewarnings;
 
+extern void clearRefArguments();
+extern void resolveRefArguments();
 extern int numargs; //need to be set to 0 when basicParse() start otherwise after a COMPILER_ERROR, the next rul will use the last value
 
 int linenumber;
@@ -110,12 +112,17 @@ char *filename;
 void count();
 void unputcolon();
 
+// LINEINDENT lasts for exactly one token after a line's indentation - see the
+// label rules below
+#define YY_USER_ACTION if (YY_START == LINEINDENT) BEGIN(INITIAL);
+
 %}
 
 %option nounistd
 
 %x INCLUDE
 %x INCLUDE_FILE
+%s LINEINDENT
 
 constinteger [0-9]+
 constdecimal [0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?
@@ -139,6 +146,7 @@ alert [Aa][Ll][Ee][Rr][Tt]
 and [Aa][Nn][Dd]
 arc [Aa][Rr][Cc]
 asc [Aa][Ss][Cc]
+ascending [Aa][Ss][Cc][Ee][Nn][Dd][Ii][Nn][Gg]
 arraybase [Aa][Rr][Rr][Aa][Yy][ \t]*[Bb][Aa][Ss][Ee]
 asin [Aa][Ss][Ii][Nn]
 assigned [Aa][Ss][Ss][Ii][Gg][Nn][Ee][Dd]
@@ -189,6 +197,7 @@ dbrow [Dd][Bb][Rr][Oo][Ww]
 dbstring [Dd][Bb][Ss][Tt][Rr][Ii][Nn][Gg]
 debuginfo [Dd][Ee][Bb][Uu][Gg][Ii][Nn][Ff][Oo]
 degrees [Dd][Ee][Gg][Rr][Ee][Ee][Ss]
+descending [Dd][Ee][Ss][Cc][Ee][Nn][Dd][Ii][Nn][Gg]
 dim [Dd][Ii][Mm]
 dir [Dd][Ii][Rr]
 dot [Dd][Oo][Tt]
@@ -357,7 +366,9 @@ graphwidth [Gg][Rr][Aa][Pp][Hh][Ww][Ii][Dd][Tt][Hh]
 gray [Gg][Rr][AaEe][Yy]
 green [Gg][Rr][Ee][Ee][Nn]
 hour [Hh][Oo][Uu][Rr]
+hsv [Hh][Ss][Vv]
 if [Ii][Ff]
+ignorecase [Ii][Gg][Nn][Oo][Rr][Ee][Cc][Aa][Ss][Ee]
 in [Ii][Nn]
 imageautocrop [Ii][Mm][Aa][Gg][Ee][Aa][Uu][Tt][Oo][Cc][Rr][Oo][Pp]
 imagecentered [Ii][Mm][Aa][Gg][Ee][Cc][Ee][Nn][Tt][Ee][Rr][Ee][Dd]
@@ -376,7 +387,7 @@ imagesmooth [Ii][Mm][Aa][Gg][Ee][Ss][Mm][Oo][Oo][Tt][Hh]
 imagetransformed [Ii][Mm][Aa][Gg][Ee][Tt][Rr][Aa][Nn][Ss][Ff][Oo][Rr][Mm][Ee][Dd]
 imagetype_bmp [Ii][Mm][Aa][Gg][Ee][Tt][Yy][Pp][Ee][_][Bb][Mm][Pp]
 imagetype_jpg [Ii][Mm][Aa][Gg][Ee][Tt][Yy][Pp][Ee][_][Jj][Pp][Gg]
-imagetype_png [Ii][Mm][Aa][Gg][Ee][Tt][Yy][Pp][Ee][_][Pp][Nn][Gn]
+imagetype_png [Ii][Mm][Aa][Gg][Ee][Tt][Yy][Pp][Ee][_][Pp][Nn][Gg]
 imagewidth [Ii][Mm][Aa][Gg][Ee][Ww][Ii][Dd][Tt][Hh]
 imgload [Ii][Mm][Gg][Ll][Oo][Aa][Dd]
 imgsave [Ii][Mm][Gg][Ss][Aa][Vv][Ee]
@@ -392,7 +403,7 @@ isnumeric [iI][Ss][Nn][Uu][Mm][Ee][Rr][Ii][Cc]
 key [Kk][Ee][Yy]
 keypressed [Kk][Ee][Yy][Pp][Rr][Ee][Ss][Ss][Ee][Dd]
 kill [Kk][Ii][Ll][Ll]
-label ^[ \t]*{variable}:
+label ^{variable}:
 lasterror [Ll][Aa][Ss][Tt][Ee][Rr][Rr][Oo][Rr]
 lasterrorextra [Ll][Aa][Ss][Tt][Ee][Rr][Rr][Oo][Rr][Ee][Xx][Tt][Rr][Aa]
 lasterrorline [Ll][Aa][Ss][Tt][Ee][Rr][Rr][Oo][Rr][Ll][Ii][Nn][Ee]
@@ -402,6 +413,7 @@ length [Ll][Ee][Nn][Gg][Tt][Hh]
 let [Ll][Ee][Tt]
 line [Ll][Ii][Nn][Ee]
 ljust [Ll][Jj][Uu][Ss][Tt]
+locate [Ll][Oo][Cc][Aa][Tt][Ee]
 log [Ll][Oo][Gg]
 logten [Ll][Oo][Gg][1][0]
 lower [Ll][Oo][Ww][Ee][Rr]
@@ -418,6 +430,7 @@ md5 [Mm][Dd][5]
 mid [Mm][Ii][Dd]
 midx [Mm][Ii][Dd][Xx]
 minute [Mm][Ii][Nn][Uu][Tt][Ee]
+mkdir [Mm][Kk][Dd][Ii][Rr]
 mod ([Mm][Oo][Dd])
 month [Mm][Oo][Nn][Tt][Hh]
 mouseb [Mm][Oo][Uu][Ss][Ee][Bb]
@@ -506,6 +519,7 @@ setgraph [Ss][Ee][Tt][Gg][Rr][Aa][Pp][Hh]
 setsetting [Ss][Ee][Tt][Ss][Ee][Tt][Tt][Ii][Nn][Gg]
 sin [Ss][Ii][Nn]
 size [Ss][Ii][Zz][Ee]
+sort [Ss][Oo][Rr][Tt]
 slice_all [Ss][Ll][Ii][Cc][Ee]_[Aa][Ll][Ll]
 slice_paint [Ss][Ll][Ii][Cc][Ee]_[Pp][Aa][Ii][Nn][Tt]
 slice_sprite [Ss][Ll][Ii][Cc][Ee]_[Ss][Pp][Rr][Ii][Tt][Ee]
@@ -544,6 +558,7 @@ spriter [Ss][Pp][Rr][Ii][Tt][Ee][Rr]
 sprites [Ss][Pp][Rr][Ii][Tt][Ee][Ss]
 spriteshow [Ss][Pp][Rr][Ii][Tt][Ee][Ss][Hh][Oo][Ww]
 spriteslice [Ss][Pp][Rr][Ii][Tt][Ee][Ss][Ll][Ii][Cc][Ee]
+spritetext [Ss][Pp][Rr][Ii][Tt][Ee][Tt][Ee][Xx][Tt]
 spritev [Ss][Pp][Rr][Ii][Tt][Ee][Vv]
 spritew [Ss][Pp][Rr][Ii][Tt][Ee][Ww]
 spritex [Ss][Pp][Rr][Ii][Tt][Ee][Xx]
@@ -556,7 +571,14 @@ subroutine [Ss][Uu][Bb][Rr][Oo][Uu][Tt][Ii][Nn][Ee]
 system [Ss][Yy][Ss][Tt][Ee][Mm]
 tan [Tt][Aa][Nn]
 text [Tt][Ee][Xx][Tt]
+textbackground [Tt][Ee][Xx][Tt][Bb][Aa][Cc][Kk][Gg][Rr][Oo][Uu][Nn][Dd]
+textcol [Tt][Ee][Xx][Tt][Cc][Oo][Ll]
+textcolor [Tt][Ee][Xx][Tt][Cc][Oo][Ll][Oo][Uu]?[Rr]
+textfont [Tt][Ee][Xx][Tt][Ff][Oo][Nn][Tt]
 textheight [Tt][Ee][Xx][Tt][Hh][Ee][Ii][Gg][Hh][Tt]
+textrow [Tt][Ee][Xx][Tt][Rr][Oo][Ww]
+textscreen [Tt][Ee][Xx][Tt][Ss][Cc][Rr][Ee][Ee][Nn]
+textchar [Tt][Ee][Xx][Tt][Cc][Hh][Aa][Rr]
 textwidth [Tt][Ee][Xx][Tt][Ww][Ii][Dd][Tt][Hh]
 then [Tt][Hh][Ee][Nn]
 throwerror [Tt][Hh][Rr][Oo][Ww][Ee][Rr][Rr][Oo][Rr]
@@ -572,7 +594,7 @@ trim [Tt][Rr][Ii][Mm]
 try [Tt][Rr][Yy]
 type_array [Tt][Yy][Pp][Ee][_][Aa][Rr][Rr][Aa][Yy]
 type_float [Tt][Yy][Pp][Ee][_][Ff][Ll][Oo][Aa][Tt]
-type_int [Tt][Yy][Pp][Ee][_][Ii][Nn][Tt]([Ee][Gg][Ee][Rr])*
+type_int [Tt][Yy][Pp][Ee][_][Ii][Nn][Tt]([Ee][Gg][Ee][Rr])?
 type_map [Tt][Yy][Pp][Ee][_][Mm][Aa][Pp]
 type_ref [Tt][Yy][Pp][Ee][_][Rr][Ee][Ff]
 type_string [Tt][Yy][Pp][Ee][_][Ss][Tt][Rr][Ii][Nn][Gg]
@@ -685,6 +707,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {arc}						{ count(); return B256ARC; }
 {arraybase}					{ count(); return B256ARRAYBASE; }
 {asc}						{ count(); return B256ASC; }
+{ascending}					{ count(); return B256ASCENDING; }
 {assigned}					{ count(); return B256ASSIGNED; }
 {asin}						{ count(); return B256ASIN; }
 {atan}						{ count(); return B256ATAN; }
@@ -859,6 +882,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {gray}						{ count(); return B256GREY; }
 {green}						{ count(); return B256GREEN; }
 {hour}						{ count(); return B256HOUR; }
+{hsv}						{ count(); return B256HSV; }
 {imagecopy}					{ count(); return B256IMAGECOPY; }
 {imageheight}					{ count(); return B256IMAGEHEIGHT; }
 {imageload}					{ count(); return B256IMAGELOAD; }
@@ -943,6 +967,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {soundload}					{ count(); return B256SOUNDLOAD; }
 {soundplayer}				{ count(); return B256SOUNDPLAYER; }
 {soundplay}					{ count(); return B256SOUNDPLAY; }
+{soundplay}":"				{ count(); unputcolon(); return B256SOUNDPLAY; }
 {soundposition}				{ count(); return B256SOUNDPOSITION; }
 {soundsamplerate}			{ count(); return B256SOUNDSAMPLERATE; }
 {soundstate}				{ count(); return B256SOUNDSTATE; }
@@ -959,6 +984,9 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {sqr}						{ count(); return B256SQR; }
 {tan}						{ count(); return B256TAN; }
 {textheight}				{ count(); return B256TEXTHEIGHT; }
+{textcol}					{ count(); return B256TEXTCOL; }
+{textrow}					{ count(); return B256TEXTROW; }
+{textchar}					{ count(); return B256TEXTCHAR; }
 {textwidth}					{ count(); return B256TEXTWIDTH; }
 {tobinary}					{ count(); return B256TOBINARY; }
 {tofloat}					{ count(); return B256TOFLOAT; }
@@ -1044,6 +1072,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {dbexecute}					{ count(); return B256DBEXECUTE; }
 {dbopenset}					{ count(); return B256DBOPENSET; }
 {dbopen}					{ count(); return B256DBOPEN; }
+{descending}				{ count(); return B256DESCENDING; }
 {dim}						{ count(); return B256DIM; }
 {do}						{ count(); return B256DO; }
 {do}":"						{ count(); unputcolon(); return B256DO; }
@@ -1083,9 +1112,11 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {goto}						{ count(); return B256GOTO; }
 {graphsize}					{ count(); return B256GRAPHSIZE; }
 {window}					{ count(); return B256WINDOW; }
+{window}":"				{ count(); unputcolon(); return B256WINDOW; }
 {graphvisible}				{ count(); return B256GRAPHVISIBLE; }
 {graphtoolbarvisible}		{ count(); return B256GRAPHTOOLBARVISIBLE; }
 {if}						{ count(); return B256IF; }
+{ignorecase}				{ count(); return B256IGNORECASE; }
 {in}						{ count(); return B256IN; }
 {imageautocrop}					{ count(); return B256IMAGEAUTOCROP; }
 {imagecentered}					{ count(); return B256IMAGECENTERED; }
@@ -1106,6 +1137,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {kill}						{ count(); return B256KILL; }
 {let}						{ count(); return B256LET; }
 {line}						{ count(); return B256LINE; }
+{locate}					{ count(); return B256LOCATE; }
 {maintoolbarvisible}		{ count(); return B256MAINTOOLBARVISIBLE; }
 {map}						{ count(); return B256MAP; }
 {maximize}					{ count(); return B256MAXIMIZE; }
@@ -1114,12 +1146,14 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {matmul}					{ count(); return B256MATMUL; }
 {matsub}					{ count(); return B256MATSUB; }
 {mattrn}					{ count(); return B256MATTRN; }
+{mkdir}						{ count(); return B256MKDIR; }
 {netclose}					{ count(); return B256NETCLOSE; }
 {netclose}":"				{ count(); unputcolon(); return B256NETCLOSE; }
 {netconnect}				{ count(); return B256NETCONNECT; }
 {netlisten}					{ count(); return B256NETLISTEN; }
 {netwrite}					{ count(); return B256NETWRITE; }
 {next}						{ count(); return B256NEXT; }
+{next}":"					{ count(); unputcolon(); return B256NEXT; }
 {offerror}					{ count(); return B256OFFERROR; }
 {offerror}":"				{ count(); unputcolon(); return B256OFFERROR; }
 {onerror}					{ count(); return B256ONERROR; }
@@ -1184,6 +1218,7 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {soundwait}":"					{ count(); unputcolon(); return B256SOUNDWAIT; }
 {soundwaveform}					{ count(); return B256SOUNDWAVEFORM; }
 {sound}						{ count(); return B256SOUND; }
+{sort}						{ count(); return B256SORT; }
 {spritedim}					{ count(); return B256SPRITEDIM; }
 {spritehide}				{ count(); return B256SPRITEHIDE; }
 {spriteload}				{ count(); return B256SPRITELOAD; }
@@ -1192,11 +1227,19 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 {spritepoly}				{ count(); return B256SPRITEPOLY; }
 {spriteshow}				{ count(); return B256SPRITESHOW; }
 {spriteslice}				{ count(); return B256SPRITESLICE; }
+{spritetext}				{ count(); return B256SPRITETEXT; }
 {stamp}						{ count(); return B256STAMP; }
 {step}						{ count(); return B256STEP; }
 {subroutine}				{ count(); return B256SUBROUTINE; }
 {system}					{ count(); return B256SYSTEM; }
 {text}						{ count(); return B256TEXT; }
+{textscreen}				{ count(); return B256TEXTSCREEN; }
+{textscreen}":"			{ count(); unputcolon(); return B256TEXTSCREEN; }
+{textbackground}			{ count(); return B256TEXTBACKGROUND; }
+{textbackground}":"		{ count(); unputcolon(); return B256TEXTBACKGROUND; }
+{textcolor}				{ count(); return B256TEXTCOLOR; }
+{textcolor}":"			{ count(); unputcolon(); return B256TEXTCOLOR; }
+{textfont}				{ count(); return B256TEXTFONT; }
 {then}						{ count(); return B256THEN; }
 {then}":"					{ count(); unputcolon(); return B256THEN; }
 {throwerror}				{ count(); return B256THROWERROR; }
@@ -1267,7 +1310,20 @@ zfill [Zz][Ff][Ii][Ll][Ll]
 "<<"						{ count(); return B256BITSHIFTL; }
 ">>"						{ count(); return B256BITSHIFTR; }
 
-{label} {
+	/* A label is a name and a colon at the start of a line, indented or not.
+	 * The indentation is eaten by a rule of its own, so that "name:" is matched
+	 * on its own and ties on length with the {stmt}":" rules for statements
+	 * that take no arguments - flex gives a tie to the earlier rule, which is
+	 * the statement.  Were the indentation part of the label, the label would
+	 * be the longer match and an indented "next:" or "cls:" would be a label.
+	 */
+^{whitespace}	{
+	count();
+	BEGIN(LINEINDENT);
+}
+
+{label} |
+<LINEINDENT>{variable}":" {
 	char *temp;
 	char *c, *d;
 
@@ -1535,6 +1591,7 @@ int basicParse(char *code) {
 	include_filenames_counter = 0;
 	filename = NULL;
 
+	clearRefArguments();
 	bp = yy_scan_string(code);
 	yy_switch_to_buffer(bp);
 	yyparse();
@@ -1557,6 +1614,11 @@ int basicParse(char *code) {
 		linenumber = testIfOnTable(0);
 		errorcode = testIfOnTableError(0);
 	}
+
+	// only now is every FUNCTION and SUBROUTINE known, wherever it was
+	// defined, so only now can a bare variable passed to a ref() parameter
+	// be turned into a reference
+	if (errorcode == COMPERR_NONE) resolveRefArguments();
 
 	return errorcode;
 }

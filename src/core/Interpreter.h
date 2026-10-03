@@ -42,6 +42,9 @@
 #include "Sound.h"
 #include "Sleeper.h"
 #include "BasicDownloader.h"
+#include "FileSecurity.h"
+#include "MediaLoader.h"
+#include "SpriteLayer.h"
 
 
 #include <QElapsedTimer>
@@ -177,21 +180,6 @@ struct forframe {
     std::map<std::string, DataElement*>::iterator mapIterEnd;
 };
 
-typedef struct {
-    bool visible;
-    double x;
-    double y;
-    double r;	// rotate
-    double s;	// scale
-    double o;	// opacity
-    QImage *image;
-    QImage *transformed_image;
-    QRect position;
-    bool changed;
-    bool was_printed;
-    QRect last_position;
-} sprite;
-
 class Interpreter : public QThread
 {
 	Q_OBJECT
@@ -211,9 +199,11 @@ class Interpreter : public QThread
 		int debugMode;					// 0=normal run, 1=step execution, 2=run to breakpoint
 		QList<int> *debugBreakPoints;	// map of line numbers where break points ( pointer to breakpoint list in basicedit)
 		int returnInt;					// return value from runcontroller emit
+		QString returnString;			// string return value, for TEXTCHAR
 		QImage returnImage;				// return value from runcontroller emit
 		int settingsAllowPort;
 		int settingsAllowSystem;
+		bool settingsNetListenAny;		// netlisten binds all interfaces, not just loopback
 		QString programTitle;			// set by RunController before each run; used for the print doc name
 
 	public slots:
@@ -228,7 +218,14 @@ class Interpreter : public QThread
 		void goutputReady();
 		void outputReady(QString);
 		void outputError(QString);
-		void outputTextAt(int, int, QString);
+		void outputLocate(int, int);
+		void outputColor(int, int);
+		void outputFont(QString, int, int, bool);
+		void getTextCol();
+		void getTextRow();
+		void outputBackground(int);
+		void outputScreen(int, int, bool);
+		void getTextChar(int, int);
 		void getInput();
 		void outputClear();
 		void getKey();
@@ -251,6 +248,7 @@ class Interpreter : public QThread
 		void dialogSaveFileDialog(QString, QString, QString);
 		void dialogAllowPortInOut(QString);
 		void dialogAllowSystem(QString);
+		void dialogAllowFile(QString, QString);
 		void playSound(QString, bool);
 		void playSound(std::vector<std::vector<double>>, bool);
 		void loadSoundFromArray(QString, QByteArray*);
@@ -275,14 +273,11 @@ class Interpreter : public QThread
 		BasicKeyboard *basicKeyboard;	// not owned -- passed in at construction
 		Sleeper *sleeper;
 		BasicDownloader *downloader;
-#ifdef Q_OS_WASM
-		// "sound:" resource ids this run has already registered for a file or
-		// URL passed straight to SOUND/SOUNDPLAY/SOUNDPLAYER, so replaying the
-		// same track in a loop does not re-download it. Interpreter-thread only
-		// -- deliberately not a peek at SoundSystem::loadedsounds, which lives
-		// on the main thread. Cleared at the start of every run().
-		QSet<QString> wasmSoundResources;
-#endif
+		// the bytes of sounds and pictures a program names - see MediaLoader.h
+		MediaLoader media;
+		// SPRITEDIM's sprites and the layer they are drawn on - see SpriteLayer.h
+		SpriteLayer sprites;
+		void registerSoundBytes(const QString &id, QByteArray *bytes);
 		//int optype(int op);
 		QString opname(int);
 		void waitForGraphics();
@@ -321,13 +316,6 @@ class Interpreter : public QThread
 		double double_random_max;
 		int64_t noiseSeed;			// seeds NOISE, set alongside srand by SEED
 		int currentLine;
-		void clearsprites();
-		void update_sprite_screen();
-		void sprite_prepare_for_new_content(int);
-		void force_redraw_all_sprites_next_time();
-		bool sprite_collide(int, int, bool);
-		sprite *sprites;
-		int nsprites;
 		void closeDatabase(int);
 		int arraybase;			// 0 for 0..n-1, 1 for 1 to n array indexing
 		// watch... functions trigger the variablewatch window to display
@@ -340,6 +328,16 @@ class Interpreter : public QThread
 		// storage.  See the block comment above it in Interpreter.cpp for how
 		// an array is read as a matrix and what the element arithmetic does.
 		void matStatement(int, int, DataElement *, int, DataElement *, int);
+		// Opcodes execByteCode() hands on, one group per Interpreter_<group>.cpp
+		void execArrayOp(int opcode, int i);
+		void execFileOp(int opcode);
+		void execSoundOp(int opcode);
+		void execGraphicsOp(int opcode);
+		void execSpriteOp(int opcode);
+		void execTextOutputOp(int opcode);
+		void execDatabaseOp(int opcode);
+		void execNetworkOp(int opcode);
+		void execSystemOp(int opcode);
 		
 		void runLoop();
 
@@ -414,6 +412,9 @@ class Interpreter : public QThread
 		QProcess *sys;
 
 		QString originalPath;				// used to restore IDE path afrer it may be changed at run time
+		// which files a program may touch - see FileSecurity.h
+		FileSecurity fileSecurity;
+		int askAllowFile(const QString &what, const QString &resolved);
 };
 
 

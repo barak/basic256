@@ -309,8 +309,8 @@ width = 1120
 height = 820
 graphsize width, height
 graphvisible(1)
-editvisible(1)
-outputvisible(1)
+editvisible(0)
+outputvisible(0)
 color grey
 rect 0,0,width,height
 return
@@ -435,7 +435,7 @@ sp_Location_array_max=4
 sp_Location_filler1=0
 sp_Location_filler2=0
 dim sp_Location_list$(5)
-sp_Location_list$={"Bottom", "Random", "Center Block", "Single Point", "Left Side"}
+sp_Location_list$={"Bottom", "Center Block", "Random", "Single Point", "Left Side"}
 dim sp_array_list$(5)
 global sp_array_list$
 for i = 0 to sp_Location_array_max
@@ -454,21 +454,21 @@ return
 DrawButtons:
 # Draw the Start button
 color black
-b_locx_a=40:b_locy_a=750
+b_locx_a=40:b_locy_a=680
 b_width_a=55:b_height_a=30
 b_text_a$="Start":b_textsize_a=10
 b_offsetx_a=10:b_offsety_a= 7
 b_init_a=0
 call button (b_locx_a, b_locy_a, b_width_a, b_height_a, b_text_a$, b_textsize_a, b_offsetx_a, b_offsety_a, b_init_a)
 # Draw the Reset button
-b_locx_b=120:b_locy_b=750
+b_locx_b=120:b_locy_b=680
 b_width_b=55:b_height_b=30
 b_text_b$="Reset":b_textsize_b=10
 b_offsetx_b=10:b_offsety_b= 7
 b_init_b=0
 call button (b_locx_b, b_locy_b, b_width_b, b_height_b, b_text_b$, b_textsize_b, b_offsetx_b, b_offsety_b, b_init_b)
 # Draw the Clear button
-b_locx_c=200:b_locy_c=750
+b_locx_c=200:b_locy_c=680
 b_width_c=55:b_height_c=30
 b_text_c$="Clear":b_textsize_c=10
 b_offsetx_c=10:b_offsety_c= 7
@@ -477,26 +477,27 @@ call button (b_locx_c, b_locy_c, b_width_c, b_height_c, b_text_c$, b_textsize_c,
 return
 
 DrawSpore:
-color gray
-rect 5,450,280,300
+color grey
+rect 20,450,260,217
 #draw sensors
 color black
-line 150,650, 150,650-(sensorDist*5+15)
-line 150,650, 150+cos(-pi/2+sensorAngle)*(sensorDist*5+15), 650+sin(-pi/2+sensorAngle)*(sensorDist*5+15)
-line 150,650, 150+cos(-pi/2-sensorAngle)*(sensorDist*5+15), 650+sin(-pi/2-sensorAngle)*(sensorDist*5+15)
+line 150,580, 150,580-(sensorDist*5+15)
+line 150,580, 150+cos(-pi/2+sensorAngle)*(sensorDist*5+15), 580+sin(-pi/2+sensorAngle)*(sensorDist*5+15)
+line 150,580, 150+cos(-pi/2-sensorAngle)*(sensorDist*5+15), 580+sin(-pi/2-sensorAngle)*(sensorDist*5+15)
 color green
-circle 150,650-(sensorDist*5+15),5
-circle 150+cos(-pi/2+sensorAngle)*(sensorDist*5+15), 650+sin(-pi/2+sensorAngle)*(sensorDist*5+15),5
-circle 150+cos(-pi/2-sensorAngle)*(sensorDist*5+15), 650+sin(-pi/2-sensorAngle)*(sensorDist*5+15),5
+circle 150,580-(sensorDist*5+15),5
+circle 150+cos(-pi/2+sensorAngle)*(sensorDist*5+15), 580+sin(-pi/2+sensorAngle)*(sensorDist*5+15),5
+circle 150+cos(-pi/2-sensorAngle)*(sensorDist*5+15), 580+sin(-pi/2-sensorAngle)*(sensorDist*5+15),5
 #draw Turning angle
 color black
-line 150,650, 150+cos(turnAngle-pi/2)*30,650+sin(turnAngle-pi/2)*30
-line 150,650, 150+cos(-turnAngle-pi/2)*30,650+sin(-turnAngle-pi/2)*30
+line 150,580, 150+cos(turnAngle-pi/2)*30,580+sin(turnAngle-pi/2)*30
+line 150,580, 150+cos(-turnAngle-pi/2)*30,580+sin(-turnAngle-pi/2)*30
 color blue
-circle 150+cos(turnAngle-pi/2)*30,650+sin(turnAngle-pi/2)*30,5
-circle 150+cos(-turnAngle-pi/2)*30,650+sin(-turnAngle-pi/2)*30,5
+circle 150+cos(turnAngle-pi/2)*30,580+sin(turnAngle-pi/2)*30,5
+circle 150+cos(-turnAngle-pi/2)*30,580+sin(-turnAngle-pi/2)*30,5
+#draw Spore
 color black,red
-circle 150,650,15
+circle 150,580,15
 return
 
 SelectCells:

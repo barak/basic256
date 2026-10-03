@@ -10,6 +10,9 @@ set -euo pipefail
         
         cp build/basic256 Basic256/
         cp -r Examples Basic256/
+        # the TestSuite has just run here and its MKDIR test leaves an empty
+        # filegatesub behind, which it has no way to remove
+        rm -rf TestSuite/filegatesub
         cp -r TestSuite Basic256/ || true
         # Bundled module library, beside the binary so include "math.kbs" resolves
         cp -r Modules Basic256/

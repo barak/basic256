@@ -4,206 +4,226 @@
 [![Latest release](https://img.shields.io/github/v/release/uglymike17/basic256?include_prereleases)](https://github.com/uglymike17/basic256/releases)
 [![License: GPLv3](https://img.shields.io/badge/license-GPLv3-blue)](license.txt)
 
-> **BASIC256 is a classic BASIC programming language designed to make learning programming fun through graphics, animation, sound and experimentation.**
+> **BASIC256 is a small, approachable language that lets a beginner gradually grow into graphics, simulation, games and systems programming.**
 
 <p align="center">
-  <img src="resources/icons/basic256_256.png" width="192" height="192" alt="The BASIC256 logo: the words BASIC and 256 in white block letters on a rounded green square with a thick black outline">
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="BitBot_Hello.png" height="192" alt="BitBot, the BASIC256 mascot: a friendly white and green robot with a smiling screen for a face, headphones, a green cape and 256 on its chest, waving hello">
+  <img src="resources/icons/basic256_256.png" width="160" alt="BASIC256 logo">
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="BitBot_Hello.png" height="160" alt="BitBot, the BASIC256 mascot">
 </p>
 
-This project is the actively maintained continuation of the original BASIC256, bringing the educational and hobbyist environment to Windows, Linux, macOS and the Web while preserving backward compatibility with existing BASIC256 programs. Its homepage is at https://basic256.org. It also has an extensive documentation site, https://doc.basic256.org, accessible from the application's Help → Online Help menu, and a third site, https://run.basic256.org, lets you run it in a browser.  
+BASIC256 is a free, open-source BASIC programming environment for beginners and hobbyists. It is the actively maintained continuation of the original BASIC256, modernized for **Windows, Linux, macOS and the Web** while retaining compatibility with existing BASIC256 programs.
 
-## Why use BASIC256?
+- 🌐 [Homepage](https://basic256.org)
+- 📚 [Documentation](https://doc.basic256.org)
+- ▶️ [Run BASIC256 in your browser](https://run.basic256.org)
+- 💾 [Download releases](https://github.com/uglymike17/basic256/releases)
 
-- Designed specifically for beginners and hobbyists  
-- Immediate graphics and sound  
-- Cross-platform  
-- Lots of example programs  
-- Simple BASIC syntax  
-- Free and open source (GPL3)  
+## Why BASIC256?
 
-## What's new in BASIC256 2.2.0
-
-- A classic BASIC command WINDOW to set the logical coordinates of the canvas.
-- All drawing primitives (CIRCLE, LINE, RECT,..) have been adapted to handle the new WINDOW command, as have the location-based ones (PIXEL, MOUSEX/Y, CLICKX/Y). They now also accept fractional coordinates, so a circle at 100.5,100.5 sits half a pixel right of and below one at 100,100.
-- A new command NOISE to generate OpenSimplex noise (follow-up to Perlin noise).
-- For more advanced use, matrix calculations can now be performed with the MAT command (MAT MUL, MAT ADD, MAT SUB, MAT INV, MAT TRN) and vector calculations can be done with DOT and CROSS products, NORM (vector length) and UNIT (unit vector). As there are no real matrix or vector primitives, arrays are used to represent these.
-- A new command FRAMERATE to hold a drawing loop to a steady number of frames a second. BASIC256 runs on everything from an RPi to an M5, so a program written on one machine should keep its speed on another. FRAMERATE 30 in the loop waits until the next frame is due rather than for a fixed time, so the drawing time comes out of the wait instead of being added to it and the rate is the one asked for whatever the scene costs.
-- On the more educational side, there is now a turtle.kbs as a module to simulate turtle graphics. The turtle commands are well documented on the documentation site.
-- An array or map literal may now be written over several lines instead of a single continuous line and a remark may be put inside the outer mustaches, so the rows of a table can be documented.
-- Programs run 20-25% faster than 2.1.1, and none run slower.
-- Arrays use about half the memory they used to, and the statements that act on a whole array at once -- DIM, REDIM, MAT statements -- are three to five times faster.
-- PAUSE is now accurate to about a millisecond on every platform, waits for any length up to a day, and can be cut short by the Stop button.
-- New and updated Example files are included, also in the WASM version.
-- Bug fixes: on Windows a running program's graphics no longer stall for seconds at a time until the mouse is moved, and SPRITEPOLY now places the polygon where it was drawn and leaves room for the pen width. Although mod and % correctly returned the modulo function, MOD was not recognized. This is now fixed.
-
-## What's new in BASIC256 2.1.1
-
-- 2x speed-up for arithmetic-heavy loops (fractals, physics,..)
-- WASM code persistence so your coding session doesn't just disappear when doing a browser refresh or restart.
-
-## What's new in BASIC256 2.1
-
-- Build environment: GitHub Actions / CMake / Qt6 /  MS Visual Studio 2022 support   
-- Supported architectures: WebAssembly  and macOS for Silicon and Intel Macs!  
-- Command line: fullscreen mode, graphics only, text only and silent running  
-- IDE: View-Theme settings for Dark themes / Updated examples / New standard library  
-- Updated documentation based on Docusaurus
+- Designed specifically for beginners and hobbyists
+- Simple BASIC syntax
+- Immediate graphics and sound
+- Cross-platform desktop and Web versions
+- Many example programs to learn from and experiment with
+- Free and open source under GPLv3+
 
 ## Try it in your browser
 
-Thanks to Qt for WebAssembly, BASIC256 runs directly in your browser — the full
-editor and interpreter, with no install needed.
+No installation is needed. The WebAssembly version provides the full editor and interpreter directly in your browser.
 
-**Live demo:** https://run.basic256.org
+**[▶ Run BASIC256](https://run.basic256.org)**
 
-You will be greeted with an interface like the following image. The interface automatically adapts to both light and dark system themes. The View menu item allows you to show/hide windows and/or toolbars among other things. You can type a program such as 
+For example:
+
 ```basic
 # bubbles.kbs — random transparent colorful circles
 clg
 fastgraphics
+
 for i = 1 to 500
-   color rgb(int(rand*256), int(rand*256), int(rand*256), 100+int(rand*150))
-   circle rand*graphwidth, rand*graphheight, rand*40
-   refresh
+    color rgb(int(rand*256), int(rand*256), int(rand*256), 100+int(rand*150))
+    circle rand*graphwidth, rand*graphheight, rand*40
+    refresh
 next i
-```  
-and click Run to see the result immediately. (you can copy/paste the program into the demo linked above too...)
+```
 
 ![The bubbles program typed into the BASIC256 editor in a browser tab, with its result in the Graphics Output pane on the right: hundreds of overlapping translucent circles in random colours and sizes filling the canvas](Basic256_in_Browser.png)
 
-### Running a program straight from the Web link
+The browser version supports several useful URL modes:
 
-You can use the above link with parameters to make a program run directly from the URL. **Which** program to run is one
-parameter, and **how** to show it is another.
+| URL parameter | Purpose |
+|---|---|
+| `?run=name` | Run a bundled Example |
+| `?url=path/file.kbs` | Load a program from the site |
+| `?src=...` | Load source encoded in the URL |
+| `&mode=ide` | Full IDE, auto-run |
+| `&mode=edit` | Full IDE, loaded but not run |
+| `&mode=graph` | Graphics-only mode |
+| `&mode=text` | Text-only mode |
+| `&mode=app` | Text + graphics, without the editor |
 
-Three ways to name the program:
+For example:
 
-| parameter | where it looks | example |
-|---|---|---|
-| `?run=` | the **Example** programs built into the app | `?run=mandelbrot` |
-| `?url=` | a file **on the site**, relative to the page | `?url=demos/bubble.kbs` |
-| `?src=` | the program source itself, base64-encoded in the link | `?src=<base64>` |
+- `https://run.basic256.org/?run=Mandelbrot-256&mode=graph`
+- `https://run.basic256.org/?run=BubbleUniverse_variations`
 
-`?run=` only sees the bundled Examples — dropping a `.kbs` onto your web server
-does *not* make it visible to `?run=`; that's what `?url=` is for. `?url=` is
-restricted to the site serving the page (a relative path), so a link can't point
-the app at somebody else's server.
-
-Then `&mode=` chooses the window layout. These mirror the command-line switches:
-
-| `?mode=` | switch | Effect |
-|---|---|---|
-| `ide` *(default)* | `-r` | full IDE, auto-run |
-| `edit` | — | full IDE, loaded but **not** run |
-| `graph` | `-g` | graphics only, auto-run |
-| `text` | `-t` | text output only, auto-run |
-| `app` | `-a` | text + graphics, no editor, auto-run |
-
-So a plain link opens the IDE with the program loaded and running — you can see
-it, stop it and edit it:
-
-**https://run.basic256.org/?run=BubbleUniverse_variations**
-
-![The Bubble Universe demo running in the browser IDE: its source in the editor on the left, the program's "A cool looking animated demo style program in Basic256" line in Text Output, and a dense multicoloured sphere of plotted points in Graphics Output](Basic256-Web.png)
-
-Add `&mode=graph` and you get just the canvas, with no menus or toolbars — the
-form to use when embedding a demo in a page:
-
-**https://run.basic256.org/?run=Mandelbrot-256&mode=graph**
-
-![The Mandelbrot-256 demo in graphics-only mode: no BASIC256 menus or toolbars, just the program's own window with a colour-banded Mandelbrot set on the left and its Mandel/Julia/Orbits/Zoom/Colors option tabs on the right](Basic256-Web_GraphicsOnly.png)
-
-`mode` works with any of the three, so `?url=demos/bubble.kbs&mode=graph` runs
-your own hosted program as a bare-canvas demo. On your own server, add folders
-such as `/demos`, `/images` or `/sounds` and reference them from `?url=` or from
-inside your programs.
+This makes the Web version useful not only for learning, but also for sharing and embedding BASIC256 programs.
 
 ### Hosting it yourself
 
-Copy the WASM build to any static host served over **HTTPS**, and send these two
-headers that the multithreaded build relies on:
+Copy the WASM build to any static host served over **HTTPS**, and send these two headers that the multithreaded build relies on:
 
 ```
 Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
 ```
 
-With those in place the page loads in a single pass — no reload — and the bundled
-`coi-serviceworker` helper (only needed because GitHub Pages can't send those
-headers itself) is no longer required.
+With those in place the page loads in a single pass — no reload — and the bundled `coi-serviceworker` helper (only needed because GitHub Pages can't send those headers itself) is no longer required.
 
 ### Browser differences
 
-Running inside a browser sandbox, a few things differ from the desktop version:
+The browser runs inside a sandbox, so some desktop features are unavailable:
 
-- **Files** live in an in-browser filesystem rather than on your disk; programs
-  load and save through the browser.
-- **Sound and `say`** use the browser's audio and speech support, and the first
-  sound may need a click first (browsers block audio until you interact with the
-  page).
-- **Networking** (TCP sockets) isn't available in the browser.
-- **Speed:** the browser build runs slower than the native one, so large fractals
-  and particle simulations will run at a gentler pace.
+- Files created by a running program exist only for the current browser session.
+- Programs in the editor persist across refreshes.
+- `SOUND`, `SAY` and related features use browser audio/speech support and could be unavailable.
+- TCP networking, `SYSTEM`, serial ports, database/SQL and printer commands are unavailable.
+- Large fractals and simulations generally run slower than on the desktop.
+- Media such as `SOUNDLOAD` and `IMGLOAD` can be loaded from paths relative to the Web page, subject to normal browser CORS rules.
 
+## What's new
 
-## The desktop IDE
+### BASIC256 2.3.0
 
-Started as a standard application, BASIC256 opens the same 3-pane IDE with edit, output and graphics windows as the web version:
+#### 🔒 Security & Filesystem
+- **File Access Prompts:** Accessing files/folders outside the program's root directory now triggers a user confirmation prompt (`OPEN`, `KILL`, `MKDIR`, `IMGSAVE`, `DBOPEN`, SQL targets, etc.).
+- **Loopback Network Default:** `NETLISTEN` now listens exclusively on `127.0.0.1` by default. Network access can be enabled in *Preferences/Advanced*.
+- **Directory Commands:** `MKDIR` restored (works without `SYSTEM`). `RMDIR` has been permanently removed for safety.
 
-![The BASIC256 desktop IDE on Windows running the same Bubble Universe demo, with the syntax-highlighted source on the left and the Text Output and Graphics Output panes on the right](Basic256-IDE.png)
+#### 💻 Text & Console Enhancements
+- **`TEXTSCREEN` Added:** Convert the Text Output window into a true grid-based character screen with fixed dimensions and optional square cells (`TEXTSCREEN cols, rows [, square]`).
+- **Console Controls:** `LOCATE` positions the cursor for in-place overwriting. Added `TEXTCOLOR`, `TEXTBACKGROUND`, `TEXTFONT`, and `TEXTCHAR()`.
 
+#### 🎨 Graphics & Audio
+- **Color & Sprites:** Added `HSV(h, s, v [, a])` color function, 3D Noise support via `NOISE(x, y, z)`, and `SPRITETEXT` to render text directly onto sprites.
+- **Sprite Scaling:** `SPRITEW` and `SPRITEH` now accurately report transformed dimensions.
+- **Coordinate Mapping:** `IMGLOAD`, `GETSLICE`, and `PUTSLICE` now respect custom `WINDOW` coordinates.
 
-## Examples
+#### ⚙️ Language & Core Fixes
+- **Array Sorting:** New built-in `SORT` statement for 1D and 2D arrays (`SORT array [, col] [, ASCENDING|DESCENDING] [, IGNORECASE]`).
+- **Subroutine Pass-by-Reference Fix:** Subroutines declaring `ref()` parameters now correctly modify the caller's target variable passed without an explicit `ref()` wrapper.
+- **Syntax Improvements:** Fixed an issue where statements without arguments followed by a colon (e.g., `NEXT:`, `CLS:`) were misidentified as labels.
 
-The Examples directories have some more or less advanced example programs to play and experiment with. Note that most of these 'new' examples are also somewhat dated and some are not working on tablets or smartphones but rely on keyboard input.  
-The original, minimalistic example programs from the 2.0.0.11 version are also included in sub-directory Original_Examples.  
-Although some of Manuel Santos' programs are already included, you can still find many additional examples of his on https://basic256.blogspot.com/.
+#### 📦 Platform & Suite Updates
+- **Raspberry Pi:** Fixed missing SQLite driver error for `DBOPEN`. Added `TestSuite` and `Benchmark` to Pi archives.
+- **Benchmarking & Examples:** Added `TestSuite/Benchmark` utility and a new SQLite console demo (`Examples/DataBase/GamesDB.kbs`). 
+
+#### 🌐 Homepage Enhancements
+* **Gallery Page** There is now a Gallery page on basic256.org where you can run the examples directly in a pop-up Browser window.
+
+### BASIC256 2.2.0
+
+#### ⚡ Performance & Memory
+- **Execution Speedup:** Overall execution is 20–25% faster due to optimized runtime value handling across arithmetic, drawing, and array operations.
+- **Array Optimization:** Arrays use ~50% less memory. Whole-array operations (`DIM`, `REDIM`, array copying, `MAT` statements) run 3–5x faster.
+
+#### 📐 New Features & Math Operators
+- **Vector Operators:** Added `DOT`, `CROSS`, `NORM(v)`, and `UNIT(v)` for vector arithmetic on standard 1D/2D arrays.
+- **Matrix Operators:** New `MAT` statement adds following matrix operations: `MUL`, `ADD`, `SUB`, `INV` and `TRN`.
+- **Turtle Graphics Module:** Added `Modules/turtle.kbs` (`INCLUDE "turtle.kbs"`) for turtle-style relative drawing (`t_forward`, `t_left`, `t_goto`, etc.).
+- **`FRAMERATE` Control:** New `FRAMERATE fps` statement locks drawing loops to a target frame rate (e.g., `FRAMERATE 60`), automatically adjusting for system speed differences.
+- **OpenSimplex noise:** Added `NOISE` for smooth, repeatable OpenSimplex noise (ideal for terrain, clouds, and paths). Tied to `SEED` for deterministic output.
+
+#### ⚙️ Core Enhancements & Fixes
+- **Unlimited File Size:** Removed the ~5,000-line program length limit (including `INCLUDE` files).
+- **Improved `PAUSE`:** Accurate millisecond-level precision across all platforms; instantly interruptible by clicking Stop.
+- **Syntax Adjustments:** `MOD` is now a case-insensitive keyword (reserved word).
+
+#### 🎨 Custom Coordinates & Rendering
+* **`WINDOW` Statement:** Set custom coordinate systems and axis orientations (`WINDOW x1, y1, x2, y2`), with middle-point centering or graph paper orientation. `MOUSEX`, `MOUSEY`, `PIXEL`, etc. adapt automatically.
+* **Subpixel Drawing:** Graphics statements (`PLOT`, `LINE`, `CIRCLE`, `RECT`, `TEXT`, etc.) now accept fractional coordinates for precision positioning.
+
+#### ⚙️ Code Readability
+* **Multi-line Literals:** Array and map literals (`{ ... }`) can now span multiple lines with inline comments (`#`), allowing clean table and matrix layouts.
+
+### BASIC256 2.1.1
+
+#### ⚡ Performance Improvements
+* **Faster Execution:** Arithmetic-heavy loops run roughly 2x faster due to internal memory reuse for intermediate values and reduced interpreter step overhead. Gains are highest in the WASM/browser build.
+
+#### 🌐 Browser (WASM) Enhancements
+* **Session Persistence:** Editor state, open tabs, active selection, and file names now auto-persist in the browser across tab closes, page refreshes, or browser restarts.
+
+#### 🪟 Windows & UI Fixes
+* **Windows 11 Scaling:** Menu bar titles (`File`, `Edit`, `View`, etc.) now properly scale and adjust spacing based on system text size settings.
+* **Streamlined Windows Installer:** Removed the redundant standalone Microsoft VC++ Redistributable installer file (still bundled within the main installer when needed).
+* **Updated Links:** Updated *Help/About* to include the main site (`https://basic256.org`) alongside the documentation portal.
+
+### BASIC256 2.1.0
+
+> **Major Update:** BASIC-256 has migrated to **Qt 6**, enabling WebAssembly (WASM) browser execution, modern UI features, and relicensing to **GPL v3 or later**.
+
+#### 🖥️ IDE & Modernization
+* **Qt 6 & WASM Support:** Ported codebase to Qt 6 and CMake. You can now run BASIC-256 directly in a web browser!
+* **UI Themes & Layout:** Added **Light**, **Dark**, and **Follow System** themes (*View/Theme*). Window maximizing and docking now preserve balanced pane proportions.
+* **New `MAXIMIZE` Statement:** Programmatically maximize (`MAXIMIZE 1`) or restore (`MAXIMIZE 0`) the IDE window.
+* **Mascot & Visuals:** Introduced new program logo, transparent app icons across all platforms, and the **BitBot** mascot.
+* **Built-in Modules:** `INCLUDE` statements now directly access bundled libraries (e.g., `include "math.kbs"`) in the browser.
+
+#### 🌐 WebAssembly (WASM) & Mobile
+* **Mobile Audio & Touch:** Full audio/speech support on iPad/iPhone and touch-driven interaction for browser demos.
+
+#### 💻 CLI & macOS
+* **New CLI Flags:** `-f` (fullscreen run), `-s` (silent mode with suppressed screen output for background processing/testing), and `-g` (shows graphics pane only).
+* **macOS Sequoia:** Added official Intel macOS support (requires macOS 15+).
+
+#### 📚 Documentation & Help
+* **New Documentation Portal:** Replaced legacy docs with a modern Docusaurus site at `doc.basic256.org` (accessible via `F1` or *Help/Online Help*).
+* **Documented Features:** Added docs for `ELLIPSE`, `SETGRAPH`, `GETARRAYBASE`, optional `LET`, bit-shifts (`<<`, `>>`), and compound assignments (`&=`, `;=`).
+
+## Desktop application
+
+The desktop application provides the familiar BASIC256 three-pane environment:
+
+- **Editor** — write and edit BASIC programs.
+- **Text Output** — program output and console-style interaction.
+- **Graphics Output** — immediate drawing and animation.
+
+The same BASIC256 programs can therefore be developed on the desktop and shared through the Web version.
+
+![The BASIC256 desktop IDE on Windows running the Bubble Universe demo, with the syntax-highlighted source on the left and the Text Output and Graphics Output panes on the right](Basic256-IDE.png)
 
 ## Download & install
 
-Grab the latest build for your platform from the [Releases page](https://github.com/uglymike17/basic256/releases).
+Get the latest builds from the **[Releases](https://github.com/uglymike17/basic256/releases)** page.
 
 | Platform | Status | Notes |
-| :--- | :---: | :--- |
-| Windows (.zip) | ✅ | Extract anywhere you like. The full TestSuite runs without issue. |
-| Windows (installer .exe) | ✅ | SmartScreen will initially block it as it comes from an unknown source — "More info" → "Run anyway" fixes this. A signed version might come later thanks to [SignPath's open-source program](https://signpath.io/solutions/open-source-community); this depends on GitHub stars and the success of the project. |
-| Linux x86 (tarball / AppImage) | ✅ | Both are quite large as they include all prerequisite software. There is also a .deb package, which is much smaller because it lists its prerequisites in metadata instead of bundling them: BASIC256 2.1.1 is in Debian 14 "Forky" main and in Debian Unstable "sid" main. |
-| Raspberry Pi (tarball / AppImage) | ✅ | Same remark as Linux x86 regarding size; BASIC256 2.1.1 is in Raspbian Testing main. Speech does not work out of the box on Raspbian "Trixie", which does not ship speech-dispatcher, so it must be installed manually. |
-| macOS (Apple Silicon) | ⚠️ | Needs **macOS 15 (Sequoia) or newer**. Builds as a Homebrew-based app. Having no developer license, I can only apply ad-hoc signing — see below. |
-| macOS (Intel) | ⚠️ | Needs **macOS 15 (Sequoia) or newer**. Same Homebrew-based app and the same ad-hoc signing caveat, built separately for x86_64 Macs. These are two single-architecture downloads, not one universal binary, so pick the one matching your Mac. |
-| Web (WASM) | 🧪 v1 | Works, with a few known gaps — see below. |
+|---|:---:|---|
+| Windows | ✅ | ZIP and installer builds available. SmartScreen will initially block the installer as it comes from an unknown source — "More info" → "Run anyway" fixes this. |
+| Linux x86 | ✅ | Tarball, AppImage and `.deb` packages. BASIC256 2.1.1 is in Debian 14 "Forky" main and in Debian Unstable "sid" main. |
+| Raspberry Pi | ✅ | Tarball and AppImage builds. BASIC256 2.1.1 is in Raspbian Testing main. |
+| macOS Apple Silicon | ⚠️ | Requires macOS 15 (Sequoia) or newer. |
+| macOS Intel | ⚠️ | Requires macOS 15 (Sequoia) or newer. Separate x86_64 build. |
+| WebAssembly | 🧪 | Usable, with the browser limitations described above. |
 
-### macOS notes
+### macOS
 
-Ad-hoc signing should prevent the "basic256.app is damaged and can't be opened" message and show "unidentified developer" instead. If the "damaged" message still appears, strip the quarantine flag:
+The supplied macOS applications are ad-hoc signed rather than notarized. If Gatekeeper reports that the application is damaged, try:
 
 ```console
 xattr -cr /Applications/basic256.app
 ```
 
-Another way to quickly run an ad-hoc signed Mac app is to open Terminal and apply the ad-hoc signature to bypass Gatekeeper:
+For older macOS versions, the original Qt5-based BASIC-256 2.0.0.11 may be an alternative, or BASIC256 can be built from source against Qt 5.15.
 
-```console
-codesign --force --deep -s - /path/to/app.app
-```
+### Raspberry Pi
 
-There is however a possibility to add your own Developer ID in the build script, opening a path to notarization, which would allow seamless installation on modern macOS versions.
+The Raspberry Pi build is intended for modern Raspberry Pi Linux installations. Speech support may require `speech-dispatcher` to be installed separately.
 
-**Older macOS versions.** Both macOS downloads need macOS 15 (Sequoia) or newer. That floor comes from Qt 6 and from the libraries bundled into the app, not from BASIC256 itself, so it cannot simply be lowered by a build setting: the app is only as portable as the least portable library inside it, and those are supplied by Homebrew for whichever macOS the build ran on. GitHub's oldest Intel runner image is macOS 15, so that is also the practical floor for the Intel build. Qt 5 was the last version to support macOS 10.13/10.14, so on an older Mac (High Sierra, Mojave, Catalina and similar) the option is the original Qt5-based BASIC-256 2.0.0.11 from [SourceForge](https://sourceforge.net/projects/kidbasic/), or building from source against Qt 5.15 yourself. Note that an Intel download will also run on an Apple Silicon Mac through Rosetta 2, which is useful if only one of the two builds starts on your system.
+## Command line
 
-### Browser build (WASM) limitations
-
-The browser build is v1 and has a few known gaps compared to the desktop app:
-
-- `SYSTEM`, serial port commands (`SERIALOPEN`...), the whole `NET...` family (`NETCONNECT` as well as `NETLISTEN`), `DBOPEN`/SQL and `PRINTER...` are not available in a browser sandbox. Programs calling them get a clear "Feature not available on this platform" error and keep running — they don't crash or hang.
-- Data files a running program creates with `open`/`write` only live for the current browser session. Your programs in the editor do persist across a refresh.
-- Loading media over HTTP is a separate path and does work: `SOUNDLOAD`, `IMGLOAD` and the sprite loads resolve a relative path against the page's own URL, so `sounds/bounce.mp3` is fetched from the server that served the page. An absolute URL naming another host is subject to that site's CORS policy, same as any browser page.
-
-## Command line / Terminal usage
-
-BASIC256 can also be called from the command line with the following options:
+BASIC256 can also run programs from a terminal:
 
 | Short | Long | Effect |
 | :---: | :--- | :--- |
@@ -218,133 +238,125 @@ BASIC256 can also be called from the command line with the following options:
 | -s | --silent | Run the specified .kbs with no GUI at all: PRINT goes to stdout, errors to stderr, and the exit code says whether it worked. Needs a filename, and cannot be combined with -r/-a/-g/-t. |
 | -l | --lang --language | Start BASIC-256 using the specified language. |
 
-The -a, -g and -t options allow you to run a program in kiosk mode, without showing the actual code window.
-(Careful: if you set edit/graph/outputvisible flags inside your .kbs, these will override your CLI option.)
-
-Without a filename to run, -r/-a/-g/-t are ignored and the normal IDE opens; -s instead reports the problem and stops with exit code 1 — which is also what you get if the file will not load or the program ends in an error. A program that runs to the end exits 0, so -s is the option to drive BASIC256 from a script or a test runner.
-
-On Windows BASIC256 is a windowed program, not a console one. It writes --help, --version and everything -s produces to the console it was started from; started from Explorer or a shortcut there is no console and that text goes nowhere.
-
-You can even make a desktop shortcut with a .bat file like:
+For example:
 
 ```console
-@echo off
-C:\PATH_TO_BASIC256\basic256.exe -g Mandelbrot-256.kbs
+basic256 -g Mandelbrot-256.kbs
+basic256 -f -t Zork256.kbs
+basic256 -s TestProgram.kbs
 ```
 
-to have a file run as if it were an application. Make sure to set the shortcut's "Run" property to Minimized to prevent a terminal window from popping up.
+## Examples
 
-When writing a purely text-based adventure, you could create a batch file like:
+The repository contains a large collection of example programs covering graphics, games, mathematics, simulations, sound and other BASIC256 features.
 
-```console
-@echo off
-C:\PATH_TO_BASIC256\basic256.exe -f -t Zork256.kbs
+The original minimal examples from BASIC256 2.0.0.11 are preserved under:
+
+```text
+Examples/Original_Examples/
 ```
 
-This way, there is no visible distraction from the text adventure.
-
-A better option on Windows is to use a .vbs file instead:
-
-```vb
-' run_mandelbrot.vbs — no console window, ever
-Set sh = CreateObject("WScript.Shell")
-sh.Run """C:\PATH_TO_BASIC256\basic256.exe"" -g ""C:\PATH_TO_KBS\Mandelbrot-256.kbs""", 1, False
-```
-
-Shortcuts made this way sit on the desktop like any other application:
-
-![A row of Windows desktop shortcuts — mandel.vbs, mandel.bat, Attractors, chat.bat, basicpaint and Colors.bat — each launching a BASIC256 program directly](Basic256-CLI.png)
-
-An example video of starting several graphics demos from Windows shortcuts can be seen here: https://www.youtube.com/watch?v=D8ord7K2QvI
+Additional examples can be found at [Manuel Santos' BASIC256 blog](https://basic256.blogspot.com/).
 
 ## Standard library
 
-This is functionality that does not exist in SourceForge BASIC-256.
-The program now contains a Modules directory that contains a single standard library: math.kbs.
-This can be included in any program you write simply with
+BASIC256 includes 2 small standard libraries:
+
+1. Modules/math.kbs
+
+Use it with:
 
 ```basic
 include "math.kbs"
 ```
 
-It provides a set of basic functions to cut down on manually typing the same functions over and over.
-Currently this provides:
+It currently provides functions including:
 
-| Function | Meaning |
-| :---: | :--- |
-| minarr(a), maxarr(a)| Returns the smallest/largest element in an array or in a list enclosed in {} |
-| sumarr(a), avgarr(a) | Returns the sum/average of the elements in an array or list. |
-| sign(x) | Returns -1 / 0 / 1. |
-| min(a,b), max(a,b)| Returns the smallest/largest of the two scalars |
-| lerp(a,b,t) | Linear interpolation between a and b by ratio t (usually 0 and 1). |
-| hypot(a, b) | Returns the length of the hypotenuse, sqrt(a*a + b*b) |
-| atan2(y, x) | Returns the angle in radians of the point (x, y) |
-| clamp(a,lo,hi) | Clamps the value of a between lo and hi - r=clamp(r,0,255). |
-| remap(x, a1,a2, b1,b2)| remap a value between ranges — very handy in graphics-oriented BASIC256 |
-| wrap(x, lo, hi) | Wraps a value cyclically (angles, screen edges) — natural companion to clamp |
-| dist(x1,y1,x2,y2)| distance between two points|
-| fmod(a,b)| floating-point remainder of a / b|
-| fround(x, n)| round to n decimals (built-in command round is 0-decimal)|
-| cbrt(x)| cube root|
-| randint(lo,hi)| returns a random integer between lo and hi (inclusive)|
-| gaussian(mean, sd)| random number with normal distribution|
+`minarr`, `maxarr`, `sumarr`, `avgarr`, `sign`, `min`, `max`, `lerp`, `hypot`, `atan2`, `clamp`, `remap`, `wrap`, `dist`, `fmod`, `fround`, `cbrt`, `randint` and `gaussian`.
 
-## Building from source
+These are implemented as BASIC256 code rather than built-in language commands, keeping the language itself small while making common operations convenient.
 
-Detailed compiling instructions can be found in [COMPILING.txt](COMPILING.txt).
+2. Modules/turtle.kbs
 
-For Raspberry Pi, there is a dedicated file: [COMPILING_RaspberryPI.txt](COMPILING_RaspberryPI.txt).
+Use it with:
 
-## History
+```basic
+include "turtle.kbs"
+```
 
-### The original project
+This provides turtle logic with following subroutines:  
 
-The original BASIC-256 v2.0.0.11 is a GPL-licensed, retro BASIC programming environment for learning coding and having fun. It was originally called KidBasic and was started in 2006 by Ian Paul Larsen, later maintained by James Reneau and other contributors through the SourceForge project. After years of updates by the contributors and a rename to BASIC-256, it is in its current state still quite capable for everyday hobby use, but the source and build setup is showing its age.
+`t_reset`, `t_goto`, `t_home`, `t_forward`, `t_backward`, `t_right`, `t_left`, `t_setheading`, `t_penup`, `t_pendown`, `t_x`, `t_y`, `t_getheading`, `t_getpen`  
+and short-codes `t_fw`, `t_bw`, `t_pu`, `t_pd`, `t_r`, `t_l`
 
-The original code and last downloadable version reside on [SourceForge](https://sourceforge.net/projects/kidbasic/) at version 2.0.0.11, released in 2020. It uses qmake and MinGW to compile the Windows version and is Qt5-based. It comes with an Examples directory, but most programs there need to be updated to modern specs related to speed and graphics sizes. There is also a TestSuite directory to test edge cases, but this doesn't run fully on 2.0.0.11.
+## Build from source
 
-Unfortunately, development of the SourceForge BASIC-256 apparently stopped after a failed attempt to port it to Qt6. Several development branches called 2.0.99.x were created between the last stable release and the moment it came to a standstill.
+Detailed build instructions are in:
 
-### This continuation
+- [COMPILING.txt](COMPILING.txt)
+- [COMPILING_RaspberryPI.txt](COMPILING_RaspberryPI.txt)
 
-This GitHub repository ([uglymike17/basic256](https://github.com/uglymike17/basic256)) is my attempt to restart BASIC256. It takes the v2.0.99.10.2 branch as its starting point, with the aim of modernizing the codebase — with a focus on portability, maintainability, speed and education.  
-BASIC256 v2.1.0 was basically v2.0 but updated for the modern age and for new architectures.  
-BASIC256 v2.2.0 adds new commands and a big speedup over v2.1.0.
+The project uses **CMake, Qt6 and GitHub Actions**, with builds for Windows, Linux, Raspberry Pi, macOS and WebAssembly.
+
+## Project history
+
+BASIC256 began as **KidBasic** in 2006, created by Ian Paul Larsen and later maintained by James Reneau and other contributors through SourceForge. The original project eventually became BASIC256 and reached version 2.0.0.11.
+
+This repository is a continuation of that project. It started from the 2.0.99.10.2 development branch with the goal of modernizing the codebase while preserving its educational character and compatibility.
+
+The major development steps have been:
+
+- **2.1.0** — modern build system, portability and new platforms.
+- **2.1.1** — significant performance improvements and Web persistence.
+- **2.2.0** — new language features, mathematics, graphics capabilities and further performance improvements.
+- **2.3.0** — safer system access and enhanced text-console capabilities.
+
+The original copyright notices have been retained.
 
 ## Roadmap
 
-Development continues with an emphasis on educational value while preserving backward compatibility.  
-- Packaging for more distributions (BASIC256 is already in Debian and Raspbian)  
-- More standard modules  (like a BTK2-like graphical module)  
-- More/Better/Updated examples  
-- Education tutorials  
-- New language features when using modules would be too slow.
+Development continues with an emphasis on **education, portability, performance and compatibility**.
 
-## Vision
+Current areas of interest include:
 
-BASIC-256 should remain one of the easiest programming languages for beginners and hobbyists, while becoming one of the easiest educational environments to build, maintain and deploy on modern platforms — Windows, Linux, macOS and the Web.
+- More distribution packages
+- More standard modules
+- More and better examples
+- Educational tutorials
+- New language features where a module would be too slow
+- Continued improvements to documentation and deployment
 
 ## Contributing
 
-Ways to help
+BASIC256 is a hobbyist/open-source project and contributions are welcome.
 
-- Report bugs  
-- Improve documentation  
-- Write examples  
-- Translate documentation  
-- Test releases  
-- Improve tutorials  
-- Submit pull requests  
-- Join the [Discord](https://discord.gg/8QaSGYAQ9R) community  
+You can help by:
 
-Bug reports and feature requests go to [Issues](https://github.com/uglymike17/basic256/issues); questions, ideas and showing off what you made belong in [Discussions](https://github.com/uglymike17/basic256/discussions).
+- Reporting bugs
+- Improving documentation
+- Writing examples
+- Translating documentation
+- Testing releases
+- Improving tutorials
+- Submitting pull requests
+
+Use:
+
+- [Issues](https://github.com/uglymike17/basic256/issues) for bugs and feature requests
+- [Discussions](https://github.com/uglymike17/basic256/discussions) for questions, ideas and projects
+- [Discord](https://discord.gg/8QaSGYAQ9R) to join the community
 
 ## License
 
-BASIC256 is distributed under the GNU General Public License, version 3 or later (GPLv3+). The original project was released under GPLv2 "or (at your option) any later version", which is what allows this upgrade; all original copyright notices have been preserved. See the [license.txt](license.txt) file in the root directory for the full license text.
+BASIC256 is distributed under the **GNU General Public License version 3 or later (GPLv3+)**.
 
-Two components keep their own, compatible licenses: `src/core/md5.cpp` / `md5.h` (RSA Data Security, adapted by Frank Thilo) and `src/gui/LineNumberArea.cpp` / `LineNumberArea.h` (BSD, from the Qt examples).
+The original project used GPLv2 "or (at your option) any later version", allowing this continuation to move to GPLv3+. See [license.txt](license.txt) for the full license.
 
-## About the maintainer
+Two components retain their compatible original licenses:
 
-I'm first and foremost a BASIC256 fan (see https://uglymike.static.domains/) rather than a professional developer. This project is maintained with the help of AI assistants (ChatGPT, Claude, Google's Gemini and Perplexity, all on free accounts) — proof of what the modern toolchain makes possible for a determined hobbyist. Additionally, as I never dabbled in sound, images or sprites, I let Claude create the xxxxStatementDemo.kbs examples for these.   Contributions for fleshing out the translated documentation or other aspects of the project would be greatly appreciated.
+- `src/core/md5.cpp` / `md5.h` — RSA Data Security code adapted by Frank Thilo
+- `src/gui/LineNumberArea.cpp` / `.h` — BSD-licensed code from the Qt examples
+
+## Maintainer
+
+BASIC256 is maintained as a hobbyist/open-source project with the help of modern AI development tools. Contributions to the code, examples, documentation and translations are especially welcome.

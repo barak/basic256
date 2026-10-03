@@ -51,6 +51,8 @@
 # 20200421  j.m.reneau      added print suite
 # 20200421  j.m.reneau      added arraybase suite
 # 20200423  j.m.reneau      added map suite
+# 20260927  m.vilain        added system suite (clipboard, toolbars, dialogs, ports);
+#                           the completeness check now reports no untested keyword
 
 include "testsuite_common_include.kbs"
 
@@ -84,6 +86,8 @@ print "  'Printer' must set to PDF File Output"
 print "  'PDF FileName' must be set to a name of a temporary file with the pdf extension"
 print "On the 'Advanced' tab"
 print "  'Allow SYSTEM statement' must be ask or allow"
+print "The completeness check reads ../LEX/basicParse.l, outside this folder:"
+print "  answer 'Allow once' when BASIC-256 asks about it"
 print
 call same("Float Tail", getSetting("SYSTEM","Runtime/FloatTail"),"true")
 call same("Type Conversion Setting", getSetting("SYSTEM","Runtime/TypeConv"),"1")
@@ -204,6 +208,35 @@ section_print:
 call section("Console Printing")
 ###################################################
 include "testsuite_print_include.kbs"
+
+section_textscreen:
+###################################################
+call section("Text Output Screen")
+###################################################
+# Needs a real text output pane: TEXTCHAR, TEXTCOL and TEXTROW have nothing to
+# read without one. Run under -s the same file checks the no-pane contract
+# instead, which is how testsuite_ci.kbs uses it.
+include "testsuite_textscreen_include.kbs"
+
+section_system:
+###################################################
+call section("System, Window, Clipboard and Dialogs")
+###################################################
+include "testsuite_system_include.kbs"
+
+section_filegate:
+###################################################
+call section("File and SQLite Permission Gates")
+###################################################
+# Every refusal in these two raises the Allow dialog, so they need a person
+# answering "Don't allow" to each one -- answering "Allow for this run" even
+# once opens everything after it and the rest of the section will fail. Under
+# -s there is nobody to ask, the gate fails closed, and testsuite_ci.kbs runs
+# both of these unattended.
+if yn("Do file-permission testing? (you must answer 'Don't allow' to every prompt that follows)") then
+   include "testsuite_filegate_include.kbs"
+   include "testsuite_sqlgate_include.kbs"
+endif
 
 
 
@@ -332,6 +365,12 @@ call section("Array index base (arraybase 0/1)")
 ###################################################
 include "testsuite_arraybase_include.kbs"
 
+section_sort:
+###################################################
+call section("SORT")
+###################################################
+include "testsuite_sort_include.kbs"
+
 map_base:
 ###################################################
 call section("Map")
@@ -361,6 +400,12 @@ section_framerate:
 call section("Frame Rate Limiting")
 ###################################################
 include "testsuite_framerate_include.kbs"
+
+section_hsv:
+###################################################
+call section("HSV Colours")
+###################################################
+include "testsuite_hsv_include.kbs"
 
 
 

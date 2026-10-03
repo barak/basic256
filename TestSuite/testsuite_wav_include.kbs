@@ -4,6 +4,7 @@
 # date		programmer	description
 # 20140415	j.m.reneau	original coding
 # 2014-08-04	j.m.reneau	rewrote using spoken number sound file
+# 20260927	m.vilain	ostype_android rather than 2 (which is macOS); WAVSTATE
 
 currentsuite = "wav"
 
@@ -11,7 +12,7 @@ file$ = "jim_saying_numbers.mp3"
 notes = 5
 len = 6
 
-if ostype = 2 then
+if ostype = ostype_android then
    # android does not have enhansed WAV support
    # (WAVPLAY, WAVSTOP, and WAVWAIT only)
    #
@@ -41,7 +42,9 @@ else
    #
    wavplay # play from begining
    pause notel
+   call n("wavstate - playing", wavstate, 1)
    wavpause
+   call n("wavstate - paused", wavstate, 2)
    call npercent("wavpos - check position 1 note",wavpos, notel, .20)
    pause notel
    wavplay
@@ -50,6 +53,7 @@ else
    call q("wavstop - were the words 'one' and 'two' played with a rest between them and then stop?")
    #
    call n("wavpos stop - check position after stop",wavpos, 0)
+   call n("wavstate - stopped", wavstate(), 0)
    #
    #
    # simple reload and play to the end of the wav file

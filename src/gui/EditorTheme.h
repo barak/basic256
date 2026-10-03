@@ -67,7 +67,10 @@ struct EditorTheme {
 	// Stylesheet for a QPlainTextEdit/QTextEdit painted in this theme. A
 	// stylesheet is used rather than setPalette() because some styles ignore
 	// the palette under a dark colour scheme.
-	QString paneStyleSheet(const QString &widgetClass) const;
+	// backgroundOverride, when valid, replaces this theme's background. The
+	// Text Output pane uses it for the TEXTBACKGROUND statement, so a program
+	// can paint the whole pane without the theme being switched underneath it.
+	QString paneStyleSheet(const QString &widgetClass, const QColor &backgroundOverride = QColor()) const;
 
 	static const EditorTheme &light();
 	static const EditorTheme &dark();

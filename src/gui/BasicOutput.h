@@ -19,15 +19,17 @@
 #define __BASICOUTPUT_H
 
 #include <QKeyEvent>
+#include <QTextCharFormat>
 #include <QPaintEvent>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QToolBar>
 
 #include <qglobal.h>
 
-#include "ViewWidgetIFace.h"
-
-class BasicOutput : public QTextEdit, public ViewWidgetIFace
+// The flowing text pane: a rich text document with terminal write semantics
+// laid over it. It is one page of BasicOutputPane, which owns the dock's menu
+// and toolbar and forwards the interpreter's statements here.
+class BasicOutput : public QTextEdit
 {
   Q_OBJECT
 	public:
@@ -39,20 +41,18 @@ class BasicOutput : public QTextEdit, public ViewWidgetIFace
 		void inputStart();
 		void outputText(QString);
 		void outputText(QString, QColor);
-		void outputTextAt(int, int, QString);
-		QAction *copyAct;
-		QAction *pasteAct;
-		QAction *printAct;
-		QAction *clearAct;
-
-	virtual bool initActions(QMenu *, QToolBar *);
+		void locateCursor(int, int);
+		void cursorColRow(int *, int *);
+		void setOutputColor(QColor, QColor);
+		void setOutputFont(QString, int, int, bool);
+		void setOutputBackground(QColor);
+		void resetOutputFormat();
 
 	public slots:
 		void getInput();
 		void stopInput();
 		void slotPrint();					// sent output to printer
 		void paintEvent(QPaintEvent*);		// display cursor on redraw
-		void updatePasteButton();
 		void slotClear();
 		void slotWrap(bool);
 		// Repaint the pane and any text already in it from EditorTheme.
@@ -83,7 +83,20 @@ class BasicOutput : public QTextEdit, public ViewWidgetIFace
 		bool gettingInput;
 		QString inputText;
 
-		void changeFontSize(unsigned int);
+
+		// Format program output is written in - the state behind TEXTCOLOR and
+		// TEXTFONT. outFormatColored says whether a program set the foreground,
+		// in which case it wins over the theme's normal output colour.
+		QTextCharFormat outFormat;
+		bool outFormatColored;
+		// Whole-pane background from TEXTBACKGROUND. Invalid means the theme's
+		// own background, which is how a program starts.
+		QColor paneBackground;
+		void applyPaneStyle();
+		QTextCharFormat normalFormat();
+		void writeText(const QString &, const QTextCharFormat &);
+		void writeTerminalText(const QString &, const QTextCharFormat &);
+		void moveCursorToColRow(int, int);
 };
 
 

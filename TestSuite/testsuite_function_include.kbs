@@ -38,3 +38,50 @@ c = funone(7, ref(a), "junk", ref(b$))
 call n("return from funone",c,23)
 call n("a=27 return from funone",a,27)
 call s("b$='hihi' return from funone",b$,"hihi")
+
+# a parameter declared ref() receives the caller's variable when the call
+# passes a bare variable, without ref() having to be written at the call too
+subroutine refdeclset(ref(x))
+   x[0] = 99
+end subroutine
+
+subroutine refdeclinc(ref(n), m)
+   n = n + 1
+   m = m + 1
+end subroutine
+
+subroutine refdeclplain(x)
+   x[0] = -1
+end subroutine
+
+refarr = {1, 2, 3}
+call refdeclset(refarr)
+call s("declared ref() changes the caller's array", implode(refarr, ","), "99,2,3")
+refarr = {1, 2, 3}
+call refdeclset(refarr[])
+call s("declared ref() with var[] changes the caller's array", implode(refarr, ","), "99,2,3")
+refarr = {1, 2, 3}
+call refdeclplain(refarr)
+call s("a plain parameter still gets a copy", implode(refarr, ","), "1,2,3")
+refarr = {1, 2, 3}
+call refdeclplain(ref(refarr))
+call s("ref() at the call still passes a reference", implode(refarr, ","), "-1,2,3")
+
+refp = 1
+refq = 1
+call refdeclinc(refp, refq)
+call n("declared ref() changes the caller's variable", refp, 2)
+call n("the value parameter beside it does not", refq, 1)
+call refdeclinc(refp + 0, refq)
+call n("an expression passed to ref() goes by value", refp, 2)
+
+# the function is defined after the calls, and one call is nested in another
+call n("declared ref() in a function defined later", refdecltwice(refp), 4)
+call n("and the caller's variable changed", refp, 4)
+call n("nested call: the outer argument is a value", refdecltwice(refdecltwice(refp)), 16)
+call n("only the inner call changed the variable", refp, 8)
+
+function refdecltwice(ref(v))
+   v = v * 2
+   return v
+end function

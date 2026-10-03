@@ -66,6 +66,23 @@ PreferencesWin::PreferencesWin (QWidget * parent, bool showAdvanced)
 		if (system != -1) allowsystemcombo->setCurrentIndex(system);
 		advancedtablayout->addWidget(allowsystemcombo,r,2,1,2);
 		//
+		r++;
+		allowfilelabel = new QLabel(tr("Allow files outside the program's folder:"), this);
+		advancedtablayout->addWidget(allowfilelabel,r,1,1,1);
+		allowfilecombo = new QComboBox(this);
+		allowfilecombo->addItem(tr("Do not allow"), 0);
+		allowfilecombo->addItem(tr("Ask confirmation from user"), 1);
+		allowfilecombo->addItem(tr("Allow"), 2);
+		int f = settings.value(SETTINGSALLOWFILE, SETTINGSALLOWFILEDEFAULT).toInt();
+		int file = allowfilecombo->findData(f);
+		if (file != -1) allowfilecombo->setCurrentIndex(file);
+		advancedtablayout->addWidget(allowfilecombo,r,2,1,2);
+		//
+		r++;
+		netlistenanycheckbox = new QCheckBox(tr("NETLISTEN accepts connections from other machines"), this);
+		netlistenanycheckbox->setChecked(settings.value(SETTINGSNETLISTENANY, SETTINGSNETLISTENANYDEFAULT).toBool());
+		advancedtablayout->addWidget(netlistenanycheckbox,r,1,1,3);
+		//
 #ifdef WIN32
 #ifndef WIN32PORTABLE
 		r++;
@@ -566,6 +583,8 @@ void PreferencesWin::clickSaveButton() {
 			}
 			//
 			settings.setValue(SETTINGSALLOWSYSTEM, allowsystemcombo->itemData(allowsystemcombo->currentIndex()));
+			settings.setValue(SETTINGSALLOWFILE, allowfilecombo->itemData(allowfilecombo->currentIndex()));
+			settings.setValue(SETTINGSNETLISTENANY, netlistenanycheckbox->isChecked());
 			settings.setValue(SETTINGSALLOWSETTING, settingcheckbox->isChecked());
 			settings.setValue(SETTINGSSETTINGSACCESS, settingsaccesscombo->itemData(settingsaccesscombo->currentIndex()));
 			settings.setValue(SETTINGSSETTINGSMAX, settingsmaxcombo->itemData(settingsmaxcombo->currentIndex()));
