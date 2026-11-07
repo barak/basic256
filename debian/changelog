@@ -1,3 +1,9 @@
+basic256 (2.3.1-1) unstable; urgency=medium
+
+  * new upstream version
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Sat, 07 Nov 2026 20:34:32 +0000
+
 basic256 (2.3.0-1) unstable; urgency=medium
 
   * new upstream release
