@@ -4,25 +4,42 @@
         <file>Console/GreenVsBlue.kbs</file>
         <file>Console/FormTemplate.kbs</file>
         <file>Demo/BasicPaint.kbs</file>
-        <file>Demo/BTK2_Toolkit_demo.kbs</file>
         <file>Demo/BubbleUniverse_variations.kbs</file>
         <file>Demo/Critters.kbs</file>
         <file>Demo/FieldLines.kbs</file>
         <file>Demo/Life_GUI.kbs</file>
         <file>Demo/Quiverbloom.kbs</file>
         <file>Demo/SlimeMoldSimulation_GUI.kbs</file>
+        <file>Demo/tk_gui_demo.kbs</file>
+        <file>FallingSand/falling_sand_part0.kbs</file>
+        <file>FallingSand/falling_sand_part1.kbs</file>
+        <file>FallingSand/falling_sand_part2.kbs</file>
+        <file>FallingSand/falling_sand_part3.kbs</file>
+        <file>FallingSand/falling_sand_part4.kbs</file>
+        <file>FallingSand/falling_sand_part5.kbs</file>
+        <file>FallingSand/falling_sand_part6.kbs</file>
         <file>FractalsChaosAttractors/BarnsleyFern.kbs</file>
         <file>FractalsChaosAttractors/CloudySky.kbs</file>
         <file>FractalsChaosAttractors/JuliaMoerman.kbs</file>
         <file>FractalsChaosAttractors/Mandelbrot-256.kbs</file>
         <file>FractalsChaosAttractors/MultiJuliaIFS.kbs</file>
         <file>FractalsChaosAttractors/StrangeAttractors.kbs</file>
+        <file>Fun/balgame256.kbs</file>
         <file>Fun/Dancing_Tentacles_color.kbs</file>
+        <file>Fun/FallingLetters.kbs</file>
         <file>Fun/Kaleido.kbs</file>
         <file>Fun/ParticleFun.kbs</file>
         <file>Fun/PongWars2.kbs</file>
         <file>Fun/SpecialEffect.kbs</file>
         <file>Fun/Warpfactor_Starfield.kbs</file>
+        <file>GUI-Demo/Demo_1Button.kbs</file>
+        <file>GUI-Demo/Demo_2Button-Drawing.kbs</file>
+        <file>GUI-Demo/Demo_3Butt-Draw-Check-Radio-Slider.kbs</file>
+        <file>GUI-Demo/Demo_Grouper.kbs</file>
+        <file>GUI-Demo/Demo_Slider.kbs</file>
+        <file>GUI-Demo/Demo_Spinner.kbs</file>
+        <file>GUI-Demo/Demo_Tabs.kbs</file>
+        <file>GUI-Demo/Demo_Textfield.kbs</file>
         <file>Games/ClaudeAI-neonsnake.kbs</file>
         <file>Games/FlappyBall.kbs</file>
         <file>Games/FlappyBall2.kbs</file>

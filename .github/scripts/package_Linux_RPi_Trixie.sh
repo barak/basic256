@@ -4,10 +4,12 @@ set -euo pipefail
         cp README.md Basic256/ || true
         cp Basic256-IDE.png Basic256-CLI.png Basic256-Web.png Basic256-Web_GraphicsOnly.png Basic256/ || true
 
-        # ICU libraries - required by Qt5Core at runtime for Unicode/locale support
-        cp /usr/lib/aarch64-linux-gnu/libicuuc.so.*   Basic256/lib/
-        cp /usr/lib/aarch64-linux-gnu/libicudata.so.* Basic256/lib/
-        cp /usr/lib/aarch64-linux-gnu/libicui18n.so.* Basic256/lib/
+        # ICU, for Unicode/locale support. Qt's own ICU, when its build ships
+        # one, was bundled with the Qt libraries in build_Linux_RPi_Trixie.sh;
+        # these are the system's, for anything else that links them.
+        cp /usr/lib/aarch64-linux-gnu/libicuuc.so.*   Basic256/lib/ || true
+        cp /usr/lib/aarch64-linux-gnu/libicudata.so.* Basic256/lib/ || true
+        cp /usr/lib/aarch64-linux-gnu/libicui18n.so.* Basic256/lib/ || true
         cp /usr/lib/aarch64-linux-gnu/libflite.so.* Basic256/lib/ || true
         cp /usr/lib/aarch64-linux-gnu/libflite_cmu_us_kal.so.* Basic256/lib/ || true
         cp /usr/lib/aarch64-linux-gnu/libflite_usenglish.so.* Basic256/lib/ || true
@@ -22,25 +24,7 @@ set -euo pipefail
         cp /usr/lib/aarch64-linux-gnu/libpipewire-0.3.so.*         Basic256/lib/ || true
         cp /usr/lib/aarch64-linux-gnu/libasound.so.*         Basic256/lib/ || true
         cp /usr/lib/aarch64-linux-gnu/libgstapp-1.0.so.*           Basic256/lib/ || true
-        cp /usr/lib/aarch64-linux-gnu/libglib-2.0.so.*             Basic256/lib/ || true
-        cp /usr/lib/aarch64-linux-gnu/libgobject-2.0.so.*          Basic256/lib/ || true
-        cp /usr/lib/aarch64-linux-gnu/libgmodule-2.0.so.*          Basic256/lib/ || true
-        cp /usr/lib/aarch64-linux-gnu/libgio-2.0.so.*              Basic256/lib/ || true
-        cp /usr/lib/aarch64-linux-gnu/libffi.so.*                  Basic256/lib/ || true
-        cp /usr/lib/aarch64-linux-gnu/libpcre2-8.so.*              Basic256/lib/ || true
         cp /usr/lib/aarch64-linux-gnu/liborc-0.4.so.*              Basic256/lib/ || true
-
-        QT_PLUGIN_DIR="/usr/lib/aarch64-linux-gnu/qt6/plugins"
-        
-        if [ -d $QT_PLUGIN_DIR/audio ]; then
-          mkdir -p Basic256/plugins/audio
-          cp $QT_PLUGIN_DIR/audio/* Basic256/plugins/audio/
-        fi
-
-        mkdir -p Basic256/plugins/mediaservice
-        if [ -d $QT_PLUGIN_DIR/mediaservice ]; then
-          cp $QT_PLUGIN_DIR/mediaservice/* Basic256/plugins/mediaservice/
-        fi
 
         # GStreamer plugins (audioconvert, autoaudiosink, alsa/pulse)
         GSTPLUG="/usr/lib/aarch64-linux-gnu/gstreamer-1.0"
@@ -76,6 +60,20 @@ set -euo pipefail
           echo "ERROR: the SQLite driver has unresolved dependencies (above)"; exit 1
         fi
 
+        # The GTK platform theme is how the IDE follows a dark desktop. GTK
+        # must come from the user's system, never from the package.
+        if [ ! -f Basic256/plugins/platformthemes/libqgtk3.so ]; then
+          echo "ERROR: plugins/platformthemes/libqgtk3.so is missing from the package"; exit 1
+        fi
+        if ls Basic256/lib/libgtk-3.so* 1>/dev/null 2>&1; then
+          echo "ERROR: GTK was bundled; the theme plugin must use the system's"; exit 1
+        fi
+        # GLib likewise: GTK, and the GIO modules it loads such as gvfs, are
+        # built against the Pi's own newer GLib and fail against an older one.
+        if ls Basic256/lib/libglib-2.0.so* Basic256/lib/libgio-2.0.so* 1>/dev/null 2>&1; then
+          echo "ERROR: GLib was bundled; the package must use the system's"; exit 1
+        fi
+
         # Diagnostics: confirm texttospeech plugins made it into the final
         # package and that their dependencies resolve against the bundled
         # Basic256/lib (this is what the shipped artifact actually sees).
@@ -97,19 +95,32 @@ set -euo pipefail
 
         # Launcher script
         cat > Basic256/run.sh << 'EOF'
-        #!/bin/sh
-        DIR="$(cd "$(dirname "$0")" && pwd)"
+#!/bin/sh
+DIR="$(cd "$(dirname "$0")" && pwd)"
 
-        export LD_LIBRARY_PATH="$DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-        export QT_PLUGIN_PATH="$DIR/plugins"
-        export QT_QPA_PLATFORM_PLUGIN_PATH="$DIR/plugins/platforms"
-        export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-xcb}"
-        export QT_TEXTTOSPEECH_PLUGINS="$DIR/plugins/texttospeech"
-        export PIPEWIRE_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-        export GST_PLUGIN_PATH="$DIR/gstreamer-1.0"
-        export GST_REGISTRY="$DIR/gstreamer-1.0/registry.bin"
+export LD_LIBRARY_PATH="$DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export QT_PLUGIN_PATH="$DIR/plugins"
+export QT_QPA_PLATFORM_PLUGIN_PATH="$DIR/plugins/platforms"
+export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-xcb}"
+export QT_TEXTTOSPEECH_PLUGINS="$DIR/plugins/texttospeech"
+# Qt reads the desktop's colours, light or dark, through a platform theme
+# plugin. It picks the bundled GTK one by itself on GNOME-like desktops but
+# not on others, such as labwc on the Raspberry Pi, so ask for it. A theme
+# already set is kept only if this package carries its plugin: anything else
+# cannot load here, and Raspberry Pi OS sets qt5ct, a Qt 5 plugin, for every
+# session. Qt-based desktops (KDE, LXQt) are left to Qt's own choice.
+case "${XDG_CURRENT_DESKTOP:-}" in
+    *KDE*|*LXQt*|*LXQT*) ;;
+    *) case "${QT_QPA_PLATFORMTHEME:-}" in
+           gtk3) ;;
+           *) export QT_QPA_PLATFORMTHEME=gtk3 ;;
+       esac ;;
+esac
+export PIPEWIRE_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export GST_PLUGIN_PATH="$DIR/gstreamer-1.0"
+export GST_REGISTRY="$DIR/gstreamer-1.0/registry.bin"
 
-        exec "$DIR/basic256" "$@"
+exec "$DIR/basic256" "$@"
 EOF
         chmod +x Basic256/run.sh
 

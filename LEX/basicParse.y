@@ -544,6 +544,7 @@
 %token B256AMPEQUAL
 %token B256AND
 %token B256ARC
+%token B256ARRAYADD
 %token B256ARRAYBASE
 %token B256ASC
 %token B256ASCENDING
@@ -1067,6 +1068,7 @@
 }
 
 %token <number> B256INTEGER
+%token B256INTEGERTOOLARGE
 %token <floatnum> B256FLOAT
 %token <string> B256STRING
 %token <string> B256HEXCONST
@@ -1931,6 +1933,17 @@ expr_numeric:
         	addLongLongOp(OP_PUSHLONG, $2);
 	}
 
+	| B256INTEGERTOOLARGE {
+		// an integer literal past the 64-bit range
+		errorcode = COMPERR_NUMBERTOOLARGE;
+		return -1;
+	}
+
+	| '+' B256INTEGERTOOLARGE %prec B256UNARY {
+		errorcode = COMPERR_NUMBERTOOLARGE;
+		return -1;
+	}
+
 	| '+' B256FLOAT %prec B256UNARY {
 		// accept/eat unary plus only for numbers
 		if(isfinite($2)){
@@ -2611,6 +2624,7 @@ expr_dataelement:
 statement:
 	alertstmt
 	| arcstmt
+	| arrayaddstmt
 	| arraybasestmt
 	| begincasestmt
 	| callstmt
@@ -4608,6 +4622,15 @@ outputtoolbarvisiblestmt:
 maximizestmt:
 			B256MAXIMIZE expr {
 				addOp(OP_MAXIMIZE);
+			}
+			;
+
+// ARRAYADD array, value [, value ...]
+// The values are pushed in order and then how many there were.
+arrayaddstmt:
+			B256ARRAYADD variable_a ',' listitems {
+				addIntOp(OP_PUSHINT, listlen);
+				addIntOp(OP_ARRAYADD, varnumber[--nvarnumber]);
 			}
 			;
 

@@ -92,6 +92,20 @@ export GST_REGISTRY_REUSE_PLUGIN_SCANNER="no"
 # Write the plugin registry cache to user's cache dir, not the read-only AppImage
 export GST_REGISTRY="${XDG_CACHE_HOME:-${HOME}/.cache}/basic256/gst-registry.bin"
 
+# Qt reads the desktop's colours, light or dark, through a platform theme
+# plugin. It picks the bundled GTK one by itself on GNOME-like desktops but
+# not on others, such as labwc on the Raspberry Pi, so ask for it. A theme
+# already set is kept only if this package carries its plugin: anything else
+# cannot load here, and Raspberry Pi OS sets qt5ct, a Qt 5 plugin, for every
+# session. Qt-based desktops (KDE, LXQt) are left to Qt's own choice.
+case "${XDG_CURRENT_DESKTOP:-}" in
+    *KDE*|*LXQt*|*LXQT*) ;;
+    *) case "${QT_QPA_PLATFORMTHEME:-}" in
+           gtk3|xdgdesktopportal) ;;
+           *) export QT_QPA_PLATFORMTHEME=gtk3 ;;
+       esac ;;
+esac
+
 exec "${HERE}/usr/bin/basic256" "$@"
 APPRUN
 chmod +x "${APPDIR}/AppRun"
@@ -126,9 +140,6 @@ cplib "libgstreamer-1.0.so.*"
 cplib "libgstbase-1.0.so.*"
 cplib "libgstaudio-1.0.so.*"
 cplib "libgstpbutils-1.0.so.*"
-cplib "libglib-2.0.so.*"
-cplib "libgobject-2.0.so.*"
-cplib "libgio-2.0.so.*"
 
 # ── GStreamer plugins → usr/lib/gstreamer-1.0 ─────────────────────────────────
 echo "==> Copying GStreamer plugins"
@@ -179,9 +190,33 @@ VERSION="$(git describe --tags --always 2>/dev/null || echo 'dev')"
 export LD_LIBRARY_PATH="${QT_DIR}/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
 
 echo "==> Running linuxdeploy (VERSION=${VERSION})"
+# The libraries GTK is built on must come from the system: GTK, loaded by
+# the theme plugin, uses whichever copy is first on the path, and one older
+# than it was built for stops the plugin loading (Linux Mint 22.3 stayed
+# light). linuxdeploy bundles them by itself, so keep them out of both passes
+# and remove what the Qt plugin deploys regardless. Any distribution new
+# enough for this binary has them at least as new as the build machine's.
+GTK_STACK=('libglib-2.0.so*' 'libgobject-2.0.so*' 'libgio-2.0.so*' 'libgmodule-2.0.so*' 'libgthread-2.0.so*' 'libffi.so*' 'libpcre.so*' 'libpcre2-8.so*' 'libcairo.so*' 'libcairo-gobject.so*' 'libpango-1.0.so*' 'libpangocairo-1.0.so*' 'libpangoft2-1.0.so*' 'libgdk_pixbuf-2.0.so*' 'libpixman-1.so*' 'libthai.so*' 'libdatrie.so*')
+GTK_EXCLUDES=()
+for pat in "${GTK_STACK[@]}"; do GTK_EXCLUDES+=(--exclude-library "${pat}"); done
+
 "${TOOLS_DIR}/linuxdeploy-${ARCH}.AppImage" \
     --appdir "${APPDIR}"                     \
-    --plugin qt                              \
+    "${GTK_EXCLUDES[@]}"                     \
+    --plugin qt
+
+for pat in "${GTK_STACK[@]}"; do rm -f "${APPDIR}"/usr/lib/${pat}; done
+
+# GTK platform theme, so the IDE follows the desktop's light or dark theme
+# (AppRun asks for it). Added only after the Qt plugin has deployed: given the
+# plugin, it would bundle GTK too, and GTK must come from the user's system.
+# Qt's plugins already look for the Qt libraries in ../../lib.
+mkdir -p "${APPDIR}/usr/plugins/platformthemes"
+cp "${QT_PLUGIN_DIR}/platformthemes/libqgtk3.so" "${APPDIR}/usr/plugins/platformthemes/"
+
+"${TOOLS_DIR}/linuxdeploy-${ARCH}.AppImage" \
+    --appdir "${APPDIR}"                     \
+    "${GTK_EXCLUDES[@]}"                     \
     --output appimage
 
 # ── Rename output to expected artifact name ───────────────────────────────────
@@ -210,4 +245,19 @@ if [ ! -f squashfs-root/usr/bin/Modules/math.kbs ]; then
     exit 1
 fi
 echo "==> Examples/ and Modules/math.kbs verified in ${ARTIFACT_NAME}.AppImage"
+if [ ! -f squashfs-root/usr/plugins/platformthemes/libqgtk3.so ]; then
+    echo "ERROR: usr/plugins/platformthemes/libqgtk3.so missing in ${ARTIFACT_NAME}.AppImage" >&2
+    exit 1
+fi
+if ls squashfs-root/usr/lib/libgtk-3.so* 1>/dev/null 2>&1; then
+    echo "ERROR: GTK was bundled in ${ARTIFACT_NAME}.AppImage; the theme plugin must use the system's" >&2
+    exit 1
+fi
+for pat in "${GTK_STACK[@]}"; do
+    if ls squashfs-root/usr/lib/${pat} 1>/dev/null 2>&1; then
+        echo "ERROR: ${pat} is bundled in ${ARTIFACT_NAME}.AppImage; it must come from the system" >&2
+        exit 1
+    fi
+done
+echo "==> GTK platform theme verified in ${ARTIFACT_NAME}.AppImage"
 rm -rf squashfs-root
